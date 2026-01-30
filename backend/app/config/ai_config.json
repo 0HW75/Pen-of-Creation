@@ -1,0 +1,46 @@
+{
+  "default_provider": "siliconflow",
+  "providers": {
+    "openai": {
+      "api_key": "your-api-key-here",
+      "api_base": "https://api.openai.com/v1",
+      "model": "gpt-3.5-turbo",
+      "timeout": 30,
+      "temperature": 0.7,
+      "max_tokens": 1000
+    },
+    "anthropic": {
+      "api_key": "",
+      "api_base": "https://api.anthropic.com/v1",
+      "model": "claude-3-sonnet-20240229",
+      "timeout": 30,
+      "temperature": 0.7,
+      "max_tokens": 1000
+    },
+    "google": {
+      "api_key": "",
+      "api_base": "https://generativelanguage.googleapis.com/v1",
+      "model": "gemini-1.5-flash",
+      "timeout": 30,
+      "temperature": 0.7,
+      "max_tokens": 1000
+    },
+    "azure": {
+      "api_key": "",
+      "api_base": "",
+      "model": "gpt-35-turbo",
+      "api_version": "2024-02-15-preview",
+      "timeout": 30,
+      "temperature": 0.7,
+      "max_tokens": 1000
+    },
+    "siliconflow": {
+      "api_key": "sk-dudffcssgjwexmpuoaxdoviahnefpskxjfnjthebfkakawyk",
+      "api_base": "https://api.siliconflow.cn/v1/",
+      "model": "deepseek-ai/DeepSeek-V3.2",
+      "timeout": 120,
+      "temperature": 0.7,
+      "max_tokens": 2000
+    }
+  }
+}

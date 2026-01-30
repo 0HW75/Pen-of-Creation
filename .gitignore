@@ -76,3 +76,9 @@ env/
 # Build artifacts
 build/
 out/
+
+# Documentation
+# *.md
+
+# Config files
+# *.json

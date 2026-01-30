@@ -1,42 +1,113 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* 响应式布局 */
+@media screen and (max-width: 768px) {
+  .ant-layout-header {
+    padding: 0 16px;
+  }
+  
+  .ant-layout-content {
+    margin: 16px !important;
+    padding: 16px !important;
+  }
+  
+  .ant-menu-horizontal {
+    overflow-x: auto;
+  }
+  
+  .ant-btn {
+    margin: 0 4px 8px 0;
+  }
+  
+  .ant-modal {
+    width: 90% !important;
+  }
+  
+  .ant-table {
+    overflow-x: auto;
+  }
+  
+  .ant-tabs-nav {
+    overflow-x: auto;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .ant-layout-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    padding: 8px 16px;
+  }
+  
+  .ant-layout-header > div {
+    margin-bottom: 8px;
+    width: 100%;
+  }
+  
+  .ant-layout-content {
+    margin: 8px !important;
+    padding: 12px !important;
+  }
+  
+  .ant-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  
+  .ant-typography {
+    font-size: 16px !important;
+  }
+}
+
+/* 通用样式优化 */
+.app-container {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.content-container {
+  min-height: 600px;
+}
+
+/* 加载动画 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+/* 空状态样式 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 48px;
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* 卡片样式优化 */
+.ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+/* 按钮组样式 */
+.button-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+@media screen and (max-width: 768px) {
+  .button-group {
+    flex-wrap: wrap;
   }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }
