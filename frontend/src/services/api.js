@@ -13,7 +13,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // 添加60秒超时设置，AI生成需要更长时间
+  timeout: 120000, // 增加到120秒超时设置，AI生成需要更长时间
 });
 
 // 请求重试配置
