@@ -283,41 +283,68 @@ def decompose_outline(id):
     if not outline:
         return jsonify({'error': 'Outline not found'}), 404
     
-    # 这里应该根据大纲内容分解为卷纲
-    # 暂时返回模拟数据
-    mock_volumes = [
-        {
-            'title': 'Volume 1',
-            'content': 'Introduction and setup',
-            'core_conflict': 'Initial conflict',
-            'order_index': 1
-        },
-        {
-            'title': 'Volume 2',
-            'content': 'Rising action',
-            'core_conflict': 'Main conflict development',
-            'order_index': 2
-        },
-        {
-            'title': 'Volume 3',
-            'content': 'Climax and resolution',
-            'core_conflict': 'Final conflict',
-            'order_index': 3
-        }
-    ]
+    # 从请求中获取卷纲数据
+    data = request.json
     
-    created_volumes = []
-    for vol_data in mock_volumes:
-        new_volume = Volume(
+    # 检查是否是批量创建
+    if isinstance(data, list):
+        created_volumes = []
+        for vol_data in data:
+            # 检查是否已存在相同order_index的卷纲
+            existing_volume = Volume.query.filter_by(
+                project_id=outline.project_id,
+                outline_id=outline.id,
+                order_index=vol_data.get('order_index')
+            ).first()
+            
+            if existing_volume:
+                # 更新现有卷纲，增加版本号
+                existing_volume.title = vol_data.get('title', existing_volume.title)
+                existing_volume.content = vol_data.get('content', existing_volume.content)
+                existing_volume.core_conflict = vol_data.get('core_conflict', existing_volume.core_conflict)
+                existing_volume.version += 1
+                created_volumes.append(existing_volume)
+            else:
+                # 创建新卷纲
+                new_volume = Volume(
+                    project_id=outline.project_id,
+                    outline_id=outline.id,
+                    title=vol_data.get('title', '未命名卷'),
+                    content=vol_data.get('content', ''),
+                    core_conflict=vol_data.get('core_conflict', ''),
+                    order_index=vol_data.get('order_index', len(created_volumes) + 1),
+                    version=1
+                )
+                db.session.add(new_volume)
+                created_volumes.append(new_volume)
+    else:
+        # 单个卷纲创建
+        existing_volume = Volume.query.filter_by(
             project_id=outline.project_id,
             outline_id=outline.id,
-            title=vol_data['title'],
-            content=vol_data['content'],
-            core_conflict=vol_data['core_conflict'],
-            order_index=vol_data['order_index']
-        )
-        db.session.add(new_volume)
-        created_volumes.append(new_volume)
+            order_index=data.get('order_index', 1)
+        ).first()
+        
+        if existing_volume:
+            # 更新现有卷纲，增加版本号
+            existing_volume.title = data.get('title', existing_volume.title)
+            existing_volume.content = data.get('content', existing_volume.content)
+            existing_volume.core_conflict = data.get('core_conflict', existing_volume.core_conflict)
+            existing_volume.version += 1
+            created_volumes = [existing_volume]
+        else:
+            # 创建新卷纲
+            new_volume = Volume(
+                project_id=outline.project_id,
+                outline_id=outline.id,
+                title=data.get('title', '未命名卷'),
+                content=data.get('content', ''),
+                core_conflict=data.get('core_conflict', ''),
+                order_index=data.get('order_index', 1),
+                version=1
+            )
+            db.session.add(new_volume)
+            created_volumes = [new_volume]
     
     db.session.commit()
     return jsonify([volume.to_dict() for volume in created_volumes]), 201
@@ -362,47 +389,76 @@ def decompose_volume(id):
     if not volume:
         return jsonify({'error': 'Volume not found'}), 404
     
-    # 这里应该根据卷纲内容分解为章纲
-    # 暂时返回模拟数据
-    mock_chapters = [
-        {
-            'title': 'Chapter 1',
-            'scenes': json.dumps(['Scene 1', 'Scene 2']),
-            'characters': json.dumps(['Character 1', 'Character 2']),
-            'core_event': 'Introduction of main character',
-            'emotional_goal': 'Establish empathy',
-            'keywords': json.dumps(['introduction', 'setup']),
-            'word_count_estimate': 2000,
-            'order_index': 1
-        },
-        {
-            'title': 'Chapter 2',
-            'scenes': json.dumps(['Scene 1', 'Scene 2']),
-            'characters': json.dumps(['Character 1', 'Character 3']),
-            'core_event': 'Introduction of conflict',
-            'emotional_goal': 'Create tension',
-            'keywords': json.dumps(['conflict', 'tension']),
-            'word_count_estimate': 2500,
-            'order_index': 2
-        }
-    ]
+    # 从请求中获取章纲数据
+    data = request.json
     
-    created_chapters = []
-    for chap_data in mock_chapters:
-        new_chapter = Chapter(
+    # 检查是否是批量创建
+    if isinstance(data, list):
+        created_chapters = []
+        for chap_data in data:
+            # 检查是否已存在相同order_index的章纲
+            existing_chapter = Chapter.query.filter_by(
+                project_id=volume.project_id,
+                volume_id=volume.id,
+                order_index=chap_data.get('order_index')
+            ).first()
+            
+            if existing_chapter:
+                # 更新现有章纲，增加版本号
+                existing_chapter.title = chap_data.get('title', existing_chapter.title)
+                existing_chapter.content = chap_data.get('content', existing_chapter.content)
+                existing_chapter.core_event = chap_data.get('core_event', existing_chapter.core_event)
+                existing_chapter.emotional_goal = chap_data.get('emotional_goal', existing_chapter.emotional_goal)
+                existing_chapter.word_count_estimate = chap_data.get('word_count_estimate', existing_chapter.word_count_estimate)
+                existing_chapter.version += 1
+                created_chapters.append(existing_chapter)
+            else:
+                # 创建新章纲
+                new_chapter = Chapter(
+                    project_id=volume.project_id,
+                    volume_id=volume.id,
+                    title=chap_data.get('title', '未命名章'),
+                    content=chap_data.get('content', ''),
+                    core_event=chap_data.get('core_event', ''),
+                    emotional_goal=chap_data.get('emotional_goal', ''),
+                    word_count_estimate=chap_data.get('word_count_estimate', 2000),
+                    order_index=chap_data.get('order_index', len(created_chapters) + 1),
+                    version=1
+                )
+                db.session.add(new_chapter)
+                created_chapters.append(new_chapter)
+    else:
+        # 单个章纲创建
+        existing_chapter = Chapter.query.filter_by(
             project_id=volume.project_id,
             volume_id=volume.id,
-            title=chap_data['title'],
-            scenes=chap_data['scenes'],
-            characters=chap_data['characters'],
-            core_event=chap_data['core_event'],
-            emotional_goal=chap_data['emotional_goal'],
-            keywords=chap_data['keywords'],
-            word_count_estimate=chap_data['word_count_estimate'],
-            order_index=chap_data['order_index']
-        )
-        db.session.add(new_chapter)
-        created_chapters.append(new_chapter)
+            order_index=data.get('order_index', 1)
+        ).first()
+        
+        if existing_chapter:
+            # 更新现有章纲，增加版本号
+            existing_chapter.title = data.get('title', existing_chapter.title)
+            existing_chapter.content = data.get('content', existing_chapter.content)
+            existing_chapter.core_event = data.get('core_event', existing_chapter.core_event)
+            existing_chapter.emotional_goal = data.get('emotional_goal', existing_chapter.emotional_goal)
+            existing_chapter.word_count_estimate = data.get('word_count_estimate', existing_chapter.word_count_estimate)
+            existing_chapter.version += 1
+            created_chapters = [existing_chapter]
+        else:
+            # 创建新章纲
+            new_chapter = Chapter(
+                project_id=volume.project_id,
+                volume_id=volume.id,
+                title=data.get('title', '未命名章'),
+                content=data.get('content', ''),
+                core_event=data.get('core_event', ''),
+                emotional_goal=data.get('emotional_goal', ''),
+                word_count_estimate=data.get('word_count_estimate', 2000),
+                order_index=data.get('order_index', 1),
+                version=1
+            )
+            db.session.add(new_chapter)
+            created_chapters = [new_chapter]
     
     db.session.commit()
     return jsonify([chapter.to_dict() for chapter in created_chapters]), 201

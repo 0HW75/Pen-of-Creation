@@ -82,3 +82,4 @@ out/
 
 # Config files
 # *.json
+backend/app/config/ai_config.json

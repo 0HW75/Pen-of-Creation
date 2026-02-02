@@ -67,6 +67,7 @@ class Volume(db.Model):
     content = db.Column(db.Text, default='')
     core_conflict = db.Column(db.Text, default='')
     order_index = db.Column(db.Integer, nullable=False)
+    version = db.Column(db.Integer, default=1)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -79,6 +80,7 @@ class Volume(db.Model):
             'content': self.content,
             'core_conflict': self.core_conflict,
             'order_index': self.order_index,
+            'version': self.version,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
@@ -99,6 +101,7 @@ class Chapter(db.Model):
     type = db.Column(db.String(50), default='普通')
     word_count = db.Column(db.Integer, default=0)
     order_index = db.Column(db.Integer, nullable=False)
+    version = db.Column(db.Integer, default=1)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -119,6 +122,7 @@ class Chapter(db.Model):
             'type': self.type,
             'word_count': self.word_count,
             'order_index': self.order_index,
+            'version': self.version,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
