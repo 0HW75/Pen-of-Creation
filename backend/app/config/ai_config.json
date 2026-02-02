@@ -35,7 +35,7 @@
       "max_tokens": 1000
     },
     "siliconflow": {
-      "api_key": "your-api-key-here",
+      "api_key": "sk-dudffcssgjwexmpuoaxdoviahnefpskxjfnjthebfkakawyk",
       "api_base": "https://api.siliconflow.cn/v1/",
       "model": "deepseek-ai/DeepSeek-V3.2",
       "timeout": 120,
