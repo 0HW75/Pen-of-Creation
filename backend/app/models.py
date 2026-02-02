@@ -400,3 +400,25 @@ class EmotionBoard(db.Model):
             'order_index': self.order_index,
             'created_at': self.created_at.isoformat()
         }
+
+class StoryModel(db.Model):
+    __tablename__ = 'story_models'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    key = db.Column(db.String(100), nullable=False, unique=True)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, default='')
+    is_default = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'key': self.key,
+            'name': self.name,
+            'description': self.description,
+            'is_default': self.is_default,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }

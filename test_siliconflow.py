@@ -2,7 +2,7 @@ import requests
 import json
 
 # 测试硅基流动API
-api_key = "sk-dudffcssgjwexmpuoaxdoviahnefpskxjfnjthebfkakawyk"
+api_key = "your-api-key-here"
 api_base = "https://api.siliconflow.cn/v1"
 
 # 构建请求数据

@@ -1,6 +1,6 @@
 from app.api import api_bp
 from app import db
-from app.models import Outline, Volume, Chapter, Project
+from app.models import Outline, Volume, Chapter, Project, StoryModel
 from flask import request, jsonify
 import json
 
@@ -68,6 +68,17 @@ def generate_outline():
     story_model = data.get('story_model', 'hero_journey')
     params = data.get('params', {})
     project_info = data.get('project_info', {})
+    system_prompt = data.get('system_prompt', '')
+    selected_architect = data.get('selected_architect', None)
+    outline_structure_prompt = data.get('outline_structure_prompt', '')
+    
+    # 如果提供了selected_architect，使用它的prompt作为系统提示词
+    if selected_architect and selected_architect.get('prompt'):
+        system_prompt = selected_architect.get('prompt')
+    
+    # 如果提供了outline_structure_prompt，添加到系统提示词中
+    if outline_structure_prompt:
+        system_prompt += '\n\n' + outline_structure_prompt
     
     # 获取项目信息
     outline_title = project_info.get('title', 'Generated Outline')
@@ -79,7 +90,25 @@ def generate_outline():
     reference_works = project_info.get('reference_works', '')
     
     # 构建AI提示词
-    system_prompt = f"你是一个专业的故事大纲生成专家，擅长根据项目信息创建详细、有深度的故事大纲。"
+    if not system_prompt:
+        # 默认系统提示词
+        system_prompt = f"你是一个专业的故事大纲生成专家，擅长根据项目信息创建详细、有深度的故事大纲。你的输出必须严格遵循指定的格式，确保结构清晰、内容完整，并且格式一致性高。"
+        system_prompt += f"\n\n请按照以下固定格式生成大纲：\n"
+        system_prompt += f"1. 使用Markdown格式输出\n"
+        system_prompt += f"2. 标题层级必须清晰：# 一级标题，## 二级标题，### 三级标题\n"
+        system_prompt += f"3. 必须包含以下章节，且章节顺序不可更改：\n"
+        system_prompt += f"   - ## 1. 主线剧情\n"
+        system_prompt += f"   - ## 2. 次要情节\n"
+        system_prompt += f"   - ## 3. 关键事件\n"
+        system_prompt += f"   - ## 4. 角色弧线\n"
+        system_prompt += f"   - ## 5. 主题\n"
+        system_prompt += f"\n"
+        system_prompt += f"内容要求：\n"
+        system_prompt += f"1. 主线剧情：详细描述故事的主要情节发展，包含起承转合\n"
+        system_prompt += f"2. 次要情节：列出2-3个重要的次要情节，每个次要情节要有标题和简短描述\n"
+        system_prompt += f"3. 关键事件：列出5-7个推动故事发展的关键事件，按时间顺序排列\n"
+        system_prompt += f"4. 角色弧线：描述主要角色的成长和转变，至少包含主角的完整弧线\n"
+        system_prompt += f"5. 主题：深入探讨故事的核心主题，分析其在故事中的体现方式\n"
     user_prompt = f"请为以下小说项目生成一个详细的故事大纲：\n\n"
     user_prompt += f"项目标题：{outline_title}\n"
     user_prompt += f"小说类型：{genre}\n"
@@ -89,13 +118,49 @@ def generate_outline():
     user_prompt += f"参考作品：{reference_works}\n"
     user_prompt += f"目标读者：{target_audience}\n"
     user_prompt += f"故事模型：{story_model}\n\n"
-    user_prompt += f"请按照以下固定格式生成大纲：\n"
-    user_prompt += f"1. 主线剧情：详细描述故事的主要情节发展\n"
-    user_prompt += f"2. 次要情节：列出2-3个重要的次要情节\n"
-    user_prompt += f"3. 关键事件：列出5-7个推动故事发展的关键事件\n"
-    user_prompt += f"4. 角色弧线：描述主要角色的成长和转变\n"
-    user_prompt += f"5. 主题：深入探讨故事的核心主题\n\n"
-    user_prompt += f"请确保大纲内容丰富、结构合理，符合所选的故事模型和小说类型。"
+    user_prompt += f"## 格式要求（必须严格遵循）：\n"
+    user_prompt += f"1. 使用Markdown格式输出\n"
+    user_prompt += f"2. 标题层级必须清晰：# 一级标题，## 二级标题，### 三级标题\n"
+    user_prompt += f"3. 必须包含以下章节，且章节顺序不可更改：\n"
+    user_prompt += f"   - ## 1. 主线剧情\n"
+    user_prompt += f"   - ## 2. 次要情节\n"
+    user_prompt += f"   - ## 3. 关键事件\n"
+    user_prompt += f"   - ## 4. 角色弧线\n"
+    user_prompt += f"   - ## 5. 主题\n"
+    user_prompt += f"\n"
+    user_prompt += f"## 内容要求：\n"
+    user_prompt += f"1. 主线剧情：详细描述故事的主要情节发展，包含起承转合\n"
+    user_prompt += f"2. 次要情节：列出2-3个重要的次要情节，每个次要情节要有标题和简短描述\n"
+    user_prompt += f"3. 关键事件：列出5-7个推动故事发展的关键事件，按时间顺序排列\n"
+    user_prompt += f"4. 角色弧线：描述主要角色的成长和转变，至少包含主角的完整弧线\n"
+    user_prompt += f"5. 主题：深入探讨故事的核心主题，分析其在故事中的体现方式\n"
+    user_prompt += f"\n"
+    user_prompt += f"## 输出示例结构：\n"
+    user_prompt += f"```markdown\n"
+    user_prompt += f"# {outline_title} 故事大纲\n\n"
+    user_prompt += f"## 1. 主线剧情\n"
+    user_prompt += f"[详细描述主线剧情]\n\n"
+    user_prompt += f"## 2. 次要情节\n"
+    user_prompt += f"### A. [次要情节1标题]\n"
+    user_prompt += f"[描述]\n"
+    user_prompt += f"### B. [次要情节2标题]\n"
+    user_prompt += f"[描述]\n\n"
+    user_prompt += f"## 3. 关键事件\n"
+    user_prompt += f"1. [关键事件1]\n"
+    user_prompt += f"2. [关键事件2]\n"
+    user_prompt += f"3. [关键事件3]\n"
+    user_prompt += f"4. [关键事件4]\n"
+    user_prompt += f"5. [关键事件5]\n\n"
+    user_prompt += f"## 4. 角色弧线\n"
+    user_prompt += f"### [主角名称]\n"
+    user_prompt += f"- 起点：[初始状态]\n"
+    user_prompt += f"- 转变点：[关键转变]\n"
+    user_prompt += f"- 终点：[最终状态]\n\n"
+    user_prompt += f"## 5. 主题\n"
+    user_prompt += f"[深入分析主题]\n"
+    user_prompt += f"```\n"
+    user_prompt += f"\n"
+    user_prompt += f"请严格按照上述格式生成大纲，确保结构完整、内容丰富，符合所选的故事模型和小说类型。"
     
     # 调用AI服务生成大纲
     try:
@@ -383,3 +448,92 @@ def evaluate_chapter(id):
     }
     
     return jsonify(evaluation)
+
+# 故事模型相关接口
+@api_bp.route('/story-models', methods=['GET'])
+def get_story_models():
+    models = StoryModel.query.all()
+    return jsonify([model.to_dict() for model in models])
+
+@api_bp.route('/story-models/<int:id>', methods=['GET'])
+def get_story_model(id):
+    model = StoryModel.query.get(id)
+    if not model:
+        return jsonify({'error': 'Story model not found'}), 404
+    return jsonify(model.to_dict())
+
+@api_bp.route('/story-models', methods=['POST'])
+def create_story_model():
+    data = request.json
+    
+    # 检查key是否已存在
+    existing = StoryModel.query.filter_by(key=data['key']).first()
+    if existing:
+        return jsonify({'error': 'Story model with this key already exists'}), 400
+    
+    new_model = StoryModel(
+        key=data['key'],
+        name=data['name'],
+        description=data.get('description', ''),
+        is_default=data.get('is_default', False)
+    )
+    db.session.add(new_model)
+    db.session.commit()
+    return jsonify(new_model.to_dict()), 201
+
+@api_bp.route('/story-models/<int:id>', methods=['PUT'])
+def update_story_model(id):
+    model = StoryModel.query.get(id)
+    if not model:
+        return jsonify({'error': 'Story model not found'}), 404
+    
+    data = request.json
+    # 检查key是否与其他模型冲突
+    if 'key' in data and data['key'] != model.key:
+        existing = StoryModel.query.filter_by(key=data['key']).first()
+        if existing:
+            return jsonify({'error': 'Story model with this key already exists'}), 400
+    
+    model.key = data.get('key', model.key)
+    model.name = data.get('name', model.name)
+    model.description = data.get('description', model.description)
+    model.is_default = data.get('is_default', model.is_default)
+    
+    db.session.commit()
+    return jsonify(model.to_dict())
+
+@api_bp.route('/story-models/<int:id>', methods=['DELETE'])
+def delete_story_model(id):
+    model = StoryModel.query.get(id)
+    if not model:
+        return jsonify({'error': 'Story model not found'}), 404
+    
+    # 不允许删除默认模型
+    if model.is_default:
+        return jsonify({'error': 'Cannot delete default story model'}), 400
+    
+    db.session.delete(model)
+    db.session.commit()
+    return jsonify({'message': 'Story model deleted successfully'})
+
+# 初始化默认故事模型
+@api_bp.route('/story-models/init', methods=['POST'])
+def init_default_story_models():
+    default_models = [
+        {'key': 'hero_journey', 'name': '英雄之旅', 'description': '约瑟夫·坎贝尔的英雄之旅模板，包含启程、启蒙、回归三个阶段', 'is_default': True},
+        {'key': 'three_act', 'name': '三幕结构', 'description': '传统戏剧结构，包含开端、发展、高潮和结局', 'is_default': True},
+        {'key': 'save_the_cat', 'name': '救猫咪', 'description': '布莱克·斯奈德的编剧模板，强调故事节拍和情感共鸣', 'is_default': True},
+        {'key': 'freytags_pyramid', 'name': '弗莱塔格金字塔', 'description': '古斯塔夫·弗莱塔格的五幕结构： exposition、rising action、climax、falling action、resolution', 'is_default': True},
+        {'key': 'campbell', 'name': '坎贝尔神话', 'description': '基于约瑟夫·坎贝尔的神话学研究，探索普遍的神话原型', 'is_default': True}
+    ]
+    
+    created_models = []
+    for model_data in default_models:
+        existing = StoryModel.query.filter_by(key=model_data['key']).first()
+        if not existing:
+            new_model = StoryModel(**model_data)
+            db.session.add(new_model)
+            created_models.append(new_model)
+    
+    db.session.commit()
+    return jsonify([model.to_dict() for model in created_models]), 201

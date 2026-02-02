@@ -30,7 +30,6 @@ import './App.css';
 const { Header, Content, Sider } = Layout;
 
 function NovelEditorApp() {
-  console.log('App组件重新渲染');
   const [current, setCurrent] = useState('project');
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [isBackupModalVisible, setIsBackupModalVisible] = useState(false);
@@ -200,8 +199,7 @@ function NovelEditorApp() {
   // 加载项目数据（用于可视化）
   const loadProjectData = async () => {
     if (!selectedProjectId) {
-      setChapters([]);
-      setCharacters([]);
+      // 当selectedProjectId为null时，不修改状态，避免不必要的渲染
       return;
     }
     
@@ -223,38 +221,31 @@ function NovelEditorApp() {
 
   // 初始化时从本地存储加载数据
   useEffect(() => {
-    console.log('初始化时从本地存储加载数据');
     const appData = loadFromLocalStorage('novel_editor_app_data');
-    console.log('从本地存储加载的数据:', appData);
     if (appData && appData.selectedProjectId) {
-      console.log('加载的项目ID:', appData.selectedProjectId);
       // 确保项目ID是数字类型
       const projectId = typeof appData.selectedProjectId === 'string' ? parseInt(appData.selectedProjectId) : appData.selectedProjectId;
-      console.log('转换后的项目ID:', projectId);
       setCurrent(appData.current || 'project');
       setSelectedProjectId(projectId);
-    } else {
-      console.log('本地存储中没有数据或项目ID');
     }
   }, []);
 
   // 当项目ID变化时加载项目数据并保存到本地存储
   useEffect(() => {
-    console.log('项目ID或当前页面变化:', { selectedProjectId, current });
     loadProjectData();
+  }, [selectedProjectId]);
+
+  // 当当前页面变化时保存到本地存储
+  useEffect(() => {
     // 保存项目选择到本地存储，但只保存非null值
     if (selectedProjectId !== null && selectedProjectId !== undefined) {
       const appData = {
         current: current,
         selectedProjectId: selectedProjectId
       };
-      console.log('保存到本地存储的数据:', appData);
-      const success = saveToLocalStorage('novel_editor_app_data', appData);
-      console.log('保存到本地存储的结果:', success);
-    } else {
-      console.log('项目ID为null或undefined，不保存到本地存储');
+      saveToLocalStorage('novel_editor_app_data', appData);
     }
-  }, [selectedProjectId, current]);
+  }, [current, selectedProjectId]);
   
   // 监听窗口大小变化，更新响应式状态
   useEffect(() => {
@@ -268,13 +259,6 @@ function NovelEditorApp() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 监听导航事件
-  useEffect(() => {
-    const handleNavigateTo = (event) => {
-      const { key } = event.detail;
-      setCurrent(key);
-    };
-
   // 选择项目
   const handleSelectProject = (event) => {
     const { projectId } = event.detail;
@@ -287,6 +271,13 @@ function NovelEditorApp() {
     };
     saveToLocalStorage('novel_editor_app_data', appData);
   };
+
+  // 监听导航事件
+  useEffect(() => {
+    const handleNavigateTo = (event) => {
+      const { key } = event.detail;
+      setCurrent(key);
+    };
 
     window.addEventListener('navigateTo', handleNavigateTo);
     window.addEventListener('selectProject', handleSelectProject);

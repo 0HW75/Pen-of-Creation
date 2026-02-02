@@ -298,6 +298,26 @@ export const blueprintApi = {
   
   // 章纲评估
   evaluateChapter: (chapterId) => api.get(`/chapters/${chapterId}/evaluate`),
+  
+  // 故事模型相关API
+  getStoryModels: () => api.get('/story-models'),
+  getStoryModel: (id) => api.get(`/story-models/${id}`),
+  createStoryModel: async (data) => {
+    const response = await api.post('/story-models', data);
+    clearCache();
+    return response;
+  },
+  updateStoryModel: async (id, data) => {
+    const response = await api.put(`/story-models/${id}`, data);
+    clearCache();
+    return response;
+  },
+  deleteStoryModel: async (id) => {
+    const response = await api.delete(`/story-models/${id}`);
+    clearCache();
+    return response;
+  },
+  initStoryModels: () => api.post('/story-models/init'),
 };
 
 export default api;

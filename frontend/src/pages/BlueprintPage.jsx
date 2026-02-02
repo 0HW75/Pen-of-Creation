@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { blueprintApi, projectApi } from '../services/api';
 import DataVisualization from '../components/DataVisualization';
 import './BlueprintPage.css';
@@ -22,14 +22,55 @@ const BlueprintPage = ({ projectId }) => {
   const [systemPrompt, setSystemPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [timestamp, setTimestamp] = useState(new Date().toLocaleTimeString());
+  const [isOutlineEditModalOpen, setIsOutlineEditModalOpen] = useState(false);
+  const [outlineEditFormData, setOutlineEditFormData] = useState({});
+  const [selectedStoryModel, setSelectedStoryModel] = useState('hero_journey');
+  const [storyModelParams, setStoryModelParams] = useState({
+    detail_level: 'medium',
+    style: 'epic'
+  });
+  const [isModelConfigOpen, setIsModelConfigOpen] = useState(false);
+  const [storyModels, setStoryModels] = useState([]);
+  const [isStoryModelManagerOpen, setIsStoryModelManagerOpen] = useState(false);
+  const [editingStoryModel, setEditingStoryModel] = useState(null);
+  const [newStoryModel, setNewStoryModel] = useState({
+    key: '',
+    name: '',
+    description: ''
+  });
+  const [worldviewArchitects, setWorldviewArchitects] = useState([]);
+  const [isArchitectManagerOpen, setIsArchitectManagerOpen] = useState(false);
+  const [selectedArchitect, setSelectedArchitect] = useState(null);
+  const [editingArchitect, setEditingArchitect] = useState(null);
+  const [architectEditFormData, setArchitectEditFormData] = useState({
+    name: '',
+    description: '',
+    prompt: ''
+  });
+  const [worldviewStructurePrompt, setWorldviewStructurePrompt] = useState('');
+  const [isWorldviewStructureConfigOpen, setIsWorldviewStructureConfigOpen] = useState(false);
+  const [streamingOutput, setStreamingOutput] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  
+  // 跟踪之前的projectId，避免重复渲染
+  const prevProjectIdRef = useRef(projectId);
   
   // 计算projectId是否有效
   const isProjectIdValid = projectId !== null && projectId !== undefined && projectId !== '';
-  console.log('BlueprintPage - projectId有效性检查:', {
-    projectId: projectId,
-    type: typeof projectId,
-    isProjectIdValid: isProjectIdValid
-  });
+  
+  // 当projectId变化时更新时间戳
+  useEffect(() => {
+    setTimestamp(new Date().toLocaleTimeString());
+  }, [projectId]);
+
+  // 组件加载时从localStorage加载系统提示词
+  useEffect(() => {
+    const savedPrompt = localStorage.getItem('outlineSystemPrompt');
+    if (savedPrompt) {
+      setSystemPrompt(savedPrompt);
+    }
+  }, []);
 
   // 加载项目信息
   const loadProjectInfo = async () => {
@@ -45,12 +86,12 @@ const BlueprintPage = ({ projectId }) => {
 
   // 加载项目大纲
   useEffect(() => {
-    console.log('BlueprintPage - 检查是否加载大纲，isProjectIdValid:', isProjectIdValid);
-    if (isProjectIdValid) {
+    if (projectId !== null && projectId !== undefined && projectId !== '') {
       loadProjectOutline();
       loadProjectInfo();
+      loadStoryModels();
     }
-  }, [projectId, isProjectIdValid]);
+  }, [projectId]);
 
   const loadProjectOutline = async () => {
     setIsLoading(true);
@@ -138,30 +179,172 @@ const BlueprintPage = ({ projectId }) => {
   // 生成大纲
   const generateOutline = async () => {
     setIsLoading(true);
+    setIsStreaming(true);
+    setStreamingOutput('');
     try {
       // 检查是否有项目信息
       if (!projectInfo) {
         await loadProjectInfo();
       }
       
-      const response = await blueprintApi.generateOutline({
-        project_id: projectId,
-        story_model: 'hero_journey',
-        params: {
-          detail_level: 'medium',
-          style: 'epic'
+      // 创建一个AbortController来处理超时
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 300000); // 5分钟超时
+      
+      // 构建AI消息
+      let systemContent = systemPrompt;
+      if (selectedArchitect && selectedArchitect.prompt) {
+        systemContent = selectedArchitect.prompt;
+      }
+      if (worldviewStructurePrompt) {
+        systemContent += '\n\n' + worldviewStructurePrompt;
+      }
+      
+      // 构建用户提示
+      let userPrompt = `请为以下小说项目生成一个详细的故事大纲：\n\n`;
+      userPrompt += `项目标题：${projectInfo?.title || '未知标题'}\n`;
+      userPrompt += `小说类型：${projectInfo?.genre || '未知类型'}\n`;
+      userPrompt += `核心主题：${projectInfo?.core_theme || '默认主题'}\n`;
+      userPrompt += `一句话梗概：${projectInfo?.synopsis || ''}\n`;
+      userPrompt += `创作风格：${projectInfo?.writing_style || ''}\n`;
+      userPrompt += `参考作品：${projectInfo?.reference_works || ''}\n`;
+      userPrompt += `目标读者：${projectInfo?.target_audience || '所有读者'}\n`;
+      userPrompt += `故事模型：${selectedStoryModel}\n\n`;
+      userPrompt += `请使用Markdown格式输出，确保结构清晰、内容完整。`;
+      
+      const messages = [
+        { role: 'system', content: systemContent },
+        { role: 'user', content: userPrompt }
+      ];
+      
+      const response = await fetch('http://localhost:5000/api/ai/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        // 添加项目信息，使AI能够根据项目信息生成大纲
-        project_info: projectInfo
+        body: JSON.stringify({
+          messages: messages,
+          max_tokens: 3000
+        }),
+        signal: controller.signal
       });
-      setOutlines([...outlines, response.data]);
-      setSelectedOutline(response.data);
-      setError(null);
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error('生成大纲失败');
+      }
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = '';
+      
+      // 使用ReadableStream API处理流式响应
+      const processStream = async () => {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            break;
+          }
+          
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.substring(6);
+              if (data === '[DONE]') {
+                break;
+              }
+              try {
+                const eventData = JSON.parse(data);
+                const content = eventData.content || '';
+                if (content) {
+                  fullContent += content;
+                  setStreamingOutput(fullContent);
+                  
+                  // 动态调整超时时间，每接收1000个字符增加1分钟
+                  if (fullContent.length % 1000 === 0) {
+                    clearTimeout(timeoutId);
+                    setTimeout(() => {
+                      controller.abort();
+                    }, 300000); // 重置为5分钟
+                  }
+                }
+              } catch (error) {
+                console.error('解析流式数据失败:', error);
+              }
+            }
+          }
+        }
+        
+        // 流式输出完成后，创建大纲对象并保存
+        if (fullContent) {
+          try {
+            // 创建大纲对象
+            const newOutline = {
+              id: Date.now(),
+              title: `${projectInfo?.title || '未知标题'} - 大纲`,
+              content: JSON.stringify({
+                ai_generated_content: fullContent,
+                main_plot: '主线剧情',
+                sub_plots: ['次要情节1', '次要情节2'],
+                key_events: ['关键事件1', '关键事件2', '关键事件3', '关键事件4', '关键事件5'],
+                character_arcs: ['角色弧线1'],
+                theme: projectInfo?.core_theme || '默认主题',
+                target_audience: projectInfo?.target_audience || '所有读者',
+                genre: projectInfo?.genre || '未知类型'
+              }),
+              story_model: selectedStoryModel,
+              version: 1
+            };
+            
+            // 保存大纲到后端
+            const saveResponse = await fetch('http://localhost:5000/api/outlines', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                project_id: projectId,
+                title: newOutline.title,
+                content: newOutline.content,
+                story_model: newOutline.story_model,
+                version: newOutline.version
+              })
+            });
+            
+            if (saveResponse.ok) {
+              const savedOutline = await saveResponse.json();
+              setOutlines([...outlines, savedOutline]);
+              setSelectedOutline(savedOutline);
+              setError(null);
+            } else {
+              throw new Error('保存大纲失败');
+            }
+          } catch (error) {
+            console.error('处理大纲失败:', error);
+            setError('生成大纲失败: 保存失败');
+          }
+        }
+      };
+      
+      try {
+        await processStream();
+      } catch (err) {
+        console.error('处理流式输出失败:', err);
+        setError('生成大纲失败');
+      } finally {
+        setIsLoading(false);
+        setIsStreaming(false);
+      }
     } catch (err) {
       setError('生成大纲失败');
       console.error('生成大纲失败:', err);
-    } finally {
       setIsLoading(false);
+      setIsStreaming(false);
     }
   };
 
@@ -334,7 +517,7 @@ const BlueprintPage = ({ projectId }) => {
   // 打开系统提示词配置窗口
   const handleOpenSystemPrompt = () => {
     // 加载默认系统提示词
-    setSystemPrompt(`你是一个专业的故事大纲生成助手，你的任务是根据用户提供的项目信息生成高质量的故事大纲。\n\n请遵循以下要求：\n1. 分析项目信息，理解故事的核心主题、类型和目标读者\n2. 根据项目信息生成符合类型特点的大纲\n3. 大纲应包含主线剧情、次要情节、关键事件、角色弧线和主题\n4. 确保大纲结构合理，节奏紧凑，冲突明确\n5. 使用专业的写作术语，保持语言流畅自然\n6. 根据用户的具体要求进行调整\n\n请生成一个完整的故事大纲，格式清晰，内容丰富。`);
+    setSystemPrompt(`你是一个专业的故事大纲生成专家，擅长根据项目信息创建详细、有深度的故事大纲。你的输出必须严格遵循指定的格式，确保结构清晰、内容完整，并且格式一致性高。\n\n请按照以下固定格式生成大纲：\n1. 使用Markdown格式输出\n2. 标题层级必须清晰：# 一级标题，## 二级标题，### 三级标题\n3. 必须包含以下章节，且章节顺序不可更改：\n   - ## 1. 主线剧情\n   - ## 2. 次要情节\n   - ## 3. 关键事件\n   - ## 4. 角色弧线\n   - ## 5. 主题\n\n内容要求：\n1. 主线剧情：详细描述故事的主要情节发展，包含起承转合\n2. 次要情节：列出2-3个重要的次要情节，每个次要情节要有标题和简短描述\n3. 关键事件：列出5-7个推动故事发展的关键事件，按时间顺序排列\n4. 角色弧线：描述主要角色的成长和转变，至少包含主角的完整弧线\n5. 主题：深入探讨故事的核心主题，分析其在故事中的体现方式\n\n请确保大纲内容丰富、结构合理，符合所选的故事模型和小说类型。`);
     setIsSystemPromptOpen(true);
   };
 
@@ -345,52 +528,340 @@ const BlueprintPage = ({ projectId }) => {
 
   // 保存系统提示词
   const handleSaveSystemPrompt = () => {
-    // 这里应该调用API保存系统提示词
-    // 暂时只在控制台输出
+    // 保存系统提示词到localStorage，实现持久化
+    localStorage.setItem('outlineSystemPrompt', systemPrompt);
     console.log('保存系统提示词:', systemPrompt);
     setIsSystemPromptOpen(false);
   };
 
-  // 添加debug日志，检查projectId的类型和值
-  useEffect(() => {
-    console.log('BlueprintPage debug - projectId详细信息:', {
-      value: projectId,
-      type: typeof projectId,
-      isNull: projectId === null,
-      isUndefined: projectId === undefined,
-      isEmptyString: projectId === '',
-      isFalsy: !projectId,
-      condition1: projectId === null || projectId === undefined || projectId === '',
-      condition2: projectId !== null && projectId !== undefined && projectId !== ''
+  // 打开大纲编辑模态框
+  const handleOpenOutlineEditModal = () => {
+    if (selectedOutline) {
+      setOutlineEditFormData({ ...selectedOutline });
+      setIsOutlineEditModalOpen(true);
+    }
+  };
+
+  // 保存大纲修改
+  const handleSaveOutlineEdit = async () => {
+    if (!selectedOutline) return;
+    
+    try {
+      const response = await blueprintApi.updateOutline(selectedOutline.id, outlineEditFormData);
+      // 更新本地大纲数据
+      setOutlines(prev => prev.map(outline => 
+        outline.id === selectedOutline.id ? response.data : outline
+      ));
+      // 更新选中的大纲
+      setSelectedOutline(response.data);
+      // 关闭模态框
+      setIsOutlineEditModalOpen(false);
+      console.log('大纲保存成功');
+    } catch (error) {
+      console.error('保存大纲失败:', error);
+    }
+  };
+
+  // 打开故事模型配置模态框
+  const handleOpenModelConfig = () => {
+    setIsModelConfigOpen(true);
+  };
+
+  // 保存故事模型配置
+  const handleSaveModelConfig = () => {
+    setIsModelConfigOpen(false);
+  };
+
+  // 处理故事模型参数变化
+  const handleModelParamChange = (param, value) => {
+    setStoryModelParams(prev => ({
+      ...prev,
+      [param]: value
+    }));
+  };
+
+  // 加载故事模型
+  const loadStoryModels = async () => {
+    try {
+      const response = await blueprintApi.getStoryModels();
+      setStoryModels(response.data);
+    } catch (error) {
+      console.error('加载故事模型失败:', error);
+      // 如果没有故事模型，初始化默认模型
+      try {
+        await blueprintApi.initStoryModels();
+        const response = await blueprintApi.getStoryModels();
+        setStoryModels(response.data);
+      } catch (initError) {
+        console.error('初始化故事模型失败:', initError);
+      }
+    }
+  };
+
+  // 打开故事模型管理器
+  const handleOpenStoryModelManager = async () => {
+    await loadStoryModels();
+    setIsStoryModelManagerOpen(true);
+  };
+
+  // 关闭故事模型管理器
+  const handleCloseStoryModelManager = () => {
+    setIsStoryModelManagerOpen(false);
+    setEditingStoryModel(null);
+    setNewStoryModel({ key: '', name: '', description: '' });
+  };
+
+  // 开始编辑故事模型
+  const handleStartEditModel = (model) => {
+    setEditingStoryModel({ ...model });
+  };
+
+  // 保存故事模型编辑
+  const handleSaveModelEdit = async () => {
+    if (!editingStoryModel) return;
+    
+    try {
+      await blueprintApi.updateStoryModel(editingStoryModel.id, editingStoryModel);
+      await loadStoryModels();
+      setEditingStoryModel(null);
+    } catch (error) {
+      console.error('保存故事模型失败:', error);
+    }
+  };
+
+  // 取消编辑故事模型
+  const handleCancelModelEdit = () => {
+    setEditingStoryModel(null);
+  };
+
+  // 保存新故事模型
+  const handleSaveNewModel = async () => {
+    if (!newStoryModel.key || !newStoryModel.name) return;
+    
+    try {
+      await blueprintApi.createStoryModel(newStoryModel);
+      await loadStoryModels();
+      setNewStoryModel({ key: '', name: '', description: '' });
+    } catch (error) {
+      console.error('创建故事模型失败:', error);
+    }
+  };
+
+  // 删除故事模型
+  const handleDeleteModel = async (modelId) => {
+    try {
+      await blueprintApi.deleteStoryModel(modelId);
+      await loadStoryModels();
+    } catch (error) {
+      console.error('删除故事模型失败:', error);
+    }
+  };
+
+
+
+  // 加载故事大纲架构师
+  const loadWorldviewArchitects = () => {
+    // 从localStorage加载
+    const savedArchitects = localStorage.getItem('worldviewArchitects');
+    if (savedArchitects) {
+      setWorldviewArchitects(JSON.parse(savedArchitects));
+    } else {
+      // 生成默认架构师
+      const defaultArchitects = [
+        {
+          id: 1,
+          name: '经典三幕剧架构师',
+          description: '擅长构建传统三幕剧结构的故事大纲',
+          prompt: `你是一个经典三幕剧架构师，擅长创作结构严谨的传统故事大纲。\n\n请按照三幕结构生成故事大纲：\n1. 第一幕：介绍人物和世界观，建立冲突\n2. 第二幕：发展冲突，主角面临挑战\n3. 第三幕：高潮和解决\n\n每个部分要有详细的情节发展和角色弧线。`
+        },
+        {
+          id: 2,
+          name: '英雄之旅架构师',
+          description: '基于约瑟夫·坎贝尔的英雄之旅模式构建故事大纲',
+          prompt: `你是一个英雄之旅架构师，擅长基于约瑟夫·坎贝尔的英雄之旅模式构建故事大纲。\n\n请按照英雄之旅的12个阶段生成故事大纲：\n1. 普通世界\n2. 冒险召唤\n3. 拒绝召唤\n4. 遇见导师\n5. 越过第一道门槛\n6. 考验、伙伴、敌人\n7. 接近最深的洞穴\n8. 磨难\n9. 报酬\n10. 回返\n11. 复活\n12. 携万能药回归\n\n每个阶段要有详细的情节描述和角色发展。`
+        },
+        {
+          id: 3,
+          name: '类型小说专家',
+          description: '专注于特定类型的故事大纲结构',
+          prompt: `你是一个类型小说专家，擅长创作符合特定类型规则的故事大纲。\n\n请根据小说类型生成专业的类型故事大纲：\n- 明确类型元素和规则\n- 包含类型特有的情节结构\n- 符合目标读者的期待\n\n确保故事充满类型特色和吸引力。`
+        },
+        {
+          id: 4,
+          name: '角色驱动型架构师',
+          description: '以角色发展为核心的故事大纲构建',
+          prompt: `你是一个角色驱动型架构师，擅长创造以角色发展为核心的故事大纲。\n\n请生成以角色为核心的故事大纲：\n- 详细的角色背景和动机\n- 完整的角色成长弧线\n- 角色关系的发展变化\n- 通过角色的选择推动情节\n\n让角色成为故事的灵魂。`
+        }
+      ];
+      setWorldviewArchitects(defaultArchitects);
+      localStorage.setItem('worldviewArchitects', JSON.stringify(defaultArchitects));
+    }
+  };
+
+  // 打开架构师管理器
+  const handleOpenArchitectManager = () => {
+    loadWorldviewArchitects();
+    setIsArchitectManagerOpen(true);
+  };
+
+  // 关闭架构师管理器
+  const handleCloseArchitectManager = () => {
+    setIsArchitectManagerOpen(false);
+    setEditingArchitect(null);
+  };
+
+  // 选择架构师
+  const handleSelectArchitect = (architect) => {
+    setSelectedArchitect(architect);
+  };
+
+  // 编辑架构师
+  const handleEditArchitect = (architect) => {
+    setEditingArchitect(architect);
+    setArchitectEditFormData({
+      name: architect.name,
+      description: architect.description,
+      prompt: architect.prompt
     });
-  }, [projectId]);
+  };
+
+  // 保存编辑的架构师
+  const handleSaveEditArchitect = () => {
+    if (!editingArchitect) return;
+    
+    const updatedArchitects = worldviewArchitects.map(architect => 
+      architect.id === editingArchitect.id ? {
+        ...architect,
+        name: architectEditFormData.name,
+        description: architectEditFormData.description,
+        prompt: architectEditFormData.prompt
+      } : architect
+    );
+    
+    setWorldviewArchitects(updatedArchitects);
+    localStorage.setItem('worldviewArchitects', JSON.stringify(updatedArchitects));
+    setEditingArchitect(null);
+  };
+
+  // 取消编辑架构师
+  const handleCancelEditArchitect = () => {
+    setEditingArchitect(null);
+  };
+
+  // 添加新架构师
+  const handleAddArchitect = () => {
+    const newArchitect = {
+      id: Date.now(),
+      name: '新架构师',
+      description: '请编辑架构师描述',
+      prompt: '请编辑提示词内容'
+    };
+    const updatedArchitects = [...worldviewArchitects, newArchitect];
+    setWorldviewArchitects(updatedArchitects);
+    localStorage.setItem('worldviewArchitects', JSON.stringify(updatedArchitects));
+  };
+
+  // 删除架构师
+  const handleDeleteArchitect = (architectId) => {
+    const updatedArchitects = worldviewArchitects.filter(architect => architect.id !== architectId);
+    setWorldviewArchitects(updatedArchitects);
+    localStorage.setItem('worldviewArchitects', JSON.stringify(updatedArchitects));
+  };
+
+  // 打开大纲结构配置
+  const handleOpenWorldviewStructureConfig = () => {
+    // 加载默认结构提示词
+    const savedStructure = localStorage.getItem('worldviewStructurePrompt');
+    if (savedStructure) {
+      setWorldviewStructurePrompt(savedStructure);
+    } else {
+      setWorldviewStructurePrompt(`请按照以下结构生成故事大纲：\n\n## 1. 故事概述\n- 简要介绍故事的核心概念和特色\n- 故事的主题和基调\n\n## 2. 主线剧情\n- 详细描述故事的主要情节发展\n- 包含起承转合的完整结构\n- 关键转折点和剧情推进\n\n## 3. 次要情节\n- 列出2-3个重要的次要情节\n- 每个次要情节要有标题和简短描述\n- 次要情节如何支持主线剧情\n\n## 4. 关键事件\n- 列出5-7个推动故事发展的关键事件\n- 按时间顺序排列\n- 每个事件的重要性和影响\n\n## 5. 角色弧线\n- 描述主要角色的成长和转变\n- 至少包含主角的完整弧线\n- 角色关系的发展变化\n\n## 6. 主题与象征\n- 深入探讨故事的核心主题\n- 分析其在故事中的体现方式\n- 重要的象征元素和隐喻\n\n## 7. 风格与节奏\n- 故事的叙述风格\n- 节奏的把控和变化\n- 场景的分布和转换\n\n## 8. 目标读者与市场定位\n- 目标读者群体\n- 与同类作品的对比\n- 市场潜力和特色\n\n请确保内容详细、逻辑一致，适合作为小说的故事大纲基础。`);
+    }
+    setIsWorldviewStructureConfigOpen(true);
+  };
+
+  // 保存大纲结构配置
+  const handleSaveWorldviewStructureConfig = () => {
+    localStorage.setItem('worldviewStructurePrompt', worldviewStructurePrompt);
+    setIsWorldviewStructureConfigOpen(false);
+  };
+
+  // 关闭大纲结构配置
+  const handleCloseWorldviewStructureConfig = () => {
+    setIsWorldviewStructureConfigOpen(false);
+  };
+
+
 
   return (
     <div className="blueprint-page">
       <div className="blueprint-header">
         <h1>故事蓝图</h1>
         <div className="header-actions">
-          <button 
-            className="btn btn-primary" 
-            onClick={generateOutline}
-            disabled={isLoading || !isProjectIdValid}
-          >
-            {isLoading ? '生成中...' : '生成大纲'}
-          </button>
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => console.log('导入大纲')}
-            disabled={!isProjectIdValid}
-          >
-            导入大纲
-          </button>
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => console.log('导出大纲')}
-            disabled={!isProjectIdValid}
-          >
-            导出大纲
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+            <button 
+              className="btn btn-primary" 
+              onClick={generateOutline}
+              disabled={isLoading || !isProjectIdValid}
+            >
+              {isLoading ? '生成中...' : '生成大纲'}
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label htmlFor="story-model" style={{ fontSize: '14px', color: '#666' }}>故事模型:</label>
+              <select 
+                id="story-model"
+                value={selectedStoryModel}
+                onChange={(e) => setSelectedStoryModel(e.target.value)}
+                disabled={isLoading || !isProjectIdValid || storyModels.length === 0}
+                style={{
+                  padding: '6px 10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  backgroundColor: (isLoading || !isProjectIdValid || storyModels.length === 0) ? '#f8f9fa' : 'white'
+                }}
+              >
+                {storyModels.map(model => (
+                  <option key={model.key} value={model.key}>{model.name}</option>
+                ))}
+                {storyModels.length === 0 && (
+                  <option value="">加载中...</option>
+                )}
+              </select>
+              <button 
+                className="btn btn-sm btn-secondary"
+                onClick={handleOpenModelConfig}
+                disabled={isLoading || !isProjectIdValid}
+                title="配置模型参数"
+              >
+                配置
+              </button>
+              <button 
+                className="btn btn-sm btn-secondary"
+                onClick={handleOpenStoryModelManager}
+                disabled={isLoading || !isProjectIdValid}
+                title="管理故事模型"
+              >
+                管理
+              </button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => console.log('导入大纲')}
+              disabled={!isProjectIdValid}
+            >
+              导入大纲
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => console.log('导出大纲')}
+              disabled={!isProjectIdValid}
+            >
+              导出大纲
+            </button>
+          </div>
         </div>
         <div className="view-switcher">
           <button 
@@ -419,71 +890,76 @@ const BlueprintPage = ({ projectId }) => {
 
       {error && <div className="error-message">{error}</div>}
 
-      {!isProjectIdValid ? (
-        <div className="error-message">
-          请先选择一个项目，然后再使用故事蓝图功能
-        </div>
-      ) : null}
-
-      <div className="blueprint-content">
-        <div className="sidebar">
-          <h3>大纲结构</h3>
-          <div className="outline-tree">
-            {isProjectIdValid ? (
-              <>
-                {console.log('BlueprintPage - 显示大纲列表，projectId:', projectId)}
-                {outlines.map(outline => (
-                  <div 
-                    key={outline.id}
-                    className={`outline-item ${selectedOutline?.id === outline.id ? 'selected' : ''}`}
-                  >
-                    <div onClick={() => handleOutlineSelect(outline)} style={{ cursor: 'pointer' }}>
-                      <h4>{outline.title}</h4>
-                      <p>版本: {outline.version}</p>
-                      <p>模型: {outline.story_model}</p>
-                    </div>
-                    <button 
-                      className="btn btn-sm btn-danger"
-                      onClick={async (e) => {
-                        e.stopPropagation(); // 阻止事件冒泡
-                        console.log('点击侧边栏删除按钮');
-                        try {
-                          // 处理 window.confirm 返回 Promise 的情况
-                          const confirmed = await window.confirm('确定要删除这个大纲吗？');
-                          console.log('用户确认结果:', confirmed);
-                          if (confirmed) {
-                            console.log('执行删除操作，大纲ID:', outline.id);
-                            await handleDeleteOutline(outline.id);
-                          } else {
-                            console.log('用户取消删除操作');
-                          }
-                        } catch (error) {
-                          console.error('处理确认对话框时出错:', error);
-                        }
-                      }}
-                      style={{ marginTop: '8px' }}
-                    >
-                      删除
-                    </button>
-                  </div>
-                ))}
-                {outlines.length === 0 && (
-                  <p className="empty-message">暂无大纲，请点击生成大纲</p>
-                )}
-              </>
-            ) : (
-              <>
-                {console.log('BlueprintPage - 显示请选择项目提示，projectId:', projectId)}
-                <p className="empty-message">请先选择一个项目</p>
-              </>
-            )}
+      {/* 流式输出显示区域 */}
+      {isStreaming && (
+        <div className="streaming-output">
+          <h3>大纲生成中...</h3>
+          <div className="streaming-content">
+            <div className="markdown-content">
+              <div style={{ 
+                whiteSpace: 'pre-wrap', 
+                lineHeight: '1.6',
+                fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+                fontSize: '14px'
+              }}>
+                {streamingOutput}
+              </div>
+            </div>
           </div>
         </div>
+      )}
+
+      <div className="blueprint-content">
+        {!isProjectIdValid && (
+          <div className="error-message">
+            [蓝图页 {timestamp}] 请先选择一个项目，然后再使用故事蓝图功能
+          </div>
+        )}
+
+        {isProjectIdValid && (
+          <div className="sidebar">
+            <h3>大纲结构</h3>
+            <div className="outline-tree">
+              {outlines.map(outline => (
+                <div 
+                  key={outline.id}
+                  className={`outline-item ${selectedOutline?.id === outline.id ? 'selected' : ''}`}
+                >
+                  <div onClick={() => handleOutlineSelect(outline)} style={{ cursor: 'pointer' }}>
+                    <h4>{outline.title}</h4>
+                    <p>版本: {outline.version}</p>
+                    <p>模型: {outline.story_model}</p>
+                  </div>
+                  <button 
+                    className="btn btn-sm btn-danger"
+                    onClick={async (e) => {
+                      e.stopPropagation(); // 阻止事件冒泡
+                      try {
+                        // 处理 window.confirm 返回 Promise 的情况
+                        const confirmed = await window.confirm('确定要删除这个大纲吗？');
+                        if (confirmed) {
+                          await handleDeleteOutline(outline.id);
+                        }
+                      } catch (error) {
+                        console.error('处理确认对话框时出错:', error);
+                      }
+                    }}
+                    style={{ marginTop: '8px' }}
+                  >
+                    删除
+                  </button>
+                </div>
+              ))}
+              {outlines.length === 0 && (
+                <p className="empty-message">暂无大纲，请点击生成大纲</p>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="main-content">
           {isProjectIdValid ? (
             <>
-              {console.log('BlueprintPage - 显示主内容，projectId:', projectId)}
               {activeView === 'outline' && (
                 <div className="outline-view">
                   <h2>大纲管理</h2>
@@ -495,23 +971,69 @@ const BlueprintPage = ({ projectId }) => {
                         <p>版本: {selectedOutline.version}</p>
                       </div>
                       <div className="outline-content">
-                        <pre>{(() => {
+                        {(() => {
                           try {
                             // 尝试解析JSON字符串
                             const parsedContent = JSON.parse(selectedOutline.content);
                             // 检查是否是对象
                             if (typeof parsedContent === 'object' && parsedContent !== null) {
-                              // 格式化JSON，使其更易读
-                              return JSON.stringify(parsedContent, null, 2);
+                              // 检查是否有ai_generated_content字段
+                              if (parsedContent.ai_generated_content) {
+                                // 显示Markdown内容
+                                return (
+                                  <div className="markdown-content">
+                                    <div style={{ 
+                                      whiteSpace: 'pre-wrap', 
+                                      lineHeight: '1.6',
+                                      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+                                      fontSize: '14px'
+                                    }}>
+                                      {parsedContent.ai_generated_content}
+                                    </div>
+                                  </div>
+                                );
+                              } else {
+                                // 显示结构化内容
+                                return (
+                                  <div className="structured-content">
+                                    <h4>主线剧情</h4>
+                                    <p>{parsedContent.main_plot || '无'}</p>
+                                    <h4>次要情节</h4>
+                                    <ul>
+                                      {parsedContent.sub_plots?.map((plot, index) => (
+                                        <li key={index}>{plot}</li>
+                                      )) || <li>无</li>}
+                                    </ul>
+                                    <h4>关键事件</h4>
+                                    <ul>
+                                      {parsedContent.key_events?.map((event, index) => (
+                                        <li key={index}>{event}</li>
+                                      )) || <li>无</li>}
+                                    </ul>
+                                    <h4>角色弧线</h4>
+                                    <ul>
+                                      {parsedContent.character_arcs?.map((arc, index) => (
+                                        <li key={index}>{arc}</li>
+                                      )) || <li>无</li>}
+                                    </ul>
+                                    <h4>主题</h4>
+                                    <p>{parsedContent.theme || '无'}</p>
+                                    <h4>目标读者</h4>
+                                    <p>{parsedContent.target_audience || '无'}</p>
+                                    <h4>类型</h4>
+                                    <p>{parsedContent.genre || '无'}</p>
+                                  </div>
+                                );
+                              }
                             } else {
                               // 如果不是JSON对象，直接返回原始内容
-                              return selectedOutline.content;
+                              return <pre>{selectedOutline.content}</pre>;
                             }
                           } catch (error) {
                             // 如果解析失败，直接返回原始内容
-                            return selectedOutline.content;
+                            return <pre>{selectedOutline.content}</pre>;
                           }
-                        })()}</pre>
+                        })()}
                       </div>
                       <div className="outline-actions">
                         <button 
@@ -522,7 +1044,8 @@ const BlueprintPage = ({ projectId }) => {
                         </button>
                         <button 
                           className="btn btn-secondary" 
-                          onClick={() => console.log('编辑大纲')}
+                          onClick={handleOpenOutlineEditModal}
+                          disabled={!selectedOutline}
                         >
                           编辑大纲
                         </button>
@@ -535,16 +1058,11 @@ const BlueprintPage = ({ projectId }) => {
                         <button 
                           className="btn btn-danger" 
                           onClick={async () => {
-                            console.log('点击删除大纲按钮');
                             try {
                               // 处理 window.confirm 返回 Promise 的情况
                               const confirmed = await window.confirm('确定要删除这个大纲吗？');
-                              console.log('用户确认结果:', confirmed);
                               if (confirmed) {
-                                console.log('执行删除操作，大纲ID:', selectedOutline.id);
                                 await handleDeleteOutline(selectedOutline.id);
-                              } else {
-                                console.log('用户取消删除操作');
                               }
                             } catch (error) {
                               console.error('处理确认对话框时出错:', error);
@@ -670,68 +1188,78 @@ const BlueprintPage = ({ projectId }) => {
                 </div>
               )}
             </>
-          ) : (
-            <>
-              {console.log('BlueprintPage - 显示主内容中的请选择项目提示，projectId:', projectId)}
-              <div className="outline-view">
-                <h2>大纲管理</h2>
-                <p className="empty-message">请先选择一个项目，然后再使用故事蓝图功能</p>
-              </div>
-            </>
-          )}
+          ) : null}
         </div>
 
-        <div className="right-sidebar">
-          <div className="project-info">
-            <h3>项目信息</h3>
-            {projectInfo ? (
-              <div className="project-info-content">
-                <p><strong>标题:</strong> {projectInfo.title}</p>
-                <p><strong>类型:</strong> {projectInfo.genre}</p>
-                <p><strong>核心主题:</strong> {projectInfo.core_theme}</p>
-                <p><strong>一句话梗概:</strong> {projectInfo.synopsis}</p>
-                <p><strong>创作风格:</strong> {projectInfo.writing_style}</p>
-                <p><strong>参考作品:</strong> {projectInfo.reference_works}</p>
-                <p><strong>目标读者:</strong> {projectInfo.target_audience}</p>
-                <p><strong>每日目标:</strong> {projectInfo.daily_word_goal} 字</p>
-                <p><strong>总目标:</strong> {projectInfo.total_word_goal} 字</p>
-                <p><strong>预计完成时间:</strong> {projectInfo.estimated_completion_date}</p>
-                <button 
-                  className="btn btn-sm btn-secondary"
-                  onClick={handleOpenEditModal}
-                  style={{ marginTop: '12px' }}
-                >
-                  编辑项目信息
-                </button>
-              </div>
-            ) : (
-              <p>加载项目信息中...</p>
-            )}
+        {isProjectIdValid && (
+          <div className="right-sidebar">
+            <div className="project-info">
+              <h3>项目信息</h3>
+              {projectInfo ? (
+                <div className="project-info-content">
+                  <p><strong>标题:</strong> {projectInfo.title}</p>
+                  <p><strong>类型:</strong> {projectInfo.genre}</p>
+                  <p><strong>核心主题:</strong> {projectInfo.core_theme}</p>
+                  <p><strong>一句话梗概:</strong> {projectInfo.synopsis}</p>
+                  <p><strong>创作风格:</strong> {projectInfo.writing_style}</p>
+                  <p><strong>参考作品:</strong> {projectInfo.reference_works}</p>
+                  <p><strong>目标读者:</strong> {projectInfo.target_audience}</p>
+                  <p><strong>每日目标:</strong> {projectInfo.daily_word_goal} 字</p>
+                  <p><strong>总目标:</strong> {projectInfo.total_word_goal} 字</p>
+                  <p><strong>预计完成时间:</strong> {projectInfo.estimated_completion_date}</p>
+                  <button 
+                    className="btn btn-sm btn-secondary"
+                    onClick={handleOpenEditModal}
+                    style={{ marginTop: '12px' }}
+                  >
+                    编辑项目信息
+                  </button>
+                </div>
+              ) : (
+                <p>加载项目信息中...</p>
+              )}
+            </div>
+            <div className="related-settings">
+              <h3>相关设定</h3>
+              <p>显示与当前选中元素相关的设定</p>
+            </div>
+            <div className="ai-suggestions">
+              <h3>智能建议</h3>
+              <p>基于当前大纲的AI建议</p>
+            </div>
+            <div className="outline-architect">
+              <h3>故事大纲架构师配置</h3>
+              <button 
+                className="btn btn-sm btn-secondary"
+                onClick={handleOpenArchitectManager}
+                style={{ marginBottom: '12px' }}
+              >
+                选择故事大纲架构师
+              </button>
+              <p>选择不同风格的故事大纲架构师</p>
+              {selectedArchitect && (
+                <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                  当前架构师: {selectedArchitect.name}
+                </p>
+              )}
+            </div>
+            <div className="system-prompt">
+              <h3>大纲结构系统提示词</h3>
+              <button 
+                className="btn btn-sm btn-secondary"
+                onClick={handleOpenWorldviewStructureConfig}
+                style={{ marginBottom: '12px' }}
+              >
+                配置大纲结构
+              </button>
+              <p>定义大纲文本的构成结构</p>
+            </div>
+            <div className="history">
+              <h3>操作历史</h3>
+              <p>最近的操作记录</p>
+            </div>
           </div>
-          <div className="related-settings">
-            <h3>相关设定</h3>
-            <p>显示与当前选中元素相关的设定</p>
-          </div>
-          <div className="ai-suggestions">
-            <h3>智能建议</h3>
-            <p>基于当前大纲的AI建议</p>
-          </div>
-          <div className="system-prompt">
-            <h3>系统提示词配置</h3>
-            <button 
-              className="btn btn-sm btn-secondary"
-              onClick={handleOpenSystemPrompt}
-              style={{ marginBottom: '12px' }}
-            >
-              配置系统提示词
-            </button>
-            <p>定义AI生成大纲的系统提示词</p>
-          </div>
-          <div className="history">
-            <h3>操作历史</h3>
-            <p>最近的操作记录</p>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* 编辑项目信息模态框 */}
@@ -899,13 +1427,44 @@ const BlueprintPage = ({ projectId }) => {
               <button className="close-btn" onClick={handleCloseSystemPrompt}>&times;</button>
             </div>
             <div className="system-prompt-content">
-              <p>请编辑AI生成大纲功能的系统提示词：</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <p>请编辑AI生成大纲功能的系统提示词：</p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    className="btn btn-sm btn-secondary"
+                    onClick={handleOpenArchitectManager}
+                    title="选择故事大纲架构师"
+                  >
+                    故事大纲架构师
+                  </button>
+                  <button 
+                    className="btn btn-sm btn-secondary"
+                    onClick={handleOpenWorldviewStructureConfig}
+                    title="配置大纲结构"
+                  >
+                    大纲结构配置
+                  </button>
+                </div>
+              </div>
               <textarea 
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
-                rows={10}
-                style={{ width: '100%', padding: '8px', marginBottom: '16px' }}
+                rows={12}
+                style={{ width: '100%', padding: '8px', marginBottom: '16px', fontFamily: 'monospace', fontSize: '14px' }}
               />
+              {selectedArchitect && (
+                <div style={{ 
+                  marginBottom: '16px', 
+                  padding: '10px', 
+                  backgroundColor: '#e3f2fd', 
+                  border: '1px solid #bbdefb', 
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  color: '#1976d2'
+                }}>
+                  当前故事大纲架构师：{selectedArchitect.name}
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <button 
                   className="btn btn-secondary"
@@ -924,8 +1483,403 @@ const BlueprintPage = ({ projectId }) => {
           </div>
         </div>
       )}
+
+      {/* 故事大纲架构师管理器模态框 */}
+      {isArchitectManagerOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '800px', maxWidth: '90%' }}>
+            <div className="modal-header">
+              <h3>故事大纲架构师管理</h3>
+              <button className="close-btn" onClick={handleCloseArchitectManager}>&times;</button>
+            </div>
+            <div className="architect-manager-content">
+              {/* 架构师列表 */}
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h4>故事大纲架构师</h4>
+                  <button 
+                    className="btn btn-sm btn-primary"
+                    onClick={handleAddArchitect}
+                  >
+                    添加架构师
+                  </button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+                  {worldviewArchitects.map(architect => (
+                    <div key={architect.id} style={{ 
+                      padding: '16px', 
+                      border: '1px solid #ddd', 
+                      borderRadius: '6px', 
+                      backgroundColor: selectedArchitect?.id === architect.id ? '#e3f2fd' : '#f8f9fa',
+                      borderColor: selectedArchitect?.id === architect.id ? '#bbdefb' : '#ddd'
+                    }}>
+                      {editingArchitect?.id === architect.id ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <div>
+                            <input 
+                              type="text" 
+                              value={architectEditFormData.name} 
+                              onChange={(e) => setArchitectEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                              placeholder="架构师名称"
+                              style={{ padding: '6px 8px', borderRadius: '4px', border: '1px solid #ddd', width: '100%', marginBottom: '8px' }}
+                            />
+                            <input 
+                              type="text" 
+                              value={architectEditFormData.description} 
+                              onChange={(e) => setArchitectEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                              placeholder="架构师描述"
+                              style={{ padding: '6px 8px', borderRadius: '4px', border: '1px solid #ddd', width: '100%', marginBottom: '8px' }}
+                            />
+                            <textarea 
+                              value={architectEditFormData.prompt} 
+                              onChange={(e) => setArchitectEditFormData(prev => ({ ...prev, prompt: e.target.value }))}
+                              placeholder="提示词内容"
+                              rows={4}
+                              style={{ padding: '6px 8px', borderRadius: '4px', border: '1px solid #ddd', width: '100%', fontFamily: 'monospace', fontSize: '12px' }}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button 
+                              className="btn btn-sm btn-secondary"
+                              onClick={handleCancelEditArchitect}
+                            >
+                              取消
+                            </button>
+                            <button 
+                              className="btn btn-sm btn-primary"
+                              onClick={handleSaveEditArchitect}
+                            >
+                              保存
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                            <div>
+                              <h5 style={{ margin: '0 0 4px 0', color: '#333' }}>{architect.name}</h5>
+                              <p style={{ margin: '0', fontSize: '12px', color: '#666' }}>{architect.description}</p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button 
+                                className="btn btn-sm btn-secondary"
+                                onClick={() => handleEditArchitect(architect)}
+                              >
+                                编辑
+                              </button>
+                              <button 
+                                className="btn btn-sm btn-primary"
+                                onClick={() => handleSelectArchitect(architect)}
+                              >
+                                选择
+                              </button>
+                              <button 
+                                className="btn btn-sm btn-danger"
+                                onClick={() => handleDeleteArchitect(architect.id)}
+                              >
+                                删除
+                              </button>
+                            </div>
+                          </div>
+                          <div style={{ 
+                            fontSize: '12px', 
+                            lineHeight: '1.4', 
+                            color: '#555',
+                            maxHeight: '80px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'pre-wrap'
+                          }}>
+                            {architect.prompt}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 使用说明 */}
+              <div style={{ padding: '16px', backgroundColor: '#f1f3f4', borderRadius: '6px' }}>
+                <h5 style={{ margin: '0 0 8px 0' }}>使用说明</h5>
+                <ul style={{ margin: '0', fontSize: '13px', lineHeight: '1.5' }}>
+                  <li>选择一个架构师来定义故事大纲的创作风格</li>
+                  <li>每个架构师专注于不同类型的故事大纲构建</li>
+                  <li>可以编辑现有架构师或创建新的架构师</li>
+                  <li>架构师的提示词会影响AI生成故事大纲的风格和特点</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 大纲结构系统提示词配置模态框 */}
+      {isWorldviewStructureConfigOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '700px', maxWidth: '90%' }}>
+            <div className="modal-header">
+              <h3>大纲结构系统提示词配置</h3>
+              <button className="close-btn" onClick={handleCloseWorldviewStructureConfig}>&times;</button>
+            </div>
+            <div className="outline-structure-content">
+              <p style={{ marginBottom: '16px' }}>请定义故事大纲文本的构成结构：</p>
+              <textarea 
+                value={worldviewStructurePrompt}
+                onChange={(e) => setWorldviewStructurePrompt(e.target.value)}
+                rows={15}
+                style={{ 
+                  width: '100%', 
+                  padding: '8px', 
+                  marginBottom: '16px', 
+                  fontFamily: 'monospace', 
+                  fontSize: '14px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px'
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button 
+                  className="btn btn-secondary"
+                  onClick={handleCloseWorldviewStructureConfig}
+                >
+                  取消
+                </button>
+                <button 
+                  className="btn btn-primary"
+                  onClick={handleSaveWorldviewStructureConfig}
+                >
+                  保存
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+      {/* 大纲编辑模态框 */}
+      {isOutlineEditModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '800px', maxWidth: '90%' }}>
+            <div className="modal-header">
+              <h3>编辑大纲</h3>
+              <button className="close-btn" onClick={() => setIsOutlineEditModalOpen(false)}>&times;</button>
+            </div>
+            <div className="outline-edit-content">
+              <form className="outline-edit-form">
+                <div className="form-group">
+                  <label htmlFor="outline-title">标题:</label>
+                  <input 
+                    type="text" 
+                    id="outline-title" 
+                    name="title" 
+                    value={outlineEditFormData.title || ''} 
+                    onChange={(e) => setOutlineEditFormData(prev => ({ ...prev, title: e.target.value }))}
+                    style={{ width: '100%', padding: '8px' }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="outline-content">内容:</label>
+                  <textarea 
+                    id="outline-content" 
+                    name="content" 
+                    value={outlineEditFormData.content || ''} 
+                    onChange={(e) => setOutlineEditFormData(prev => ({ ...prev, content: e.target.value }))}
+                    rows={15}
+                    style={{ width: '100%', padding: '8px', fontFamily: 'monospace' }}
+                  />
+                </div>
+                <div className="form-actions">
+                  <button type="button" className="btn btn-secondary" onClick={() => setIsOutlineEditModalOpen(false)}>
+                    取消
+                  </button>
+                  <button type="button" className="btn btn-primary" onClick={handleSaveOutlineEdit}>
+                    保存
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 故事模型配置模态框 */}
+      {isModelConfigOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '600px', maxWidth: '90%' }}>
+            <div className="modal-header">
+              <h3>故事模型配置</h3>
+              <button className="close-btn" onClick={() => setIsModelConfigOpen(false)}>&times;</button>
+            </div>
+            <div className="model-config-content">
+              <form className="model-config-form">
+                <div className="form-group">
+                  <label htmlFor="model-detail-level">详细程度:</label>
+                  <select 
+                    id="model-detail-level"
+                    value={storyModelParams.detail_level}
+                    onChange={(e) => handleModelParamChange('detail_level', e.target.value)}
+                    style={{ width: '100%', padding: '8px' }}
+                  >
+                    <option value="low">简单</option>
+                    <option value="medium">中等</option>
+                    <option value="high">详细</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="model-style">风格:</label>
+                  <select 
+                    id="model-style"
+                    value={storyModelParams.style}
+                    onChange={(e) => handleModelParamChange('style', e.target.value)}
+                    style={{ width: '100%', padding: '8px' }}
+                  >
+                    <option value="epic">史诗</option>
+                    <option value="dramatic">戏剧</option>
+                    <option value="mysterious">神秘</option>
+                    <option value="romantic">浪漫</option>
+                    <option value="adventurous">冒险</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>当前选中模型:</label>
+                  <div style={{ padding: '8px', backgroundColor: '#f8f9fa', borderRadius: '4px', marginTop: '4px' }}>
+                    {storyModels.find(m => m.key === selectedStoryModel)?.name || selectedStoryModel}
+                  </div>
+                </div>
+                <div className="form-actions">
+                  <button type="button" className="btn btn-secondary" onClick={() => setIsModelConfigOpen(false)}>
+                    取消
+                  </button>
+                  <button type="button" className="btn btn-primary" onClick={handleSaveModelConfig}>
+                    保存配置
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 故事模型管理器模态框 */}
+      {isStoryModelManagerOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '800px', maxWidth: '90%' }}>
+            <div className="modal-header">
+              <h3>故事模型管理</h3>
+              <button className="close-btn" onClick={handleCloseStoryModelManager}>&times;</button>
+            </div>
+            <div className="story-model-manager-content">
+              {/* 现有故事模型列表 */}
+              <div style={{ marginBottom: '30px' }}>
+                <h4>现有故事模型</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+                  {storyModels.map(model => (
+                    <div key={model.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', backgroundColor: '#f8f9fa' }}>
+                      {editingStoryModel?.id === model.id ? (
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <input 
+                            type="text" 
+                            value={editingStoryModel.name} 
+                            onChange={(e) => setEditingStoryModel(prev => ({ ...prev, name: e.target.value }))}
+                            style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
+                          />
+                          <textarea 
+                            value={editingStoryModel.description} 
+                            onChange={(e) => setEditingStoryModel(prev => ({ ...prev, description: e.target.value }))}
+                            style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ddd', minHeight: '60px' }}
+                            placeholder="描述"
+                          />
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                            <button 
+                              className="btn btn-sm btn-primary"
+                              onClick={handleSaveModelEdit}
+                            >
+                              保存
+                            </button>
+                            <button 
+                              className="btn btn-sm btn-secondary"
+                              onClick={handleCancelModelEdit}
+                            >
+                              取消
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ flex: 1 }}>
+                            <h5 style={{ margin: '0 0 4px 0', color: '#333' }}>{model.name}</h5>
+                            <p style={{ margin: '0', fontSize: '12px', color: '#666' }}>{model.description || '无描述'}</p>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#999' }}>Key: {model.key} {model.is_default && <span style={{ color: '#007bff' }}>(默认)</span>}</p>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button 
+                              className="btn btn-sm btn-secondary"
+                              onClick={() => handleStartEditModel(model)}
+                            >
+                              编辑
+                            </button>
+                            {!model.is_default && (
+                              <button 
+                                className="btn btn-sm btn-danger"
+                                onClick={() => handleDeleteModel(model.id)}
+                              >
+                                删除
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 添加新故事模型 */}
+              <div>
+                <h4>添加新故事模型</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <input 
+                    type="text" 
+                    placeholder="模型标识 (key)" 
+                    value={newStoryModel.key}
+                    onChange={(e) => setNewStoryModel(prev => ({ ...prev, key: e.target.value }))}
+                    style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="模型名称" 
+                    value={newStoryModel.name}
+                    onChange={(e) => setNewStoryModel(prev => ({ ...prev, name: e.target.value }))}
+                    style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                  />
+                  <textarea 
+                    placeholder="模型描述" 
+                    value={newStoryModel.description}
+                    onChange={(e) => setNewStoryModel(prev => ({ ...prev, description: e.target.value }))}
+                    style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', minHeight: '80px' }}
+                  />
+                  <button 
+                    className="btn btn-primary"
+                    onClick={handleSaveNewModel}
+                    disabled={!newStoryModel.key || !newStoryModel.name}
+                  >
+                    添加模型
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default BlueprintPage;
+// 使用React.memo避免不必要的重复渲染
+export default React.memo(BlueprintPage, (prevProps, nextProps) => {
+  // 只有当projectId真正变化时才重新渲染
+  return prevProps.projectId === nextProps.projectId;
+});

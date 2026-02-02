@@ -11,6 +11,7 @@ const DataVisualization = ({ projectId, chapters = [], characters = [] }) => {
   const [loading, setLoading] = useState(false);
   const [analysisType, setAnalysisType] = useState('emotion');
   const [selectedChapter, setSelectedChapter] = useState(null);
+  const isMountedRef = useRef(false);
   
   const relationshipChartRef = useRef(null);
   const emotionChartRef = useRef(null);
@@ -258,7 +259,10 @@ const DataVisualization = ({ projectId, chapters = [], characters = [] }) => {
   // 分析数据
   const analyzeData = async () => {
     if (!projectId) {
-      message.warning('请先选择一个项目');
+      // 只有当组件真正挂载后才显示提示
+      if (isMountedRef.current) {
+        message.warning('请先选择一个项目');
+      }
       return;
     }
     
@@ -303,11 +307,18 @@ const DataVisualization = ({ projectId, chapters = [], characters = [] }) => {
   };
 
   useEffect(() => {
-    analyzeData();
+    // 设置组件已挂载
+    isMountedRef.current = true;
+    
+    // 只有当projectId存在时才分析数据，避免在导航切换时重复显示提示
+    if (projectId) {
+      analyzeData();
+    }
     
     window.addEventListener('resize', handleResize);
     
     return () => {
+      isMountedRef.current = false;
       window.removeEventListener('resize', handleResize);
       relationshipChart.current?.dispose();
       emotionChart.current?.dispose();
