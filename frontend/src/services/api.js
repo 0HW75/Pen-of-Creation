@@ -667,6 +667,7 @@ export const worldApi = {
     clearCache();
     return response;
   },
+  getWorldStats: (id) => api.get(`/worlds/${id}/stats`),
 };
 
 // AI相关API

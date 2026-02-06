@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app import db
-from app.models import World
+from app.models import World, Character, Location, Faction, HistoricalEvent
 from datetime import datetime
 
 worlds_bp = Blueprint('worlds', __name__)
@@ -145,4 +145,38 @@ def delete_world(world_id):
         return jsonify({
             'code': 500,
             'message': f'删除世界失败: {str(e)}'
+        }), 500
+
+
+@worlds_bp.route('/<int:world_id>/stats', methods=['GET'])
+def get_world_stats(world_id):
+    """获取世界统计信息"""
+    try:
+        world = World.query.get(world_id)
+        if not world:
+            return jsonify({
+                'code': 404,
+                'message': '世界不存在'
+            }), 404
+        
+        # 统计各类数据数量
+        character_count = Character.query.filter_by(world_id=world_id).count()
+        location_count = Location.query.filter_by(world_id=world_id).count()
+        faction_count = Faction.query.filter_by(world_id=world_id).count()
+        event_count = HistoricalEvent.query.filter_by(world_id=world_id).count()
+        
+        return jsonify({
+            'code': 200,
+            'data': {
+                'character_count': character_count,
+                'location_count': location_count,
+                'faction_count': faction_count,
+                'event_count': event_count
+            },
+            'message': '获取世界统计信息成功'
+        })
+    except Exception as e:
+        return jsonify({
+            'code': 500,
+            'message': f'获取世界统计信息失败: {str(e)}'
         }), 500
