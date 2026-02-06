@@ -1,1086 +1,663 @@
-小说设定数据库表结构设计（续）
+世界观设定模块数据库字段设计
 
-模块五：角色设定模块
+前言
 
-21. 角色主表
+我采用分表、结构化、可扩展的设计理念，避免大宽表。每个主表对应核心概念，子表存储一对多关系。所有表都通过world_id关联到主世界表。
 
-表名：characters
-说明：所有角色的核心档案
-• character_id
+模块一：世界基本框架
 
-• world_id (外键，所属世界观)
+1. 世界主表
 
-• character_name (角色姓名)
+表名：worlds
+说明：每个独立世界观的核心记录
+• world_id (唯一标识)
 
-• alternative_names (别名/称号JSON)
+• world_name (世界名称)
 
-• role_type (角色类型：主角/配角/反派/龙套/背景)
+• core_theme (核心主题/类型：史诗、悬疑、科幻、奇幻)
 
-• status (状态：存活/死亡/失踪/转生)
+• core_concept (一句话核心理念)
 
-• importance_level (重要程度：1-10级)
+• creation_myth (创世神话文本)
 
-• birth_date (出生日期)
+• world_type (世界类型：单一/多元/位面/嵌套)
 
-• death_date (死亡日期)
+• status (状态：草稿/完善/归档)
 
-• birth_place_id (出生地，关联regions)
+• creator_id (创建者)
 
-• current_location_id (当前位置)
+• created_at (创建时间)
 
-• race_id (种族，关联生物图鉴)
+• updated_at (更新时间)
 
-• gender (性别)
+• version (版本号)
 
-• age (年龄)
+• cover_image (封面图URL)
 
-• appearance_age (外貌年龄)
+• description (简要介绍)
 
-• physical_description (外貌描述)
+2. 维度/位面表
 
-• distinguishing_features (显著特征)
-
-• portrait_image (角色肖像)
-
-• brief_intro (一句话简介)
-
-• description (详细档案)
-
-22. 角色属性表
-
-表名：character_attributes
-说明：角色的能力属性数值化
-• attribute_id
-
-• character_id (外键)
-
-• attribute_type (属性类型：力量/敏捷/智力/感知/体质/魅力)
-
-• base_value (基础值)
-
-• current_value (当前值)
-
-• max_value (最大值)
-
-• growth_rate (成长率)
-
-• last_updated (最后更新时间)
-
-• description (属性说明)
-
-23. 角色背景故事表
-
-表名：character_backgrounds
-说明：角色的经历和背景
-• background_id
-
-• character_id (外键)
-
-• period_name (时期名称：童年/少年/成年)
-
-• start_age (开始年龄)
-
-• end_age (结束年龄)
-
-• key_events (关键事件JSON)
-
-• influential_people (影响人物)
-
-• traumas (心理创伤)
-
-• turning_points (人生转折)
-
-• core_memory (核心记忆)
-
-• description (时期详述)
-
-24. 角色性格表
-
-表名：character_personalities
-说明：角色的性格特质
-• personality_id
-
-• character_id (外键)
-
-• core_motivation (核心动机)
-
-• deepest_desire (最深渴望)
-
-• greatest_fear (最大恐惧)
-
-• moral_alignment (道德倾向：守序善良/混乱中立等)
-
-• key_values (核心价值观JSON)
-
-• virtues (美德)
-
-• flaws (缺点)
-
-• habits (习惯)
-
-• catchphrases (口头禅)
-
-• character_arc (角色弧光：成长/悲剧/救赎)
-
-• description (性格分析)
-
-25. 角色能力表
-
-表名：character_abilities
-说明：角色掌握的能力和技能
-• ability_id
-
-• character_id (外键)
-
-• ability_type (能力类型：天赋/学习/觉醒/装备)
-
-• skill_id (关联common_skills)
-
-• proficiency_level (掌握程度：入门/熟练/精通/大师)
-
-• acquired_age (获得年龄)
-
-• acquired_method (获得方式)
-
-• usage_restrictions (使用限制)
-
-• signature_move (是否为招牌能力)
-
-• description (能力详述)
-
-26. 角色装备表
-
-表名：character_equipments
-说明：角色拥有的装备物品
-• equipment_id
-
-• character_id (外键)
-
-• item_id (关联物品表)
-
-• equipment_type (装备类型：武器/防具/饰品/道具)
-
-• equipped_slot (装备栏位)
-
-• acquired_time (获得时间)
-
-• acquired_method (获得方式)
-
-• current_condition (当前状态：完好/损坏/丢失)
-
-• enhancement_level (强化等级)
-
-• custom_mods (自定义改造)
-
-• emotional_value (情感价值)
-
-• description (装备详述)
-
-27. 角色关系表
-
-表名：character_relationships
-说明：角色之间的社交关系
-• relationship_id
+表名：dimensions
+说明：一个世界可以有多个维度/位面
+• dimension_id
 
 • world_id (外键)
 
-• character_a_id (角色A)
+• dimension_name (维度名称)
 
-• character_b_id (角色B)
+• dimension_type (类型：主物质位面/元素位面/神国/冥界/口袋空间)
 
-• relationship_type (关系类型：血缘/爱情/友情/师徒/敌对/同事)
-
-• closeness_level (亲密程度：1-10)
-
-• relationship_dynamics (关系动态：平等/依赖/控制)
-
-• start_time (关系开始时间)
-
-• end_time (关系结束时间)
-
-• key_shared_events (关键共享事件)
-
-• current_status (当前状态：和睦/紧张/破裂)
-
-• description (关系详述)
-
-模块六：势力组织模块
-
-28. 组织主表
-
-表名：organizations
-说明：所有势力组织的核心档案
-• organization_id
-
-• world_id (外键)
-
-• organization_name (组织名称)
-
-• alternative_names (别名)
-
-• organization_type (组织类型：国家/宗派/家族/公司/秘密结社)
-
-• founding_year (成立年份)
-
-• founder_id (创始人，关联characters)
-
-• current_leader_id (现任领袖)
-
-• headquarters_id (总部地点)
-
-• primary_region_id (主要活动区域)
-
-• size_scale (规模：小型/中型/大型/跨国)
-
-• member_count (成员数量)
-
-• influence_level (影响力等级：地方/国家/世界)
-
-• ideology (核心理念)
-
-• symbol (组织标志)
-
-• status (状态：活跃/衰落/解散/潜伏)
-
-• description (组织概述)
-
-29. 组织架构表
-
-表名：organization_structures
-说明：组织的内部结构
-• structure_id
-
-• organization_id (外键)
-
-• hierarchy_level (层级：顶层/中层/基层)
-
-• department_name (部门名称)
-
-• parent_department_id (上级部门)
-
-• function_description (职能描述)
-
-• typical_positions (典型职位JSON)
-
-• recruitment_criteria (招募标准)
-
-• promotion_path (晋升路径)
-
-• disciplinary_rules (纪律规定)
-
-• description (部门详述)
-
-30. 组织成员表
-
-表名：organization_members
-说明：组织成员及其职位
-• membership_id
-
-• organization_id (外键)
-
-• character_id (外键，关联角色)
-
-• join_date (加入日期)
-
-• leave_date (离开日期)
-
-• position_title (职位名称)
-
-• rank_level (职级)
-
-• responsibilities (职责)
-
-• privileges (特权)
-
-• loyalty_level (忠诚度)
-
-• membership_status (成员状态：正式/实习/荣誉/叛逃)
-
-• description (成员履历)
-
-31. 组织目标表
-
-表名：organization_objectives
-说明：组织的目标和计划
-• objective_id
-
-• organization_id (外键)
-
-• objective_type (目标类型：短期/中期/长期/秘密)
-
-• priority_level (优先级：1-10)
-
-• objective_statement (目标陈述)
-
-• key_strategies (关键策略)
-
-• required_resources (所需资源)
-
-• timeline (时间线)
-
-• success_criteria (成功标准)
-
-• potential_obstacles (潜在障碍)
-
-• current_progress (当前进度)
-
-• description (目标详述)
-
-32. 组织关系表
-
-表名：organization_relations
-说明：组织之间的关系
-• relation_id
-
-• world_id (外键)
-
-• organization_a_id (组织A)
-
-• organization_b_id (组织B)
-
-• relation_type (关系类型：盟友/敌对/竞争/附庸/贸易伙伴)
-
-• relation_strength (关系强度：1-10)
-
-• historical_context (历史背景)
-
-• current_interactions (当前互动)
-
-• future_outlook (未来展望)
-
-• description (关系详述)
-
-33. 组织资源表
-
-表名：organization_resources
-说明：组织拥有的资源
-• resource_id
-
-• organization_id (外键)
-
-• resource_type (资源类型：财力/人力/物资/情报/技术)
-
-• quantity (数量/规模)
-
-• quality (质量评估)
-
-• location_ids (存储位置)
-
-• guarding_level (守卫等级)
-
-• acquisition_method (获取方式)
-
-• utilization_rate (利用率)
-
-• description (资源详述)
-
-模块七：地点场景模块
-
-34. 地点主表
-
-表名：locations
-说明：所有地点的核心档案
-• location_id
-
-• world_id (外键)
-
-• location_name (地点名称)
-
-• location_type (地点类型：城市/村庄/山脉/森林/建筑/遗迹)
-
-• parent_location_id (所属上级地点)
-
-• region_id (所属区域)
-
-• geographical_coordinates (地理坐标JSON)
-
-• altitude (海拔)
-
-• climate_zone (气候带)
-
-• average_temperature (平均温度)
-
-• precipitation_level (降水量)
-
-• natural_hazards (自然灾害)
-
-• strategic_position (战略位置重要性)
-
-• accessibility (可达性：容易/困难/秘密)
-
-• defensive_features (防御特征)
-
-• description (地点概述)
-
-• historical_significance (历史意义)
-
-35. 建筑结构表
-
-表名：building_structures
-说明：具体建筑的内部结构
-• building_id
-
-• location_id (外键，所在地点)
-
-• building_name (建筑名称)
-
-• building_type (建筑类型：宫殿/民居/商铺/工坊/神庙)
-
-• architectural_style (建筑风格)
-
-• construction_year (建造年份)
-
-• builder_id (建造者)
-
-• floors_count (楼层数)
-
-• total_area (总面积)
-
-• room_layout (房间布局JSON)
-
-• defensive_features (防御设施)
-
-• hidden_spaces (隐藏空间)
-
-• current_condition (当前状况：完好/废弃/翻修中)
-
-• owner_id (当前拥有者)
-
-• description (建筑详述)
-
-36. 区域特征表
-
-表名：location_features
-说明：地点的具体特征
-• feature_id
-
-• location_id (外键)
-
-• feature_type (特征类型：地貌/植被/水体/矿产/特殊能量)
-
-• feature_name (特征名称)
-
-• scale_size (规模大小)
-
-• unique_properties (独特属性)
-
-• ecological_role (生态作用)
-
-• resource_value (资源价值)
-
-• danger_level (危险等级)
-
-• discovery_history (发现历史)
-
-• description (特征详述)
-
-37. 地点居民表
-
-表名：location_inhabitants
-说明：地点的居民构成
-• inhabitant_id
-
-• location_id (外键)
-
-• population_group (人群类型：常住居民/流动人口/统治者/守卫)
-
-• race_id (主要种族)
-
-• population_count (人口数量)
-
-• population_density (人口密度)
-
-• social_structure (社会结构)
-
-• governing_body (管理机构)
-
-• living_conditions (生活条件)
-
-• economic_activities (经济活动)
-
-• cultural_practices (文化习俗)
-
-• description (居民详述)
-
-38. 特殊地点表
-
-表名：special_locations
-说明：具有特殊规则的地点
-• special_id
-
-• location_id (外键)
-
-• special_type (特殊类型：秘境/遗迹/异空间/概念领域/时间异常区)
+• parent_dimension_id (父维度ID，支持嵌套)
 
 • access_conditions (进入条件)
 
-• internal_rules (内部规则)
+• physical_laws (特殊物理法则)
 
-• time_flow (时间流速)
+• time_flow_ratio (时间流速比，相对于主世界)
 
-• spatial_anomalies (空间异常)
+• energy_concentration (能量浓度)
 
-• treasures (存在的宝藏)
+• stability_level (稳定性)
 
-• dangers (存在的危险)
+• inhabitants (主要栖居者)
 
-• origin_story (起源故事)
+• description (详细描述)
 
-• description (特殊地点详述)
+3. 地理区域表
 
-模块八：物品与资源模块
-
-39. 物品主表
-
-表名：items
-说明：所有物品的核心档案
-• item_id
+表名：regions
+说明：多级地理结构（世界→大陆→国家→行省）
+• region_id
 
 • world_id (外键)
 
-• item_name (物品名称)
+• parent_region_id (父区域ID，支持层级)
 
-• item_type (物品类型：武器/防具/工具/材料/消耗品/艺术品)
+• region_name (区域名称)
 
-• rarity_level (稀有度：普通/罕见/稀有/史诗/传说)
+• region_type (类型：大陆/海洋/国家/山脉/森林/沙漠)
 
-• creation_method (制作方式：天然/手工/魔法/科技)
+• area_size (面积大小)
 
-• creator_id (创造者)
+• climate_type (气候类型)
 
-• creation_date (创造日期)
+• terrain_features (地形特征JSON)
 
-• material_composition (材料组成JSON)
-
-• physical_properties (物理属性：重量/尺寸/硬度)
-
-• durability (耐久度)
-
-• decay_rate (衰变率)
-
-• value_estimation (价值估算)
-
-• current_owner_id (当前拥有者)
-
-• current_location_id (当前位置)
-
-• description (物品描述)
-
-• historical_provenance (历史流传)
-
-40. 装备属性表
-
-表名：equipment_attributes
-说明：装备的具体属性
-• attribute_id
-
-• item_id (外键)
-
-• attribute_type (属性类型：攻击力/防御力/特效/加成)
-
-• base_value (基础值)
-
-• enhancement_bonus (强化加成)
-
-• enchantment_effects (附魔效果JSON)
-
-• usage_requirements (使用要求：等级/属性/技能)
-
-• energy_cost (能量消耗)
-
-• cooldown_time (冷却时间)
-
-• degradation_rate (损耗率)
-
-• maintenance_needs (维护需求)
-
-• description (属性详述)
-
-41. 消耗品效果表
-
-表名：consumable_effects
-说明：消耗品的使用效果
-• effect_id
-
-• item_id (外键)
-
-• effect_type (效果类型：治疗/增益/减益/变形/召唤)
-
-• potency_level (效力等级)
-
-• duration (持续时间)
-
-• application_method (使用方式：口服/注射/涂抹/吸入)
-
-• side_effects (副作用)
-
-• addiction_risk (成瘾风险)
-
-• tolerance_build (耐受性积累)
-
-• counteragents (解药/中和剂)
-
-• synthesis_recipe (合成配方JSON)
-
-• description (效果详述)
-
-42. 材料资源表
-
-表名：material_resources
-说明：基础材料资源
-• material_id
-
-• world_id (外键)
-
-• material_name (材料名称)
-
-• material_type (材料类型：金属/木材/石材/草药/矿石/能量结晶)
-
-• natural_abundance (自然丰度)
-
-• primary_locations (主要产地ID列表)
-
-• harvesting_method (采集方法)
-
-• processing_techniques (加工技术)
-
-• quality_grades (品质等级)
-
-• key_properties (关键特性)
-
-• common_uses (常见用途)
-
-• substitute_materials (替代材料)
-
-• market_value (市场价值)
+• natural_resources (自然资源列表)
 
 • strategic_importance (战略重要性)
 
-• description (材料详述)
+• danger_level (危险等级)
 
-43. 物品制作配方表
+• description (地理描述)
 
-表名：item_recipes
-说明：物品的制作配方
-• recipe_id
+• map_coordinates (地图坐标JSON)
 
-• world_id (外键)
+4. 自然法则表
 
-• result_item_id (成品物品)
-
-• recipe_name (配方名称)
-
-• recipe_type (配方类型：锻造/炼金/附魔/烹饪/合成)
-
-• required_skill (所需技能)
-
-• skill_level_requirement (技能等级要求)
-
-• required_tools (所需工具列表)
-
-• required_materials (所需材料及数量JSON)
-
-• production_time (制作时间)
-
-• success_rate (成功率)
-
-• failure_consequences (失败后果)
-
-• recipe_source (配方来源：发现/购买/传授/研发)
-
-• description (配方详述)
-
-模块九：生物图鉴模块
-
-44. 种族主表
-
-表名：races
-说明：智慧种族定义
-• race_id
+表名：natural_laws
+说明：世界的物理/魔法基础法则
+• law_id
 
 • world_id (外键)
 
-• race_name (种族名称)
+• law_name (法则名称)
 
-• classification_type (分类：类人/兽人/精灵/龙族/机械/元素)
+• law_type (类型：物理/魔法/时空/生命/因果)
 
-• origin_story (起源故事)
+• is_universal (是否全局适用)
 
-• average_lifespan (平均寿命)
+• affected_dimensions (适用维度ID列表)
 
-• maturity_age (成年年龄)
+• affected_regions (适用区域ID列表)
 
-• reproductive_method (繁殖方式)
+• law_statement (法则陈述)
 
-• social_structure (社会结构)
+• exceptions (例外情况)
 
-• technological_level (科技水平)
-
-• magical_affinity (魔法亲和)
-
-• primary_locations (主要分布区域)
-
-• population_estimate (人口估算)
-
-• physical_description (外貌特征)
-
-• unique_physiology (独特生理)
-
-• natural_abilities (天生能力)
-
-• weaknesses (种族弱点)
-
-• typical_culture (典型文化)
-
-• description (种族详述)
-
-45. 生物种类表
-
-表名：creature_species
-说明：非智慧生物种类
-• species_id
-
-• world_id (外键)
-
-• species_name (物种名称)
-
-• classification_kingdom (生物界：动物/植物/真菌/元素/亡灵)
-
-• diet_type (食性：肉食/草食/杂食/能量吸收)
-
-• habitat_preference (栖息地偏好)
-
-• threat_level (威胁等级：无害/危险/致命/天灾)
-
-• average_size (平均体型)
-
-• intelligence_level (智力水平)
-
-• social_behavior (社会行为)
-
-• hunting_methods (狩猎方式)
-
-• defensive_mechanisms (防御机制)
-
-• special_abilities (特殊能力)
-
-• natural_predators (天敌)
-
-• reproduction_rate (繁殖速度)
-
-• ecological_role (生态角色)
-
-• description (物种详述)
-
-46. 变异/亚种表
-
-表名：creature_variants
-说明：种族的变异和亚种
-• variant_id
-
-• race_id或species_id (外键)
-
-• variant_name (变种名称)
-
-• mutation_cause (变异原因：环境/魔法/实验/杂交)
-
-• distinct_features (显著特征)
-
-• enhanced_abilities (增强能力)
-
-• additional_weaknesses (新增弱点)
-
-• viability_status (生存状态：稳定/濒危/灭绝)
+• enforcement_mechanism (执行机制)
 
 • discovery_history (发现历史)
 
-• description (变种详述)
+• description (详细解释)
 
-47. 生物能力表
+5. 天体系统表
 
-表名：creature_abilities
-说明：生物的特殊能力
-• ability_id
-
-• creature_type (关联类型：race/species/variant)
-
-• creature_id (关联ID)
-
-• ability_name (能力名称)
-
-• activation_condition (触发条件)
-
-• energy_cost (能量消耗)
-
-• effect_description (效果描述)
-
-• cooldown_period (冷却时间)
-
-• inheritance_pattern (遗传模式：显性/隐性/随机)
-
-• description (能力详述)
-
-模块十：关系网络模块
-
-48. 事件时间线表
-
-表名：timeline_events
-说明：按时间顺序排列的事件
-• timeline_id
+表名：celestial_bodies
+说明：恒星、行星、卫星等天体
+• body_id
 
 • world_id (外键)
 
-• event_type (事件类型：历史/个人/组织/自然)
+• parent_body_id (绕哪个天体运行)
 
-• referenced_event_id (关联的事件ID)
+• body_name (天体名称)
 
-• referenced_character_id (关联的角色ID)
+• body_type (类型：恒星/行星/卫星/彗星/小行星)
 
-• referenced_organization_id (关联的组织ID)
+• size_category (大小分类)
 
-• event_time (事件时间点)
+• orbital_period (轨道周期)
 
-• event_title (事件标题)
+• rotation_period (自转周期)
 
-• brief_description (简要描述)
+• atmosphere_type (大气类型)
 
-• importance_rating (重要性评级)
+• surface_conditions (表面条件)
 
-• description (详述)
+• inhabitable (是否可居住)
 
-49. 因果关联表
+• inhabitants (栖居物种)
 
-表名：causal_relationships
-说明：事件之间的因果关系
-• causal_id
+• special_features (特殊特征)
 
-• world_id (外键)
+• description (详细描述)
 
-• cause_event_id (原因事件)
+模块二：能量与规则体系
 
-• effect_event_id (结果事件)
+6. 能量体系表
 
-• causal_strength (因果强度：弱/中/强)
-
-• causal_mechanism (作用机制)
-
-• time_lag (时间延迟)
-
-• evidence_level (证据等级)
-
-• description (因果详述)
-
-50. 物品流转表
-
-表名：item_movements
-说明：重要物品的所有权流转
-• movement_id
+表名：energy_systems
+说明：定义世界的能量类型和规则
+• system_id
 
 • world_id (外键)
 
-• item_id (外键)
+• system_name (体系名称：魔力/真气/灵能/原力)
 
-• previous_owner_id (前拥有者)
+• energy_source (能量来源)
 
-• new_owner_id (新拥有者)
+• philosophical_alignment (哲学倾向：守序/混沌/创造/毁灭)
 
-• transfer_time (转移时间)
+• natural_abundance (自然丰度)
 
-• transfer_method (转移方式：赠与/买卖/抢夺/继承)
+• tidal_cycle (潮汐周期)
 
-• transfer_location_id (转移地点)
+• conversion_efficiency (转化效率)
 
-• witnesses (见证者列表)
+• pollution_effect (污染效应)
 
-• description (流转详述)
+• storage_methods (存储方式)
 
-模块十一：数据关联系统
+• detection_methods (探测方式)
 
-51. 标签系统表
+• fundamental_principles (基本原理)
 
-表名：world_tags
-说明：用于分类检索的标签系统
-• tag_id
+• description (体系概述)
 
-• world_id (外键)
+7. 能量形态表
 
-• tag_name (标签名称)
+表名：energy_forms
+说明：具体能量形态（一个体系可有多种形态）
+• form_id
 
-• tag_category (标签分类：类型/属性/主题/风格/元素)
+• system_id (外键，关联能量体系)
 
-• tag_color (显示颜色)
+• form_name (形态名称：火元素/生命能/时空能)
 
-• usage_count (使用次数)
+• form_type (类型：元素/生命/概念/复合)
 
-• description (标签说明)
+• basic_properties (基本属性)
 
-52. 实体标签关联表
+• interaction_rules (相互作用规则)
 
-表名：entity_tags
-说明：实体与标签的多对多关联
-• association_id
+• purification_method (提纯方法)
 
-• tag_id (外键)
+• corruption_effects (污染/腐化效果)
 
-• entity_type (实体类型：world/character/organization/location/item)
+• visual_manifestation (视觉表现)
 
-• entity_id (实体ID)
+• sensory_perception (感官感知)
 
-• association_strength (关联强度：1-10)
+• description (详细描述)
 
-• applied_by (添加者)
+8. 力量等级体系表
 
-• applied_time (添加时间)
-
-53. 跨模块关联表
-
-表名：cross_module_links
-说明：记录任意两个实体间的关系
-• link_id
+表名：power_level_systems
+说明：境界/等级划分系统
+• level_system_id
 
 • world_id (外键)
 
-• source_type (源实体类型)
+• system_name (体系名称：修仙九境/魔法十阶)
 
-• source_id (源实体ID)
+• total_levels (总等级数)
 
-• target_type (目标实体类型)
+• level_framework (等级框架JSON，包含各级名称、特征、寿命)
 
-• target_id (目标实体ID)
+• breakthrough_conditions (突破通用条件)
 
-• relationship_type (关系类型：使用/属于/创造/影响/对抗)
+• bottleneck_description (瓶颈描述)
 
-• relationship_description (关系描述)
+• tribulation_system (天劫/考验系统)
 
-• relationship_strength (关系强度)
+• regression_risk (倒退风险)
 
-• evidence_sources (证据来源)
+• ultimate_form (巅峰形态)
 
-54. 数据版本表
+• description (体系概述)
 
-表名：data_versions
-说明：支持版本管理和分支设定
-• version_id
+9. 通用技能表
 
-• world_id (外键)
-
-• version_number (版本号，如2.1.0)
-
-• branch_name (分支名称：主线/分支A)
-
-• parent_version_id (父版本ID)
-
-• change_summary (变更摘要)
-
-• change_details (变更详情JSON)
-
-• created_by (创建者)
-
-• created_time (创建时间)
-
-• is_current (是否为当前版本)
-
-55. 文件附件表
-
-表名：world_attachments
-说明：存储相关文件
-• file_id
+表名：common_skills
+说明：世界公用的基础技能/法术
+• skill_id
 
 • world_id (外键)
 
-• file_name (文件名称)
+• skill_name (技能名称)
 
-• file_type (文件类型：地图/肖像/概念图/音频)
+• skill_type (类型：攻击/防御/辅助/治疗/生活)
 
-• file_path (存储路径)
+• energy_system_id (所需能量体系)
 
-• file_size (文件大小)
+• required_level (最低等级要求)
 
-• uploaded_by (上传者)
+• casting_components (施法组件：咒语/手势/材料)
 
-• upload_time (上传时间)
+• effect_range (影响范围)
 
-• description (文件描述)
+• duration (持续时间)
 
-• linked_entities (关联的实体JSON)
+• cooldown (冷却时间)
 
-全局关联关系总结
+• cost_resource (消耗资源)
 
-核心关联路径
+• side_effects (副作用)
 
-1. 所有实体 → worlds.world_id (世界观隔离)
-2. 角色相关：
-   • characters → regions (出生地/当前位置)
+• learning_difficulty (学习难度)
 
-   • characters → races (种族)
+• description (技能描述)
 
-   • character_abilities → common_skills (能力关联)
+• common_variations (常见变体)
 
-   • character_equipments → items (装备物品)
+10. 力量代价表
 
-   
-3. 组织相关：
-   • organizations → characters (领袖/成员)
+表名：power_costs
+说明：使用力量的代价系统
+• cost_id
 
-   • organizations → locations (总部/据点)
+• world_id (外键)
 
-   • organization_members (多对多关联表)
+• cost_type (代价类型：寿命/记忆/情感/理智/随机)
 
-   
-4. 地点相关：
-   • locations → regions (地理层级)
+• trigger_conditions (触发条件)
 
-   • building_structures → locations (建筑从属)
+• payment_mechanism (支付机制)
 
-   • location_inhabitants → characters/locations (居民关系)
+• severity_level (严重程度)
 
-   
-5. 物品相关：
-   • items → characters (创造者/拥有者)
+• reversible (是否可逆)
 
-   • items → locations (当前位置)
+• mitigation_methods (缓解方法)
 
-   • equipment_attributes → items (装备属性)
+• accumulation_effect (累积效应)
 
-   • item_recipes → items (制作配方)
+• description (详细说明)
 
-6. 历史关系：
-   • historical_events → historical_eras (时间层级)
+模块三：社会与文化体系
 
-   • historical_figures → characters (历史人物关联)
+11. 文明/文化圈表
 
-   • event_participants (多对多关联)
+表名：civilizations
+说明：定义不同的文明实体
+• civilization_id
 
-7. 生物关系：
-   • creatures → races/species (生物分类)
+• world_id (外键)
 
-   • creature_variants → races/species (变异关联)
+• civilization_name (文明名称)
 
-检索优化设计
+• primary_region_id (主要区域)
 
-1. 常用联合索引：
-   • (world_id, character_type, importance_level) - 角色筛选
+• development_stage (发展阶段：原始/农耕/工业/信息/后信息)
 
-   • (world_id, organization_type, influence_level) - 组织筛选
+• tech_magic_level (科技魔法水平)
 
-   • (world_id, location_type, region_id) - 地点检索
+• core_ideology (核心意识形态)
 
-   • (world_id, item_type, rarity_level) - 物品筛选
+• core_values (核心价值观JSON)
 
-2. JSON字段检索：为常用JSON路径创建生成列索引
+• population_estimate (人口估算)
 
-3. 全文检索：为description等长文本字段添加全文索引
+• average_lifespan (平均寿命)
 
-数据一致性保证
+• social_model (社会模型)
 
-1. 外键约束：所有关联字段都设置外键约束
-2. 级联策略：
-   • 世界观删除 → 所有相关数据级联删除
+• description (文明概述)
 
-   • 角色删除 → 关联关系设为NULL
+• historical_origin (历史起源)
 
-   • 物品删除 → 装备记录保留但标记为“已销毁”
+12. 文明-区域关联表
 
-3. 事务处理：复杂的关联操作在事务中完成
+表名：civilization_regions
+说明：多对多关系，记录文明在哪些区域有影响
+• id
 
-这个完整的表结构体系为AI小说编辑器提供了强大的数据支撑能力，既保证了数据的结构化存储，又通过灵活的关联设计支持复杂的创作需求。
+• civilization_id (外键)
+
+• region_id (外键)
+
+• influence_level (影响力：核心/主要/次要/边缘)
+
+• control_strength (控制强度)
+
+• settlement_year (在此定居年份)
+
+• conflict_history (冲突历史)
+
+• current_relation (当前关系)
+
+13. 社会阶级表
+
+表名：social_classes
+说明：一个文明内的阶级划分
+• class_id
+
+• civilization_id (外键)
+
+• class_name (阶级名称)
+
+• hierarchy_level (层级数字，1为最高)
+
+• population_percentage (人口占比%)
+
+• birth_rights (与生俱来的权利)
+
+• social_privileges (社会特权)
+
+• legal_restrictions (法律限制)
+
+• mobility_conditions (阶级流动条件)
+
+• typical_lifestyle (典型生活方式)
+
+• education_access (教育机会)
+
+• political_power (政治权力)
+
+• economic_status (经济状况)
+
+• description (阶级描述)
+
+14. 文化习俗表
+
+表名：cultural_customs
+说明：具体的文化习俗
+• custom_id
+
+• civilization_id (外键)
+
+• custom_name (习俗名称)
+
+• custom_type (类型：节日/礼仪/禁忌/艺术/饮食/服饰/婚丧)
+
+• frequency (频率：每日/每周/每年/一生一次)
+
+• participants (参与者范围)
+
+• required_actions (必需行为)
+
+• forbidden_actions (禁忌行为)
+
+• symbolic_meanings (象征意义)
+
+• historical_origin (历史起源)
+
+• variations (地区变体)
+
+• modern_adaptation (现代适应)
+
+• description (习俗详情)
+
+15. 经济体系表
+
+表名：economic_systems
+说明：文明的经济运行方式
+• economy_id
+
+• civilization_id (外键)
+
+• economic_model (经济模式：物物交换/市场经济/计划经济/混合)
+
+• currency_name (货币名称)
+
+• currency_material (货币材质)
+
+• denomination_system (面额体系)
+
+• exchange_rates (汇率体系JSON)
+
+• major_industries (主要产业JSON)
+
+• trade_routes (主要商路)
+
+• trade_partners (贸易伙伴)
+
+• resource_dependencies (资源依赖)
+
+• wealth_distribution (财富分布)
+
+• taxation_system (税收系统)
+
+• banking_system (银行系统)
+
+• economic_challenges (经济挑战)
+
+• description (经济概述)
+
+16. 政治体系表
+
+表名：political_systems
+说明：文明的政治结构
+• polity_id
+
+• civilization_id (外键)
+
+• government_type (政体类型：君主制/共和制/神权制/寡头制)
+
+• power_structure (权力结构描述)
+
+• succession_system (继承制度)
+
+• decision_process (决策流程)
+
+• administrative_divisions (行政区划)
+
+• legal_system (法律体系)
+
+• military_organization (军事组织)
+
+• diplomatic_style (外交风格)
+
+• internal_conflicts (内部矛盾)
+
+• external_threats (外部威胁)
+
+• political_stability (政治稳定性)
+
+• description (政治概述)
+
+模块四：历史脉络
+
+17. 历史纪元表
+
+表名：historical_eras
+说明：划分大的历史时期
+• era_id
+
+• world_id (外键)
+
+• era_name (纪元名称)
+
+• start_year (开始年份，可自定义纪年)
+
+• end_year (结束年份)
+
+• duration_description (持续时间描述)
+
+• main_characteristics (时代特征)
+
+• key_technologies (关键技术)
+
+• dominant_civilizations (主导文明)
+
+• ending_cause (结束原因)
+
+• legacy_impact (遗留影响)
+
+• description (纪元详述)
+
+18. 历史事件表
+
+表名：historical_events
+说明：具体的历史事件
+• event_id
+
+• world_id (外键)
+
+• era_id (外键，所属纪元)
+
+• event_name (事件名称)
+
+• event_type (类型：战争/灾难/发现/发明/条约/革命)
+
+• start_year (开始年份)
+
+• end_year (结束年份)
+
+• location_ids (发生地点ID列表)
+
+• primary_causes (主要原因)
+
+• key_participants (主要参与者)
+
+• event_sequence (事件过程)
+
+• immediate_outcomes (直接结果)
+
+• long_term_consequences (长期影响)
+
+• historical_significance (历史意义)
+
+• conflicting_accounts (矛盾记载)
+
+• description (事件详述)
+
+19. 历史人物表
+
+表名：historical_figures
+说明：历史上有记载的人物
+• figure_id
+
+• world_id (外键)
+
+• figure_name (人物名称)
+
+• birth_year (出生年份)
+
+• death_year (死亡年份)
+
+• birth_place_id (出生地)
+
+• death_place_id (死亡地)
+
+• primary_role (主要身份：统治者/将军/学者/艺术家)
+
+• civilization_id (所属文明)
+
+• social_class (社会阶级)
+
+• key_achievements (主要成就)
+
+• controversies (争议)
+
+• historical_legacy (历史遗产)
+
+• character_id (可选：关联到具体角色)
+
+• description (人物详述)
+
+20. 事件-人物关联表
+
+表名：event_participants
+说明：多对多，记录人物在事件中的角色
+• id
+
+• event_id (外键)
+
+• figure_id (外键)
+
+• role_type (角色：领导者/参与者/反对者/受害者/旁观者)
+
+• contribution_level (贡献程度)
+
+• motivation (动机)
+
+• outcome_for_participant (对参与者的结果)
+
+• description (参与详情)
+
+模块间关键关系总结
+
+核心外键关联
+
+1. 所有表 → worlds.world_id (每个设定都属于一个世界观)
+2. dimensions → worlds (一个世界有多个维度)
+3. regions → regions.parent_region_id (区域层级结构)
+4. regions → worlds (区域属于世界)
+5. civilizations → worlds (文明属于世界)
+6. civilization_regions → civilizations + regions (多对多)
+7. historical_events → historical_eras (事件属于纪元)
+8. event_participants → historical_events + historical_figures (多对多)
+9. common_skills → energy_systems (技能需要能量体系)
+10. power_level_systems → worlds (等级体系属于世界)
+
+可选关联
+
+• historical_figures.character_id → characters.character_id (如果历史人物在故事中出场)
+
+• celestial_bodies.parent_body_id → celestial_bodies.body_id (天体绕行关系)
+
+• regions.primary_civilization_id → civilizations.civilization_id (区域主要文明)
+
+层级结构实现
+
+1. 地理层级：regions.parent_region_id 自引用
+2. 维度嵌套：dimensions.parent_dimension_id 自引用
+3. 天体系统：celestial_bodies.parent_body_id 自引用
+4. 时间层级：historical_events.era_id → historical_eras
+
+多对多中间表
+
+1. civilization_regions (文明-区域)
+2. event_participants (事件-人物)
+3. 未来可扩展：region_resources (区域-资源)、civilization_conflicts (文明-冲突)等
+
+扩展性设计
+
+JSON字段的合理使用
+
+1. 存储列表/数组：terrain_features、natural_resources、core_values
+2. 存储键值对：level_framework、exchange_rates
+3. 存储复杂结构：map_coordinates、orbital_data
+
+预留扩展字段
+
+每个主表可包含：
+• custom_data (JSON，用户自定义扩展)
+
+• tags (标签数组，方便分类检索)
+
+• attachments (附件ID列表，关联文件表)
+
+• notes (作者私密备注)
+
+版本控制
+
+• 所有表都有version字段
+
+• 可考虑单独的world_versions表存储完整快照
+
+• 支持分支设定：branch_name字段
+

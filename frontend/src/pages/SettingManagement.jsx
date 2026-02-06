@@ -1,1493 +1,1012 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Table, Button, Modal, Form, Input, Select,
-  message, Popconfirm, Space, Card, Typography,
-  Menu
+  Layout, Menu, Card, Button, Table, Modal, Form, Input, Select,
+  message, Popconfirm, Space, Typography, Tabs, Row, Col, Tag,
+  Empty, Breadcrumb, Tooltip, Badge
 } from 'antd';
 import axios from 'axios';
 
 const { TextArea } = Input;
+const { TabPane } = Tabs;
+const { Content, Sider } = Layout;
 import {
   PlusOutlined, EditOutlined, DeleteOutlined,
-  UserOutlined, EnvironmentOutlined,
-  ToolOutlined, TeamOutlined,
-  RocketOutlined, LinkOutlined,
-  StarOutlined, DatabaseOutlined, ClockCircleOutlined,
-  LeftOutlined, RightOutlined
+  GlobalOutlined, UserOutlined, EnvironmentOutlined,
+  ToolOutlined, TeamOutlined, DatabaseOutlined,
+  SettingOutlined, HomeOutlined, ArrowLeftOutlined,
+  BookOutlined, FireOutlined, StarOutlined,
+  ApartmentOutlined, ClockCircleOutlined, ShoppingOutlined,
+  ExperimentOutlined, BugOutlined, NodeIndexOutlined,
+  EyeOutlined, SaveOutlined
 } from '@ant-design/icons';
 import {
-  characterApi, locationApi, itemApi, factionApi, relationshipApi, settingApi, aiApi
+  characterApi, locationApi, itemApi, factionApi,
+  relationshipApi, settingApi, aiApi, worldApi,
+  worldSettingApi, energySocietyApi
 } from '../services/api';
-import { modules } from '../config/moduleConfig.jsx';
+import LocationManagement from '../components/WorldSetting/LocationManagement';
+import FactionManagement from '../components/WorldSetting/FactionManagement';
+import ItemManagement from '../components/WorldSetting/ItemManagement';
+import TimelineManagement from '../components/WorldSetting/TimelineManagement';
+import EnergySystem from '../components/WorldSetting/EnergySystem';
+import SocietySystem from '../components/WorldSetting/SocietySystem';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
-const SettingManagement = ({ projectId }) => {
-  const [activeModule, setActiveModule] = useState('world');
-  const [activeSubModule, setActiveSubModule] = useState('worldSettings');
-  const [collapsed, setCollapsed] = useState(false);
-  const [settings, setSettings] = useState({
-    characters: [],
-    characterTraits: [],
-    characterAbilities: [],
-    characterRelationships: [],
-    locations: [],
-    locationStructures: [],
-    specialLocations: [],
-    items: [],
-    equipmentSystems: [],
-    specialItems: [],
-    factions: [],
-    factionStructures: [],
-    factionGoals: [],
-    relationships: [],
-    timelines: [],
-    worldSettings: [],
-    energySystems: [],
-    societyCultures: [],
-    histories: [],
-    abilities: [],
-    skills: [],
-    talents: [],
-    races: [],
-    creatures: [],
-    specialCreatures: [],
-    dataAssociations: []
-  });
+// 世界管理组件
+const WorldManagementPanel = ({ onSelectWorld }) => {
+  const [worlds, setWorlds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  
-  // 将 form 实例移到 Modal 内部的组件中
   const [isEditing, setIsEditing] = useState(false);
-  const [currentItem, setCurrentItem] = useState(null);
-  const [cancelToken, setCancelToken] = useState(null);
-  // AI设定生成状态
-  const [isAiModalVisible, setIsAiModalVisible] = useState(false);
-  const [aiFunction, setAiFunction] = useState('world');
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [aiResult, setAiResult] = useState('');
+  const [currentWorld, setCurrentWorld] = useState(null);
+  const [form] = Form.useForm();
 
-  // 加载设定数据
-  const loadSettings = async (type) => {
-    if (!projectId) return;
-    
-    // 取消之前的请求
-    if (cancelToken) {
-      cancelToken.cancel('请求已取消');
-    }
-    
-    // 创建新的取消令牌
-    const source = axios.CancelToken.source();
-    setCancelToken(source);
-    
+  const fetchWorlds = async () => {
     setLoading(true);
     try {
-      let response;
-      switch (type) {
-        case 'characters':
-          response = await characterApi.getCharacters(projectId, source.token);
-          setSettings(prev => ({ ...prev, characters: response.data }));
-          break;
-        case 'locations':
-          response = await locationApi.getLocations(projectId, source.token);
-          setSettings(prev => ({ ...prev, locations: response.data }));
-          break;
-        case 'items':
-          response = await itemApi.getItems(projectId, source.token);
-          setSettings(prev => ({ ...prev, items: response.data }));
-          break;
-        case 'factions':
-          response = await factionApi.getFactions(projectId, source.token);
-          setSettings(prev => ({ ...prev, factions: response.data }));
-          break;
-        case 'relationships':
-          response = await relationshipApi.getRelationships(projectId, source.token);
-          setSettings(prev => ({ ...prev, relationships: response.data }));
-          break;
-        case 'worldSettings':
-          response = await settingApi.getWorldSettings(projectId);
-          setSettings(prev => ({ ...prev, worldSettings: response.data }));
-          break;
-        case 'energySystems':
-          response = await settingApi.getEnergySystems(projectId);
-          setSettings(prev => ({ ...prev, energySystems: response.data }));
-          break;
-        case 'societyCultures':
-          response = await settingApi.getSocietyCultures(projectId);
-          setSettings(prev => ({ ...prev, societyCultures: response.data }));
-          break;
-        case 'histories':
-          response = await settingApi.getHistories(projectId);
-          setSettings(prev => ({ ...prev, histories: response.data }));
-          break;
-        case 'abilities':
-          response = await settingApi.getAbilities(projectId);
-          setSettings(prev => ({ ...prev, abilities: response.data }));
-          break;
-        case 'skills':
-          response = await settingApi.getSkills(projectId);
-          setSettings(prev => ({ ...prev, skills: response.data }));
-          break;
-        case 'talents':
-          response = await settingApi.getTalents(projectId);
-          setSettings(prev => ({ ...prev, talents: response.data }));
-          break;
-        case 'races':
-          response = await settingApi.getRaces(projectId);
-          setSettings(prev => ({ ...prev, races: response.data }));
-          break;
-        case 'creatures':
-          response = await settingApi.getCreatures(projectId);
-          setSettings(prev => ({ ...prev, creatures: response.data }));
-          break;
-        case 'specialCreatures':
-          response = await settingApi.getSpecialCreatures(projectId);
-          setSettings(prev => ({ ...prev, specialCreatures: response.data }));
-          break;
-        case 'timelines':
-          response = await settingApi.getTimelines(projectId);
-          setSettings(prev => ({ ...prev, timelines: response.data }));
-          break;
-        case 'characterTraits':
-          response = await settingApi.getCharacterTraits(projectId);
-          setSettings(prev => ({ ...prev, characterTraits: response.data }));
-          break;
-        case 'characterAbilities':
-          response = await settingApi.getCharacterAbilities(projectId);
-          setSettings(prev => ({ ...prev, characterAbilities: response.data }));
-          break;
-        case 'characterRelationships':
-          response = await settingApi.getCharacterRelationships(projectId);
-          setSettings(prev => ({ ...prev, characterRelationships: response.data }));
-          break;
-        case 'factionStructures':
-          response = await settingApi.getFactionStructures(projectId);
-          setSettings(prev => ({ ...prev, factionStructures: response.data }));
-          break;
-        case 'factionGoals':
-          response = await settingApi.getFactionGoals(projectId);
-          setSettings(prev => ({ ...prev, factionGoals: response.data }));
-          break;
-        case 'locationStructures':
-          response = await settingApi.getLocationStructures(projectId);
-          setSettings(prev => ({ ...prev, locationStructures: response.data }));
-          break;
-        case 'specialLocations':
-          response = await settingApi.getSpecialLocations(projectId);
-          setSettings(prev => ({ ...prev, specialLocations: response.data }));
-          break;
-        case 'equipmentSystems':
-          response = await settingApi.getEquipmentSystems(projectId);
-          setSettings(prev => ({ ...prev, equipmentSystems: response.data }));
-          break;
-        case 'specialItems':
-          response = await settingApi.getSpecialItems(projectId);
-          setSettings(prev => ({ ...prev, specialItems: response.data }));
-          break;
-        case 'dataAssociations':
-          response = await settingApi.getDataAssociations(projectId);
-          setSettings(prev => ({ ...prev, dataAssociations: response.data }));
-          break;
-        default:
-          break;
+      const response = await worldApi.getWorlds();
+      if (response.data.code === 200) {
+        setWorlds(response.data.data);
       }
     } catch (error) {
-      if (!axios.isCancel(error)) {
-        message.error('加载设定失败，请检查网络连接或后端服务是否正常');
-        console.error('Error loading settings:', error);
-      }
+      message.error('获取世界列表失败');
     } finally {
       setLoading(false);
     }
   };
 
-  // 当模块或子模块切换时加载数据
   useEffect(() => {
-    loadSettings(activeSubModule);
-  }, [activeSubModule, projectId]);
+    fetchWorlds();
+  }, []);
 
-  // 处理表单提交
-  const handleSubmit = async (values) => {
-    if (!projectId) {
-      message.error('请先选择项目');
-      return;
-    }
-    console.log('表单提交数据:', values);
-
+  const handleCreate = async (values) => {
     try {
-      const data = { ...values, project_id: projectId };
-      
-      switch (activeSubModule) {
-        case 'characters':
-          if (isEditing) {
-            await characterApi.updateCharacter(currentItem.id, data);
-          } else {
-            await characterApi.createCharacter(data);
-          }
-          break;
-        case 'locations':
-          if (isEditing) {
-            await locationApi.updateLocation(currentItem.id, data);
-          } else {
-            await locationApi.createLocation(data);
-          }
-          break;
-        case 'items':
-          if (isEditing) {
-            await itemApi.updateItem(currentItem.id, data);
-          } else {
-            await itemApi.createItem(data);
-          }
-          break;
-        case 'factions':
-          if (isEditing) {
-            await factionApi.updateFaction(currentItem.id, data);
-          } else {
-            await factionApi.createFaction(data);
-          }
-          break;
-        case 'relationships':
-          if (isEditing) {
-            await relationshipApi.updateRelationship(currentItem.id, data);
-          } else {
-            await relationshipApi.createRelationship(data);
-          }
-          break;
-        case 'worldSettings':
-          if (isEditing) {
-            await settingApi.updateWorldSetting(currentItem.id, data);
-          } else {
-            await settingApi.createWorldSetting(data);
-          }
-          break;
-        case 'energySystems':
-          if (isEditing) {
-            await settingApi.updateEnergySystem(currentItem.id, data);
-          } else {
-            await settingApi.createEnergySystem(data);
-          }
-          break;
-        case 'societyCultures':
-          if (isEditing) {
-            await settingApi.updateSocietyCulture(currentItem.id, data);
-          } else {
-            await settingApi.createSocietyCulture(data);
-          }
-          break;
-        case 'histories':
-          if (isEditing) {
-            await settingApi.updateHistory(currentItem.id, data);
-          } else {
-            await settingApi.createHistory(data);
-          }
-          break;
-        case 'abilities':
-          if (isEditing) {
-            await settingApi.updateAbility(currentItem.id, data);
-          } else {
-            await settingApi.createAbility(data);
-          }
-          break;
-        case 'skills':
-          if (isEditing) {
-            await settingApi.updateSkill(currentItem.id, data);
-          } else {
-            await settingApi.createSkill(data);
-          }
-          break;
-        case 'talents':
-          if (isEditing) {
-            await settingApi.updateTalent(currentItem.id, data);
-          } else {
-            await settingApi.createTalent(data);
-          }
-          break;
-        case 'races':
-          if (isEditing) {
-            await settingApi.updateRace(currentItem.id, data);
-          } else {
-            await settingApi.createRace(data);
-          }
-          break;
-        case 'creatures':
-          if (isEditing) {
-            await settingApi.updateCreature(currentItem.id, data);
-          } else {
-            await settingApi.createCreature(data);
-          }
-          break;
-        case 'specialCreatures':
-          if (isEditing) {
-            await settingApi.updateSpecialCreature(currentItem.id, data);
-          } else {
-            await settingApi.createSpecialCreature(data);
-          }
-          break;
-        case 'timelines':
-          if (isEditing) {
-            await settingApi.updateTimeline(currentItem.id, data);
-          } else {
-            await settingApi.createTimeline(data);
-          }
-          break;
-        case 'characterTraits':
-          if (isEditing) {
-            await settingApi.updateCharacterTrait(currentItem.id, data);
-          } else {
-            await settingApi.createCharacterTrait(data);
-          }
-          break;
-        case 'characterAbilities':
-          if (isEditing) {
-            await settingApi.updateCharacterAbility(currentItem.id, data);
-          } else {
-            await settingApi.createCharacterAbility(data);
-          }
-          break;
-        case 'characterRelationships':
-          if (isEditing) {
-            await settingApi.updateCharacterRelationship(currentItem.id, data);
-          } else {
-            await settingApi.createCharacterRelationship(data);
-          }
-          break;
-        case 'factionStructures':
-          if (isEditing) {
-            await settingApi.updateFactionStructure(currentItem.id, data);
-          } else {
-            await settingApi.createFactionStructure(data);
-          }
-          break;
-        case 'factionGoals':
-          if (isEditing) {
-            await settingApi.updateFactionGoal(currentItem.id, data);
-          } else {
-            await settingApi.createFactionGoal(data);
-          }
-          break;
-        case 'locationStructures':
-          if (isEditing) {
-            await settingApi.updateLocationStructure(currentItem.id, data);
-          } else {
-            await settingApi.createLocationStructure(data);
-          }
-          break;
-        case 'specialLocations':
-          if (isEditing) {
-            await settingApi.updateSpecialLocation(currentItem.id, data);
-          } else {
-            await settingApi.createSpecialLocation(data);
-          }
-          break;
-        case 'equipmentSystems':
-          if (isEditing) {
-            await settingApi.updateEquipmentSystem(currentItem.id, data);
-          } else {
-            await settingApi.createEquipmentSystem(data);
-          }
-          break;
-        case 'specialItems':
-          if (isEditing) {
-            await settingApi.updateSpecialItem(currentItem.id, data);
-          } else {
-            await settingApi.createSpecialItem(data);
-          }
-          break;
-        case 'dataAssociations':
-          if (isEditing) {
-            await settingApi.updateDataAssociation(currentItem.id, data);
-          } else {
-            await settingApi.createDataAssociation(data);
-          }
-          break;
-        default:
-          break;
+      if (isEditing && currentWorld) {
+        await worldApi.updateWorld(currentWorld.id, values);
+        message.success('世界更新成功');
+      } else {
+        await worldApi.createWorld(values);
+        message.success('世界创建成功');
       }
-      
-      message.success(isEditing ? '更新成功' : '创建成功');
       setIsModalVisible(false);
-      loadSettings(activeSubModule);
+      form.resetFields();
+      fetchWorlds();
     } catch (error) {
-      console.error('提交失败:', error);
       message.error(isEditing ? '更新失败' : '创建失败');
     }
   };
 
-  // 处理删除设定
   const handleDelete = async (id) => {
-    if (!projectId) {
-      message.error('请先选择项目');
-      return;
-    }
-
     try {
-      switch (activeSubModule) {
-        case 'characters':
-          await characterApi.deleteCharacter(id);
-          break;
-        case 'locations':
-          await locationApi.deleteLocation(id);
-          break;
-        case 'items':
-          await itemApi.deleteItem(id);
-          break;
-        case 'factions':
-          await factionApi.deleteFaction(id);
-          break;
-        case 'relationships':
-          await relationshipApi.deleteRelationship(id);
-          break;
-        case 'worldSettings':
-          await settingApi.deleteWorldSetting(id);
-          break;
-        case 'energySystems':
-          await settingApi.deleteEnergySystem(id);
-          break;
-        case 'societyCultures':
-          await settingApi.deleteSocietyCulture(id);
-          break;
-        case 'histories':
-          await settingApi.deleteHistory(id);
-          break;
-        case 'abilities':
-          await settingApi.deleteAbility(id);
-          break;
-        case 'skills':
-          await settingApi.deleteSkill(id);
-          break;
-        case 'talents':
-          await settingApi.deleteTalent(id);
-          break;
-        case 'races':
-          await settingApi.deleteRace(id);
-          break;
-        case 'creatures':
-          await settingApi.deleteCreature(id);
-          break;
-        case 'specialCreatures':
-          await settingApi.deleteSpecialCreature(id);
-          break;
-        case 'timelines':
-          await settingApi.deleteTimeline(id);
-          break;
-        case 'characterTraits':
-          await settingApi.deleteCharacterTrait(id);
-          break;
-        case 'characterAbilities':
-          await settingApi.deleteCharacterAbility(id);
-          break;
-        case 'characterRelationships':
-          await settingApi.deleteCharacterRelationship(id);
-          break;
-        case 'factionStructures':
-          await settingApi.deleteFactionStructure(id);
-          break;
-        case 'factionGoals':
-          await settingApi.deleteFactionGoal(id);
-          break;
-        case 'locationStructures':
-          await settingApi.deleteLocationStructure(id);
-          break;
-        case 'specialLocations':
-          await settingApi.deleteSpecialLocation(id);
-          break;
-        case 'equipmentSystems':
-          await settingApi.deleteEquipmentSystem(id);
-          break;
-        case 'specialItems':
-          await settingApi.deleteSpecialItem(id);
-          break;
-        case 'dataAssociations':
-          await settingApi.deleteDataAssociation(id);
-          break;
-        default:
-          break;
-      }
-      
+      await worldApi.deleteWorld(id);
       message.success('删除成功');
-      loadSettings(activeSubModule);
+      fetchWorlds();
     } catch (error) {
-      console.error('删除失败:', error);
       message.error('删除失败');
     }
   };
 
-  // 显示创建/编辑模态框
-  const showModal = (item = null) => {
-    if (item) {
-      setCurrentItem(item);
+  const showModal = (world = null) => {
+    if (world) {
+      setCurrentWorld(world);
       setIsEditing(true);
+      form.setFieldsValue(world);
     } else {
-      setCurrentItem(null);
+      setCurrentWorld(null);
       setIsEditing(false);
+      form.resetFields();
     }
     setIsModalVisible(true);
   };
 
-  // 渲染表单字段
-  const renderForm = () => {
-    const formItems = [];
-    
-    switch (activeSubModule) {
-      case 'characters':
-        formItems.push(
-          <Form.Item key="name" name="name" label="角色名称" rules={[{ required: true, message: '请输入角色名称' }]}>
-            <Input placeholder="请输入角色名称" />
-          </Form.Item>,
-          <Form.Item key="alternative_names" name="alternative_names" label="别名">
-            <Input placeholder="多个别名用逗号分隔" />
-          </Form.Item>,
-          <Form.Item key="role_type" name="role_type" label="角色类型" rules={[{ required: true, message: '请选择角色类型' }]}>
-            <Select placeholder="选择角色类型">
-              <Select.Option value="主角">主角</Select.Option>
-              <Select.Option value="配角">配角</Select.Option>
-              <Select.Option value="反派">反派</Select.Option>
-              <Select.Option value="龙套">龙套</Select.Option>
-            </Select>
-          </Form.Item>,
-          <Form.Item key="importance_level" name="importance_level" label="重要程度">
-            <Select placeholder="选择重要程度">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => (
-                <Select.Option key={level} value={level}>{level}级</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>,
-          <Form.Item key="race" name="race" label="种族">
-            <Input placeholder="请输入种族" />
-          </Form.Item>,
-          <Form.Item key="gender" name="gender" label="性别">
-            <Select placeholder="选择性别">
-              <Select.Option value="男">男</Select.Option>
-              <Select.Option value="女">女</Select.Option>
-              <Select.Option value="未知">未知</Select.Option>
-            </Select>
-          </Form.Item>,
-          <Form.Item key="age" name="age" label="年龄">
-            <Input type="number" placeholder="请输入年龄" />
-          </Form.Item>,
-          <Form.Item key="birth_date" name="birth_date" label="出生日期">
-            <Input placeholder="例如：1990年1月1日" />
-          </Form.Item>,
-          <Form.Item key="death_date" name="death_date" label="死亡日期">
-            <Input placeholder="例如：2020年12月31日（如适用）" />
-          </Form.Item>,
-          <Form.Item key="appearance" name="appearance" label="外貌描述">
-            <TextArea rows={3} placeholder="描述角色的外貌特征" />
-          </Form.Item>,
-          <Form.Item key="appearance_age" name="appearance_age" label="外貌年龄">
-            <Input type="number" placeholder="角色看起来多少岁" />
-          </Form.Item>,
-          <Form.Item key="distinguishing_features" name="distinguishing_features" label="显著特征">
-            <TextArea rows={2} placeholder="描述角色的显著特征，如疤痕、胎记等" />
-          </Form.Item>,
-          <Form.Item key="personality" name="personality" label="性格特点">
-            <TextArea rows={3} placeholder="描述角色的性格特点" />
-          </Form.Item>,
-          <Form.Item key="background" name="background" label="背景故事">
-            <TextArea rows={4} placeholder="描述角色的背景故事" />
-          </Form.Item>,
-          <Form.Item key="motivation" name="motivation" label="动机">
-            <TextArea rows={2} placeholder="描述角色的动机和目标" />
-          </Form.Item>,
-          <Form.Item key="current_location" name="current_location" label="当前位置">
-            <Input placeholder="角色当前所在位置" />
-          </Form.Item>,
-          <Form.Item key="status" name="status" label="状态">
-            <Select placeholder="选择状态">
-              <Select.Option value="存活">存活</Select.Option>
-              <Select.Option value="死亡">死亡</Select.Option>
-              <Select.Option value="失踪">失踪</Select.Option>
-              <Select.Option value="其他">其他</Select.Option>
-            </Select>
-          </Form.Item>
-        );
-        break;
-      case 'locations':
-        formItems.push(
-          <Form.Item key="name" name="name" label="地点名称" rules={[{ required: true, message: '请输入地点名称' }]}>
-            <Input placeholder="请输入地点名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="地点描述">
-            <TextArea rows={4} placeholder="请输入地点描述" />
-          </Form.Item>
-        );
-        break;
-      case 'items':
-        formItems.push(
-          <Form.Item key="name" name="name" label="物品名称" rules={[{ required: true, message: '请输入物品名称' }]}>
-            <Input placeholder="请输入物品名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="物品描述">
-            <TextArea rows={4} placeholder="请输入物品描述" />
-          </Form.Item>
-        );
-        break;
-      case 'factions':
-        formItems.push(
-          <Form.Item key="name" name="name" label="势力名称" rules={[{ required: true, message: '请输入势力名称' }]}>
-            <Input placeholder="请输入势力名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="势力描述">
-            <TextArea rows={4} placeholder="请输入势力描述" />
-          </Form.Item>
-        );
-        break;
-      case 'relationships':
-        formItems.push(
-          <Form.Item key="name" name="name" label="关系名称" rules={[{ required: true, message: '请输入关系名称' }]}>
-            <Input placeholder="请输入关系名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="关系描述">
-            <TextArea rows={4} placeholder="请输入关系描述" />
-          </Form.Item>
-        );
-        break;
-      case 'worldSettings':
-        formItems.push(
-          <Form.Item key="name" name="name" label="世界设定名称" rules={[{ required: true, message: '请输入世界设定名称' }]}>
-            <Input placeholder="请输入世界设定名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="世界设定描述">
-            <TextArea rows={4} placeholder="请输入世界设定描述" />
-          </Form.Item>
-        );
-        break;
-      case 'energySystems':
-        formItems.push(
-          <Form.Item key="name" name="name" label="能量体系名称" rules={[{ required: true, message: '请输入能量体系名称' }]}>
-            <Input placeholder="请输入能量体系名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="能量体系描述">
-            <TextArea rows={4} placeholder="请输入能量体系描述" />
-          </Form.Item>
-        );
-        break;
-      case 'societyCultures':
-        formItems.push(
-          <Form.Item key="name" name="name" label="社会文化名称" rules={[{ required: true, message: '请输入社会文化名称' }]}>
-            <Input placeholder="请输入社会文化名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="社会文化描述">
-            <TextArea rows={4} placeholder="请输入社会文化描述" />
-          </Form.Item>
-        );
-        break;
-      case 'histories':
-        formItems.push(
-          <Form.Item key="name" name="name" label="历史事件名称" rules={[{ required: true, message: '请输入历史事件名称' }]}>
-            <Input placeholder="请输入历史事件名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="历史事件描述">
-            <TextArea rows={4} placeholder="请输入历史事件描述" />
-          </Form.Item>
-        );
-        break;
-      case 'abilities':
-        formItems.push(
-          <Form.Item key="name" name="name" label="能力名称" rules={[{ required: true, message: '请输入能力名称' }]}>
-            <Input placeholder="请输入能力名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="能力描述">
-            <TextArea rows={4} placeholder="请输入能力描述" />
-          </Form.Item>
-        );
-        break;
-      case 'skills':
-        formItems.push(
-          <Form.Item key="name" name="name" label="技能名称" rules={[{ required: true, message: '请输入技能名称' }]}>
-            <Input placeholder="请输入技能名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="技能描述">
-            <TextArea rows={4} placeholder="请输入技能描述" />
-          </Form.Item>
-        );
-        break;
-      case 'talents':
-        formItems.push(
-          <Form.Item key="name" name="name" label="天赋名称" rules={[{ required: true, message: '请输入天赋名称' }]}>
-            <Input placeholder="请输入天赋名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="天赋描述">
-            <TextArea rows={4} placeholder="请输入天赋描述" />
-          </Form.Item>
-        );
-        break;
-      case 'races':
-        formItems.push(
-          <Form.Item key="name" name="name" label="种族名称" rules={[{ required: true, message: '请输入种族名称' }]}>
-            <Input placeholder="请输入种族名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="种族描述">
-            <TextArea rows={4} placeholder="请输入种族描述" />
-          </Form.Item>
-        );
-        break;
-      case 'creatures':
-        formItems.push(
-          <Form.Item key="name" name="name" label="生物名称" rules={[{ required: true, message: '请输入生物名称' }]}>
-            <Input placeholder="请输入生物名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="生物描述">
-            <TextArea rows={4} placeholder="请输入生物描述" />
-          </Form.Item>
-        );
-        break;
-      case 'specialCreatures':
-        formItems.push(
-          <Form.Item key="name" name="name" label="特殊生物名称" rules={[{ required: true, message: '请输入特殊生物名称' }]}>
-            <Input placeholder="请输入特殊生物名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="特殊生物描述">
-            <TextArea rows={4} placeholder="请输入特殊生物描述" />
-          </Form.Item>
-        );
-        break;
-      case 'timelines':
-        formItems.push(
-          <Form.Item key="name" name="name" label="时间线名称" rules={[{ required: true, message: '请输入时间线名称' }]}>
-            <Input placeholder="请输入时间线名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="时间线描述">
-            <TextArea rows={4} placeholder="请输入时间线描述" />
-          </Form.Item>
-        );
-        break;
-      case 'characterTraits':
-        formItems.push(
-          <Form.Item key="name" name="name" label="内在特质名称" rules={[{ required: true, message: '请输入内在特质名称' }]}>
-            <Input placeholder="请输入内在特质名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="内在特质描述">
-            <TextArea rows={4} placeholder="请输入内在特质描述" />
-          </Form.Item>
-        );
-        break;
-      case 'characterAbilities':
-        formItems.push(
-          <Form.Item key="name" name="name" label="能力装备名称" rules={[{ required: true, message: '请输入能力装备名称' }]}>
-            <Input placeholder="请输入能力装备名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="能力装备描述">
-            <TextArea rows={4} placeholder="请输入能力装备描述" />
-          </Form.Item>
-        );
-        break;
-      case 'characterRelationships':
-        formItems.push(
-          <Form.Item key="name" name="name" label="关系发展名称" rules={[{ required: true, message: '请输入关系发展名称' }]}>
-            <Input placeholder="请输入关系发展名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="关系发展描述">
-            <TextArea rows={4} placeholder="请输入关系发展描述" />
-          </Form.Item>
-        );
-        break;
-      case 'factionStructures':
-        formItems.push(
-          <Form.Item key="name" name="name" label="组织结构名称" rules={[{ required: true, message: '请输入组织结构名称' }]}>
-            <Input placeholder="请输入组织结构名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="组织结构描述">
-            <TextArea rows={4} placeholder="请输入组织结构描述" />
-          </Form.Item>
-        );
-        break;
-      case 'factionGoals':
-        formItems.push(
-          <Form.Item key="name" name="name" label="能力目标名称" rules={[{ required: true, message: '请输入能力目标名称' }]}>
-            <Input placeholder="请输入能力目标名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="能力目标描述">
-            <TextArea rows={4} placeholder="请输入能力目标描述" />
-          </Form.Item>
-        );
-        break;
-      case 'locationStructures':
-        formItems.push(
-          <Form.Item key="name" name="name" label="内部结构名称" rules={[{ required: true, message: '请输入内部结构名称' }]}>
-            <Input placeholder="请输入内部结构名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="内部结构描述">
-            <TextArea rows={4} placeholder="请输入内部结构描述" />
-          </Form.Item>
-        );
-        break;
-      case 'specialLocations':
-        formItems.push(
-          <Form.Item key="name" name="name" label="特殊地点名称" rules={[{ required: true, message: '请输入特殊地点名称' }]}>
-            <Input placeholder="请输入特殊地点名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="特殊地点描述">
-            <TextArea rows={4} placeholder="请输入特殊地点描述" />
-          </Form.Item>
-        );
-        break;
-      case 'equipmentSystems':
-        formItems.push(
-          <Form.Item key="name" name="name" label="装备系统名称" rules={[{ required: true, message: '请输入装备系统名称' }]}>
-            <Input placeholder="请输入装备系统名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="装备系统描述">
-            <TextArea rows={4} placeholder="请输入装备系统描述" />
-          </Form.Item>
-        );
-        break;
-      case 'specialItems':
-        formItems.push(
-          <Form.Item key="name" name="name" label="特殊物品名称" rules={[{ required: true, message: '请输入特殊物品名称' }]}>
-            <Input placeholder="请输入特殊物品名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="特殊物品描述">
-            <TextArea rows={4} placeholder="请输入特殊物品描述" />
-          </Form.Item>
-        );
-        break;
-      case 'dataAssociations':
-        formItems.push(
-          <Form.Item key="name" name="name" label="数据关联名称" rules={[{ required: true, message: '请输入数据关联名称' }]}>
-            <Input placeholder="请输入数据关联名称" />
-          </Form.Item>,
-          <Form.Item key="description" name="description" label="数据关联描述">
-            <TextArea rows={4} placeholder="请输入数据关联描述" />
-          </Form.Item>
-        );
-        break;
-      default:
-        break;
-    }
-    
-    return formItems;
-  };
-
-  // 创建一个内部组件来包含 Form，这样 form 实例就只会在 Modal 可见时创建
-  const SettingForm = ({ onSubmit }) => {
-    const [form] = Form.useForm();
-    
-    // 当模态框显示且 currentItem 存在时，设置表单字段的值
-    useEffect(() => {
-      if (isEditing && currentItem) {
-        form.setFieldsValue(currentItem);
-      } else {
-        form.resetFields();
-      }
-    }, [isEditing, currentItem, form]);
-    
-    return (
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onSubmit}
-      >
-        {renderForm()}
-
-        <Form.Item style={{ textAlign: 'right' }}>
-          <Button onClick={() => setIsModalVisible(false)} style={{ marginRight: '8px' }}>
-            取消
-          </Button>
-          <Button type="primary" htmlType="submit">
-            {isEditing ? '更新' : '创建'}
-          </Button>
-        </Form.Item>
-      </Form>
-    );
-  };
-
-  // 渲染表格列
-  const getColumns = (type) => {
-    let columns = [
-      {
-        title: '名称',
-        dataIndex: 'name',
-        key: 'name',
-        width: 200,
+  const columns = [
+    {
+      title: '世界名称',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record) => (
+        <Space>
+          <GlobalOutlined style={{ color: '#1890ff' }} />
+          <a onClick={() => onSelectWorld(record)}>{text}</a>
+        </Space>
+      ),
+    },
+    {
+      title: '类型',
+      dataIndex: 'world_type',
+      key: 'world_type',
+      render: (type) => {
+        const typeMap = {
+          'fantasy': '奇幻',
+          'scifi': '科幻',
+          'modern': '现代',
+          'historical': '历史',
+          'other': '其他'
+        };
+        return <Tag color="blue">{typeMap[type] || type}</Tag>;
       },
-      {
-        title: '描述',
-        dataIndex: 'description',
-        key: 'description',
-        ellipsis: true,
-        width: 400,
-      },
-      {
-        title: '操作',
-        key: 'action',
-        width: 150,
-        fixed: 'right',
-        render: (_, record) => (
-          <Space size="middle">
-            <Button icon={<EditOutlined />} onClick={() => showModal(record)} />
-            <Popconfirm title="确定要删除这个设定吗？" onConfirm={() => handleDelete(record.id)}>
-              <Button icon={<DeleteOutlined />} danger />
-            </Popconfirm>
+    },
+    {
+      title: '描述',
+      dataIndex: 'description',
+      key: 'description',
+      ellipsis: true,
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (date) => new Date(date).toLocaleDateString(),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 200,
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="primary"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => onSelectWorld(record)}
+          >
+            进入
+          </Button>
+          <Button
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => showModal(record)}
+          />
+          <Popconfirm
+            title="确定要删除这个世界吗？"
+            onConfirm={() => handleDelete(record.id)}
+          >
+            <Button size="small" icon={<DeleteOutlined />} danger />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <Card
+        title={
+          <Space>
+            <GlobalOutlined />
+            <span>世界观管理</span>
           </Space>
-        ),
-      },
-    ];
+        }
+        extra={
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>
+            创建新世界
+          </Button>
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={worlds}
+          rowKey="id"
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+        />
+      </Card>
 
-    // 角色模块的特殊列
-    if (type === 'characters') {
-      columns = [
-        {
-          title: '角色名称',
-          dataIndex: 'name',
-          key: 'name',
-          width: 150,
-        },
-        {
-          title: '角色类型',
-          dataIndex: 'role_type',
-          key: 'role_type',
-          width: 100,
-          render: (type) => {
-            const colorMap = {
-              '主角': 'gold',
-              '配角': 'blue',
-              '反派': 'red',
-              '龙套': 'default'
-            };
-            return <span style={{ color: colorMap[type] || 'default' }}>{type}</span>;
-          },
-        },
-        {
-          title: '重要程度',
-          dataIndex: 'importance_level',
-          key: 'importance_level',
-          width: 100,
-          render: (level) => (
-            <span style={{ 
-              color: level >= 8 ? '#ff4d4f' : level >= 5 ? '#faad14' : '#52c41a',
-              fontWeight: 'bold'
-            }}>
-              {level}级
-            </span>
-          ),
-        },
-        {
-          title: '种族',
-          dataIndex: 'race',
-          key: 'race',
-          width: 100,
-        },
-        {
-          title: '性别',
-          dataIndex: 'gender',
-          key: 'gender',
-          width: 80,
-        },
-        {
-          title: '年龄',
-          dataIndex: 'age',
-          key: 'age',
-          width: 80,
-        },
-        {
-          title: '状态',
-          dataIndex: 'status',
-          key: 'status',
-          width: 80,
-          render: (status) => {
-            const colorMap = {
-              '存活': 'green',
-              '死亡': 'red',
-              '失踪': 'orange',
-              '其他': 'default'
-            };
-            return <span style={{ color: colorMap[status] || 'default' }}>{status}</span>;
-          },
-        },
-        {
-          title: '当前位置',
-          dataIndex: 'current_location',
-          key: 'current_location',
-          width: 150,
-          ellipsis: true,
-        },
-        {
-          title: '操作',
-          key: 'action',
-          width: 150,
-          fixed: 'right',
-          render: (_, record) => (
-            <Space size="middle">
-              <Button icon={<EditOutlined />} onClick={() => showModal(record)} title="编辑" />
-              <Popconfirm title="确定要删除这个角色吗？" onConfirm={() => handleDelete(record.id)}>
-                <Button icon={<DeleteOutlined />} danger title="删除" />
-              </Popconfirm>
-            </Space>
-          ),
-        },
-      ];
-    }
+      <Modal
+        title={isEditing ? '编辑世界' : '创建世界'}
+        open={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        onOk={() => form.submit()}
+        width={600}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleCreate}
+        >
+          <Form.Item
+            name="name"
+            label="世界名称"
+            rules={[{ required: true, message: '请输入世界名称' }]}
+          >
+            <Input placeholder="例如：艾泽拉斯、中土世界" />
+          </Form.Item>
+          <Form.Item
+            name="world_type"
+            label="世界类型"
+            rules={[{ required: true, message: '请选择世界类型' }]}
+          >
+            <Select placeholder="选择世界类型">
+              <Select.Option value="fantasy">奇幻</Select.Option>
+              <Select.Option value="scifi">科幻</Select.Option>
+              <Select.Option value="modern">现代</Select.Option>
+              <Select.Option value="historical">历史</Select.Option>
+              <Select.Option value="other">其他</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="世界描述"
+          >
+            <TextArea rows={4} placeholder="描述这个世界的核心设定..." />
+          </Form.Item>
+          <Form.Item
+            name="core_rules"
+            label="核心规则"
+          >
+            <TextArea rows={3} placeholder="描述世界的核心规则，如魔法体系、物理法则等" />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+};
 
-    return columns;
+// 世界详情组件
+const WorldDetailPanel = ({ world, onBack, onEditWorld }) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isSettingModalVisible, setIsSettingModalVisible] = useState(false);
+  const [editForm] = Form.useForm();
+  const [settingForm] = Form.useForm();
+
+  if (!world) return <Empty description="请选择或创建一个世界" />;
+
+  const breadcrumbItems = [
+    {
+      title: <a onClick={onBack}><ArrowLeftOutlined /> 返回世界列表</a>,
+    },
+    {
+      title: world.name,
+    },
+  ];
+
+  const handleEditWorld = () => {
+    editForm.setFieldsValue({
+      name: world.name,
+      world_type: world.world_type,
+      description: world.description,
+      core_rules: world.core_rules,
+    });
+    setIsEditModalVisible(true);
   };
 
-  // 获取当前标签页的数据
-  const getCurrentData = () => {
-    return settings[activeSubModule] || [];
-  };
-
-  // 处理模块切换
-  const handleModuleChange = (moduleKey) => {
-    setActiveModule(moduleKey);
-    // 获取该模块的第一个子模块
-    const module = modules.find(m => m.key === moduleKey);
-    if (module && module.subModules.length > 0) {
-      setActiveSubModule(module.subModules[0].key);
-    }
-  };
-
-  // 处理子模块切换
-  const handleSubModuleChange = (subModuleKey) => {
-    setActiveSubModule(subModuleKey);
-  };
-
-  // 处理AI生成
-  const handleAiGenerate = async () => {
-    if (!aiPrompt) {
-      message.error('请输入创意提示');
-      return;
-    }
-    
-    setIsAiLoading(true);
-    setAiResult('');
-    
+  const handleEditSubmit = async (values) => {
     try {
-      let messages = [];
-      let maxTokens = 1000;
-      
-      switch (aiFunction) {
-        case 'world':
-          messages = [
-            {
-              'role': 'system',
-              'content': '你是一位专业的小说世界观设定师，擅长构建丰富、独特的世界观。'
-            },
-            {
-              'role': 'user',
-              'content': `请根据以下创意生成一个详细的小说世界观设定，包括但不限于：世界名称、地理环境、历史背景、社会结构、能量体系、主要种族等。\n\n创意：${aiPrompt}`
-            }
-          ];
-          maxTokens = 1500;
+      await worldApi.updateWorld(world.id, values);
+      message.success('世界更新成功');
+      setIsEditModalVisible(false);
+      if (onEditWorld) onEditWorld();
+    } catch (error) {
+      message.error('更新世界失败');
+    }
+  };
+
+  const handleAddSetting = () => {
+    settingForm.resetFields();
+    setIsSettingModalVisible(true);
+  };
+
+  const handleSettingSubmit = async (values) => {
+    try {
+      const { setting_type, ...data } = values;
+      data.world_id = world.id;
+
+      switch (setting_type) {
+        case 'dimension':
+          await worldSettingApi.createDimension(data);
           break;
-        case 'character':
-          messages = [
-            {
-              'role': 'system',
-              'content': '你是一位专业的小说角色设定师，擅长塑造立体、有深度的角色。'
-            },
-            {
-              'role': 'user',
-              'content': `请根据以下创意生成一个详细的小说角色设定，包括但不限于：角色名称、性别、年龄、外貌特征、性格特点、背景故事、能力技能等。\n\n创意：${aiPrompt}`
-            }
-          ];
-          maxTokens = 1200;
+        case 'region':
+          await worldSettingApi.createRegion(data);
           break;
-        case 'energy':
-          messages = [
-            {
-              'role': 'system',
-              'content': '你是一位专业的小说能量体系设定师，擅长设计独特、平衡的能量系统。'
-            },
-            {
-              'role': 'user',
-              'content': `请根据以下创意生成一个详细的小说能量体系设定，包括但不限于：能量名称、来源、等级划分、使用方法、限制条件等。\n\n创意：${aiPrompt}`
-            }
-          ];
-          maxTokens = 1200;
+        case 'celestial_body':
+          await worldSettingApi.createCelestialBody(data);
           break;
-        case 'society':
-          messages = [
-            {
-              'role': 'system',
-              'content': '你是一位专业的小说社会文化设定师，擅长构建丰富、真实的社会体系。'
-            },
-            {
-              'role': 'user',
-              'content': `请根据以下创意生成一个详细的小说社会文化设定，包括但不限于：社会结构、风俗习惯、宗教信仰、教育体系、艺术形式等。\n\n创意：${aiPrompt}`
-            }
-          ];
-          maxTokens = 1200;
+        case 'natural_law':
+          await worldSettingApi.createNaturalLaw(data);
           break;
-        case 'history':
-          messages = [
-            {
-              'role': 'system',
-              'content': '你是一位专业的小说历史事件设定师，擅长设计有意义、影响深远的历史事件。'
-            },
-            {
-              'role': 'user',
-              'content': `请根据以下创意生成一个详细的小说历史事件设定，包括但不限于：事件名称、发生时间、地点、参与方、起因、经过、结果、影响等。\n\n创意：${aiPrompt}`
-            }
-          ];
-          maxTokens = 1200;
+        case 'energy_system':
+          await energySocietyApi.createEnergySystem(data);
           break;
-        case 'ability':
-          messages = [
-            {
-              'role': 'system',
-              'content': '你是一位专业的小说能力设定师，擅长设计独特、有创意的能力。'
-            },
-            {
-              'role': 'user',
-              'content': `请根据以下创意生成一个详细的小说能力设定，包括但不限于：能力名称、等级、类型、使用方法、效果、限制条件等。\n\n创意：${aiPrompt}`
-            }
-          ];
-          maxTokens = 1200;
+        case 'power_level':
+          await energySocietyApi.createPowerLevel(data);
           break;
-        case 'race':
-          messages = [
-            {
-              'role': 'system',
-              'content': '你是一位专业的小说种族设定师，擅长设计独特、丰富的种族特性。'
-            },
-            {
-              'role': 'user',
-              'content': `请根据以下创意生成一个详细的小说种族设定，包括但不限于：种族名称、起源传说、分布区域、社会形态、生理特性、特殊能力、弱点限制等。\n\n创意：${aiPrompt}`
-            }
-          ];
-          maxTokens = 1500;
-          break;
-        case 'creature':
-          messages = [
-            {
-              'role': 'system',
-              'content': '你是一位专业的小说生物设定师，擅长设计独特、有趣的生物特性。'
-            },
-            {
-              'role': 'user',
-              'content': `请根据以下创意生成一个详细的小说生物设定，包括但不限于：生物名称、生物类型、栖息环境、行为习性、特殊能力、弱点天敌、威胁等级等。\n\n创意：${aiPrompt}`
-            }
-          ];
-          maxTokens = 1200;
-          break;
-        case 'timeline':
-          messages = [
-            {
-              'role': 'system',
-              'content': '你是一位专业的小说时间线设定师，擅长设计连贯、有意义的时间脉络。'
-            },
-            {
-              'role': 'user',
-              'content': `请根据以下创意生成一个详细的小说时间线设定，包括但不限于：时间线名称、开始时间、结束时间、关键事件、历史意义、影响等。\n\n创意：${aiPrompt}`
-            }
-          ];
-          maxTokens = 1500;
+        case 'civilization':
+          await energySocietyApi.createCivilization(data);
           break;
         default:
-          break;
+          message.error('未知的设定类型');
+          return;
       }
-      
-      // 使用流式输出
-      const response = await aiApi.streamChatCompletion({
-        messages: messages,
-        max_tokens: maxTokens,
-        temperature: 0.7
-      });
-      
-      // 处理流式响应
-      let partialResult = '';
-      
-      console.log('响应数据类型:', typeof response.data);
-      console.log('响应数据:', response.data);
-      console.log('响应完整对象:', response);
-      
-      // 检查response.data的类型
-      if (response.data) {
-        if (typeof response.data === 'object') {
-          console.log('响应数据是对象，检查是否有getReader方法:', typeof response.data.getReader);
-          console.log('响应数据是否有on方法:', typeof response.data.on);
-          
-          if (response.data.getReader) {
-            // 如果是ReadableStream对象
-            console.log('处理ReadableStream对象');
-            const reader = response.data.getReader();
-            
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) {
-                console.log('ReadableStream读取完成');
-                break;
-              }
-              
-              // 解析SSE数据
-              const chunk = new TextDecoder('utf-8').decode(value);
-              console.log('ReadableStream读取到数据:', chunk);
-              const lines = chunk.split('\n');
-              
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.substring(6);
-                  if (data === '[DONE]') {
-                    console.log('ReadableStream遇到[DONE]');
-                    break;
-                  }
-                  try {
-                    const chunkData = JSON.parse(data);
-                    console.log('ReadableStream解析到数据:', chunkData);
-                    if (chunkData.content) {
-                      partialResult += chunkData.content;
-                      setAiResult(partialResult);
-                    }
-                  } catch (error) {
-                    console.error('解析流式响应失败:', error);
-                  }
-                }
-              }
-            }
-          } else if (typeof response.data.on === 'function') {
-            // 如果是Node.js风格的流
-            console.log('处理Node.js风格的流');
-            response.data.on('data', (chunk) => {
-              const chunkStr = chunk.toString('utf-8');
-              console.log('Node.js流接收到数据:', chunkStr);
-              const lines = chunkStr.split('\n');
-              
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.substring(6);
-                  if (data === '[DONE]') {
-                    console.log('Node.js流遇到[DONE]');
-                    return;
-                  }
-                  try {
-                    const chunkData = JSON.parse(data);
-                    console.log('Node.js流解析到数据:', chunkData);
-                    if (chunkData.content) {
-                      partialResult += chunkData.content;
-                      setAiResult(partialResult);
-                    }
-                  } catch (error) {
-                    console.error('解析流式响应失败:', error);
-                  }
-                }
-              }
-            });
 
-            response.data.on('end', () => {
-              console.log('Node.js流结束');
-            });
+      message.success('设定添加成功');
+      setIsSettingModalVisible(false);
+      settingForm.resetFields();
 
-            response.data.on('error', (error) => {
-              console.error('Node.js流错误:', error);
-              message.error('生成过程中出现错误');
-            });
-          } else {
-            // 如果是普通对象
-            console.log('处理普通对象响应');
-            if (response.data.content) {
-              setAiResult(response.data.content);
-            }
-          }
-        } else if (typeof response.data === 'string') {
-          // 如果是字符串
-          console.log('处理字符串响应');
-          setAiResult(response.data);
-        }
+      // 刷新对应标签页的数据
+      const tabMap = {
+        'dimension': 'worlds',
+        'region': 'worlds',
+        'celestial_body': 'worlds',
+        'natural_law': 'worlds',
+        'energy_system': 'energy',
+        'power_level': 'energy',
+        'civilization': 'society',
+      };
+      const targetTab = tabMap[setting_type];
+      if (targetTab && activeTab !== targetTab) {
+        setActiveTab(targetTab);
       }
     } catch (error) {
-      console.error('AI生成错误:', error);
-      message.error('生成失败，请检查网络连接或重试');
-    } finally {
-      setIsAiLoading(false);
+      message.error('添加设定失败: ' + (error.response?.data?.message || error.message));
     }
   };
 
-  // 应用AI生成结果到表单
-  const handleApplyAiResult = () => {
-    setIsAiModalVisible(false);
-    // 这里可以根据需要解析aiResult并填充到表单
-    message.success('AI生成结果已应用');
+  // 根据设定类型获取对应的表单字段
+  const getSettingTypeFields = (type) => {
+    switch (type) {
+      case 'dimension':
+        return (
+          <>
+            <Form.Item name="dimension_type" label="维度类型" rules={[{ required: true }]} initialValue="主维度">
+              <Select>
+                <Select.Option value="主维度">主维度</Select.Option>
+                <Select.Option value="平行维度">平行维度</Select.Option>
+                <Select.Option value="子维度">子维度</Select.Option>
+                <Select.Option value="口袋维度">口袋维度</Select.Option>
+                <Select.Option value="虚空">虚空</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="access_method" label="访问方式">
+              <TextArea rows={2} placeholder="如何进入这个维度？" />
+            </Form.Item>
+            <Form.Item name="time_flow_ratio" label="时间流速比例" initialValue={1.0}>
+              <Input type="number" step={0.1} placeholder="相对于主维度的时间流速" />
+            </Form.Item>
+            <Form.Item name="physical_properties" label="物理特性">
+              <TextArea rows={2} placeholder="该维度的物理法则特点" />
+            </Form.Item>
+          </>
+        );
+      case 'region':
+        return (
+          <>
+            <Form.Item name="region_type" label="区域类型" rules={[{ required: true }]} initialValue="城市">
+              <Select>
+                <Select.Option value="大陆">大陆</Select.Option>
+                <Select.Option value="国家">国家</Select.Option>
+                <Select.Option value="城市">城市</Select.Option>
+                <Select.Option value="村庄">村庄</Select.Option>
+                <Select.Option value="森林">森林</Select.Option>
+                <Select.Option value="山脉">山脉</Select.Option>
+                <Select.Option value="水域">水域</Select.Option>
+                <Select.Option value="地下城">地下城</Select.Option>
+                <Select.Option value="特殊">特殊</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="geography" label="地理特征">
+              <TextArea rows={2} placeholder="地形、气候、资源等" />
+            </Form.Item>
+            <Form.Item name="climate" label="气候类型">
+              <Input placeholder="例如：温带季风气候" />
+            </Form.Item>
+          </>
+        );
+      case 'celestial_body':
+        return (
+          <>
+            <Form.Item name="body_type" label="天体类型" rules={[{ required: true }]} initialValue="行星">
+              <Select>
+                <Select.Option value="恒星">恒星</Select.Option>
+                <Select.Option value="行星">行星</Select.Option>
+                <Select.Option value="卫星">卫星</Select.Option>
+                <Select.Option value="小行星">小行星</Select.Option>
+                <Select.Option value="彗星">彗星</Select.Option>
+                <Select.Option value="星云">星云</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="properties" label="天体属性">
+              <TextArea rows={2} placeholder="大小、质量、轨道周期等" />
+            </Form.Item>
+            <Form.Item name="influence" label="对世界的影响">
+              <TextArea rows={2} placeholder="例如：魔力潮汐、季节变化" />
+            </Form.Item>
+          </>
+        );
+      case 'natural_law':
+        return (
+          <>
+            <Form.Item name="law_type" label="法则类型" rules={[{ required: true }]} initialValue="物理法则">
+              <Select>
+                <Select.Option value="物理法则">物理法则</Select.Option>
+                <Select.Option value="魔法法则">魔法法则</Select.Option>
+                <Select.Option value="生命法则">生命法则</Select.Option>
+                <Select.Option value="时间法则">时间法则</Select.Option>
+                <Select.Option value="空间法则">空间法则</Select.Option>
+                <Select.Option value="因果法则">因果法则</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="scope" label="作用范围">
+              <Input placeholder="例如：全宇宙、主物质界" />
+            </Form.Item>
+            <Form.Item name="exceptions" label="例外情况">
+              <TextArea rows={2} placeholder="该法则的例外或限制" />
+            </Form.Item>
+          </>
+        );
+      case 'energy_system':
+        return (
+          <>
+            <Form.Item name="system_type" label="体系类型" rules={[{ required: true }]} initialValue="魔法">
+              <Select>
+                <Select.Option value="魔法">魔法</Select.Option>
+                <Select.Option value="斗气">斗气</Select.Option>
+                <Select.Option value="真气">真气</Select.Option>
+                <Select.Option value="灵力">灵力</Select.Option>
+                <Select.Option value="科技">科技</Select.Option>
+                <Select.Option value="其他">其他</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="core_principles" label="核心原理">
+              <TextArea rows={3} placeholder="描述这个能量体系的核心原理" />
+            </Form.Item>
+            <Form.Item name="usage_restrictions" label="使用限制">
+              <TextArea rows={2} placeholder="使用该体系的限制条件" />
+            </Form.Item>
+          </>
+        );
+      case 'power_level':
+        return (
+          <>
+            <Form.Item name="level_number" label="等级序号" rules={[{ required: true }]}>
+              <Input type="number" placeholder="例如：1, 2, 3..." />
+            </Form.Item>
+            <Form.Item name="requirements" label="晋升条件">
+              <TextArea rows={3} placeholder="达到该等级需要满足的条件" />
+            </Form.Item>
+            <Form.Item name="abilities" label="获得能力">
+              <TextArea rows={3} placeholder="该等级获得的能力" />
+            </Form.Item>
+          </>
+        );
+      case 'civilization':
+        return (
+          <>
+            <Form.Item name="civilization_type" label="文明类型" rules={[{ required: true }]} initialValue="农耕文明">
+              <Select>
+                <Select.Option value="原始文明">原始文明</Select.Option>
+                <Select.Option value="农耕文明">农耕文明</Select.Option>
+                <Select.Option value="商业文明">商业文明</Select.Option>
+                <Select.Option value="工业文明">工业文明</Select.Option>
+                <Select.Option value="魔法文明">魔法文明</Select.Option>
+                <Select.Option value="科技文明">科技文明</Select.Option>
+                <Select.Option value="混合文明">混合文明</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="tech_level" label="技术水平" initialValue="中世纪">
+              <Select>
+                <Select.Option value="原始时代">原始时代</Select.Option>
+                <Select.Option value="古代">古代</Select.Option>
+                <Select.Option value="中世纪">中世纪</Select.Option>
+                <Select.Option value="文艺复兴">文艺复兴</Select.Option>
+                <Select.Option value="工业时代">工业时代</Select.Option>
+                <Select.Option value="现代">现代</Select.Option>
+                <Select.Option value="未来">未来</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="population_scale" label="人口规模">
+              <Input placeholder="例如：百万级、千万级" />
+            </Form.Item>
+          </>
+        );
+      default:
+        return null;
+    }
   };
 
-  // 获取当前模块的子模块
-  const getCurrentSubModules = () => {
-    const module = modules.find(m => m.key === activeModule);
-    return module ? module.subModules : [];
+  const tabItems = [
+    {
+      key: 'overview',
+      label: '概览',
+      children: (
+        <Row gutter={16}>
+          <Col span={16}>
+            <Card title="世界描述" size="small" style={{ marginBottom: 16 }}>
+              <Text>{world.description || '暂无描述'}</Text>
+            </Card>
+            <Card title="核心规则" size="small">
+              <Text>{world.core_rules || '暂无核心规则设定'}</Text>
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card title="统计信息" size="small">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <UserOutlined style={{ fontSize: 24, color: '#1890ff' }} />
+                  <div style={{ marginTop: 8 }}>角色</div>
+                  <div style={{ fontSize: 20, fontWeight: 'bold' }}>0</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <EnvironmentOutlined style={{ fontSize: 24, color: '#52c41a' }} />
+                  <div style={{ marginTop: 8 }}>地点</div>
+                  <div style={{ fontSize: 20, fontWeight: 'bold' }}>0</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <TeamOutlined style={{ fontSize: 24, color: '#faad14' }} />
+                  <div style={{ marginTop: 8 }}>势力</div>
+                  <div style={{ fontSize: 20, fontWeight: 'bold' }}>0</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <ToolOutlined style={{ fontSize: 24, color: '#722ed1' }} />
+                  <div style={{ marginTop: 8 }}>物品</div>
+                  <div style={{ fontSize: 20, fontWeight: 'bold' }}>0</div>
+                </div>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+      ),
+    },
+    {
+      key: 'characters',
+      label: '角色库',
+      children: <CharacterManagementPanel worldId={world.id} />,
+    },
+    {
+      key: 'locations',
+      label: '地点场景',
+      children: <LocationManagement worldId={world.id} />,
+    },
+    {
+      key: 'factions',
+      label: '组织势力',
+      children: <FactionManagement worldId={world.id} />,
+    },
+    {
+      key: 'items',
+      label: '物品资源',
+      children: <ItemManagement worldId={world.id} />,
+    },
+    {
+      key: 'timeline',
+      label: '时间线',
+      children: <TimelineManagement worldId={world.id} />,
+    },
+    {
+      key: 'energy',
+      label: '能量体系',
+      children: <EnergySystem worldId={world.id} />,
+    },
+    {
+      key: 'society',
+      label: '社会体系',
+      children: <SocietySystem worldId={world.id} />,
+    },
+  ];
+
+  return (
+    <div>
+      <Breadcrumb style={{ marginBottom: 16 }} items={breadcrumbItems} />
+
+      <Card>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+          <div>
+            <Title level={3} style={{ marginBottom: 8 }}>
+              <GlobalOutlined style={{ color: '#1890ff', marginRight: 8 }} />
+              {world.name}
+            </Title>
+            <Space>
+              <Tag color="blue">
+                {{
+                  'fantasy': '奇幻',
+                  'scifi': '科幻',
+                  'modern': '现代',
+                  'historical': '历史',
+                  'other': '其他'
+                }[world.world_type] || world.world_type}
+              </Tag>
+              <Text type="secondary">创建于 {new Date(world.created_at).toLocaleDateString()}</Text>
+            </Space>
+          </div>
+          <Space>
+            <Button icon={<EditOutlined />} onClick={handleEditWorld}>编辑世界</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddSetting}>添加设定</Button>
+          </Space>
+        </div>
+
+        <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
+      </Card>
+
+      {/* 编辑世界模态框 */}
+      <Modal
+        title="编辑世界"
+        open={isEditModalVisible}
+        onCancel={() => setIsEditModalVisible(false)}
+        onOk={() => editForm.submit()}
+      >
+        <Form form={editForm} layout="vertical" onFinish={handleEditSubmit}>
+          <Form.Item name="name" label="世界名称" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="world_type" label="世界类型" rules={[{ required: true }]}>
+            <Select>
+              <Select.Option value="fantasy">奇幻</Select.Option>
+              <Select.Option value="scifi">科幻</Select.Option>
+              <Select.Option value="modern">现代</Select.Option>
+              <Select.Option value="historical">历史</Select.Option>
+              <Select.Option value="other">其他</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="description" label="世界描述">
+            <TextArea rows={4} />
+          </Form.Item>
+          <Form.Item name="core_rules" label="核心规则">
+            <TextArea rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 添加设定模态框 */}
+      <Modal
+        title="添加设定"
+        open={isSettingModalVisible}
+        onCancel={() => {
+          setIsSettingModalVisible(false);
+          settingForm.resetFields();
+        }}
+        onOk={() => settingForm.submit()}
+        width={700}
+      >
+        <Form form={settingForm} layout="vertical" onFinish={handleSettingSubmit}>
+          <Form.Item name="setting_type" label="设定类型" rules={[{ required: true }]}>
+            <Select 
+              placeholder="选择设定类型"
+              onChange={() => {
+                // 清除之前类型的特定字段，保留名称和描述
+                const currentValues = settingForm.getFieldsValue();
+                settingForm.resetFields();
+                settingForm.setFieldsValue({
+                  setting_type: currentValues.setting_type,
+                  name: currentValues.name,
+                  description: currentValues.description,
+                });
+              }}
+            >
+              <Select.Option value="dimension">维度/位面</Select.Option>
+              <Select.Option value="region">地理区域</Select.Option>
+              <Select.Option value="celestial_body">天体</Select.Option>
+              <Select.Option value="natural_law">自然法则</Select.Option>
+              <Select.Option value="energy_system">能量体系</Select.Option>
+              <Select.Option value="power_level">力量等级</Select.Option>
+              <Select.Option value="civilization">文明</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="name" label="设定名称" rules={[{ required: true }]}>
+            <Input placeholder="输入设定名称" />
+          </Form.Item>
+          <Form.Item name="description" label="设定描述">
+            <TextArea rows={3} placeholder="描述这个设定的详细信息..." />
+          </Form.Item>
+          
+          {/* 动态显示对应类型的表单字段 */}
+          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.setting_type !== curr.setting_type}>
+            {({ getFieldValue }) => {
+              const settingType = getFieldValue('setting_type');
+              return settingType ? getSettingTypeFields(settingType) : null;
+            }}
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+};
+
+// 角色管理组件
+const CharacterManagementPanel = ({ worldId }) => {
+  const [characters, setCharacters] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingCharacter, setEditingCharacter] = useState(null);
+  const [form] = Form.useForm();
+
+  // 获取角色列表
+  const fetchCharacters = async () => {
+    setLoading(true);
+    try {
+      const response = await characterApi.getCharacters(null, worldId);
+      setCharacters(response.data || []);
+    } catch (error) {
+      message.error('获取角色列表失败');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 获取当前子模块的信息
-  const getCurrentSubModuleInfo = () => {
-    const module = modules.find(m => m.key === activeModule);
-    if (!module) return null;
-    return module.subModules.find(sm => sm.key === activeSubModule);
+  useEffect(() => {
+    if (worldId) {
+      fetchCharacters();
+    }
+  }, [worldId]);
+
+  // 打开创建/编辑模态框
+  const showModal = (character = null) => {
+    setEditingCharacter(character);
+    if (character) {
+      form.setFieldsValue(character);
+    } else {
+      form.resetFields();
+    }
+    setModalVisible(true);
+  };
+
+  // 关闭模态框
+  const handleCancel = () => {
+    setModalVisible(false);
+    setEditingCharacter(null);
+    form.resetFields();
+  };
+
+  // 提交表单
+  const handleSubmit = async (values) => {
+    try {
+      if (editingCharacter) {
+        await characterApi.updateCharacter(editingCharacter.id, values);
+        message.success('更新角色成功');
+      } else {
+        await characterApi.createCharacter({ ...values, world_id: worldId });
+        message.success('创建角色成功');
+      }
+      setModalVisible(false);
+      fetchCharacters();
+    } catch (error) {
+      message.error(editingCharacter ? '更新角色失败' : '创建角色失败');
+      console.error(error);
+    }
+  };
+
+  // 删除角色
+  const handleDelete = async (id) => {
+    try {
+      await characterApi.deleteCharacter(id);
+      message.success('删除角色成功');
+      fetchCharacters();
+    } catch (error) {
+      message.error('删除角色失败');
+      console.error(error);
+    }
+  };
+
+  const columns = [
+    {
+      title: '角色名称',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record) => (
+        <Space>
+          <UserOutlined style={{ color: '#1890ff' }} />
+          <strong>{text}</strong>
+        </Space>
+      ),
+    },
+    {
+      title: '角色类型',
+      dataIndex: 'role_type',
+      key: 'role_type',
+      render: (type) => <Tag color="blue">{type}</Tag>,
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => (
+        <Tag color={status === '存活' ? 'green' : 'red'}>{status}</Tag>
+      ),
+    },
+    {
+      title: '重要程度',
+      dataIndex: 'importance_level',
+      key: 'importance_level',
+      render: (level) => <Tag color="orange">{level}/10</Tag>,
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (date) => new Date(date).toLocaleString(),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => showModal(record)}
+          >
+            编辑
+          </Button>
+          <Popconfirm
+            title="确定要删除这个角色吗？"
+            description="删除后将无法恢复"
+            onConfirm={() => handleDelete(record.id)}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button type="link" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <Card
+        title={
+          <Space>
+            <UserOutlined />
+            <span>角色管理</span>
+          </Space>
+        }
+        extra={
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>
+            创建角色
+          </Button>
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={characters}
+          rowKey="id"
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: 'max-content' }}
+        />
+      </Card>
+
+      <Modal
+        title={editingCharacter ? '编辑角色' : '创建角色'}
+        open={modalVisible}
+        onCancel={handleCancel}
+        onOk={() => form.submit()}
+        width={700}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+        >
+          <Form.Item
+            name="name"
+            label="角色名称"
+            rules={[{ required: true, message: '请输入角色名称' }]}
+          >
+            <Input placeholder="例如：阿尔萨斯" />
+          </Form.Item>
+
+          <Form.Item
+            name="role_type"
+            label="角色类型"
+            rules={[{ required: true, message: '请选择角色类型' }]}
+          >
+            <Select placeholder="选择角色类型">
+              <Option value="主角">主角</Option>
+              <Option value="配角">配角</Option>
+              <Option value="反派">反派</Option>
+              <Option value="龙套">龙套</Option>
+              <Option value="背景">背景</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="status"
+            label="状态"
+            initialValue="存活"
+          >
+            <Select>
+              <Option value="存活">存活</Option>
+              <Option value="死亡">死亡</Option>
+              <Option value="失踪">失踪</Option>
+              <Option value="转生">转生</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="importance_level"
+            label="重要程度"
+            initialValue={5}
+          >
+            <Select>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => (
+                <Option key={level} value={level}>{level}/10</Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="race"
+            label="种族"
+          >
+            <Input placeholder="例如：人类、精灵" />
+          </Form.Item>
+
+          <Form.Item
+            name="gender"
+            label="性别"
+          >
+            <Select placeholder="选择性别">
+              <Option value="男">男</Option>
+              <Option value="女">女</Option>
+              <Option value="其他">其他</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="age"
+            label="年龄"
+          >
+            <Input type="number" placeholder="输入年龄" />
+          </Form.Item>
+
+          <Form.Item
+            name="appearance"
+            label="外貌描述"
+          >
+            <TextArea rows={3} placeholder="描述角色的外貌特征" />
+          </Form.Item>
+
+          <Form.Item
+            name="personality"
+            label="性格描述"
+          >
+            <TextArea rows={3} placeholder="描述角色的性格特点" />
+          </Form.Item>
+
+          <Form.Item
+            name="background"
+            label="背景故事"
+          >
+            <TextArea rows={4} placeholder="描述角色的背景故事" />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+};
+
+// 主设定管理组件
+const SettingManagement = ({ projectId }) => {
+  const [selectedWorld, setSelectedWorld] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'detail'
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleSelectWorld = (world) => {
+    setSelectedWorld(world);
+    setViewMode('detail');
+  };
+
+  const handleBackToList = () => {
+    setSelectedWorld(null);
+    setViewMode('list');
+  };
+
+  const handleEditWorld = () => {
+    // 刷新世界数据
+    setRefreshKey(prev => prev + 1);
   };
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* 顶部标题栏 */}
-      <div style={{ height: 64, background: '#fff', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Button
-            type="text"
-            icon={collapsed ? <RightOutlined /> : <LeftOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{ marginRight: 8 }}
-          />
-          <Typography.Title level={4} style={{ margin: 0 }}>
-            设定管理
-          </Typography.Title>
-        </div>
-        <Button
-          type="primary"
-          icon={<RocketOutlined />}
-          onClick={() => setIsAiModalVisible(true)}
-        >
-          AI生成设定
-        </Button>
-      </div>
-
-      {/* 主内容区 */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* 左侧菜单 */}
-        <Menu
-          mode="inline"
-          theme="light"
-          inlineCollapsed={collapsed}
-          selectedKeys={[activeModule]}
-          onSelect={({ key }) => handleModuleChange(key)}
-          style={{ width: collapsed ? 80 : 240, background: '#fff', borderRight: '1px solid #f0f0f0' }}
-          items={modules.map(module => ({
-            key: module.key,
-            label: (
-              <span>
-                {module.icon}
-                <span>{module.label}</span>
-              </span>
-            ),
-            children: module.subModules.map(subModule => ({
-              key: subModule.key,
-              label: subModule.label,
-              onClick: () => handleSubModuleChange(subModule.key)
-            }))
-          }))}
-        />
-
-        {/* 右侧内容 */}
-        <div style={{ flex: 1, padding: 24, overflowY: 'auto', background: '#f5f5f5' }}>
-          {/* 子模块选择按钮组 */}
-          <div style={{ marginBottom: 24, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {getCurrentSubModules().map(subModule => (
-              <Button
-                key={subModule.key}
-                type={activeSubModule === subModule.key ? 'primary' : 'default'}
-                onClick={() => handleSubModuleChange(subModule.key)}
-              >
-                {subModule.label}
-              </Button>
-            ))}
-          </div>
-
-          {/* 内容区域 */}
-          <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <Typography.Title level={5} style={{ margin: 0 }}>
-                {getCurrentSubModuleInfo()?.label || '设定管理'}
-              </Typography.Title>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => showModal()}
-              >
-                新增设定
-              </Button>
-            </div>
-
-            {/* 表格 */}
-            <Table
-              columns={getColumns(activeSubModule)}
-              dataSource={getCurrentData()}
-              rowKey="id"
-              loading={loading}
-              pagination={{
-                showSizeChanger: true,
-                pageSizeOptions: ['10', '20', '50'],
-                showQuickJumper: true,
-                showTotal: (total) => `共 ${total} 条记录`,
-              }}
-            />
-          </Card>
-        </div>
-      </div>
-
-      {/* 设定编辑模态框 */}
-      <Modal
-        title={isEditing ? '更新设定' : '创建设定'}
-        open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        footer={null}
-        width={600}
-      >
-        <SettingForm onSubmit={handleSubmit} />
-      </Modal>
-
-      {/* AI生成模态框 */}
-      <Modal
-        title="AI生成设定"
-        open={isAiModalVisible}
-        onCancel={() => setIsAiModalVisible(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setIsAiModalVisible(false)}>
-            取消
-          </Button>,
-          <Button key="apply" type="primary" onClick={handleApplyAiResult} disabled={!aiResult}>
-            应用结果
-          </Button>
-        ]}
-        width={800}
-      >
-        <div style={{ marginBottom: 16 }}>
-          <Form layout="vertical">
-            <Form.Item label="生成类型">
-              <Select
-                value={aiFunction}
-                onChange={setAiFunction}
-                style={{ width: '100%' }}
-              >
-                <Select.Option value="world">世界观设定</Select.Option>
-                <Select.Option value="character">角色设定</Select.Option>
-                <Select.Option value="energy">能量体系设定</Select.Option>
-                <Select.Option value="society">社会文化设定</Select.Option>
-                <Select.Option value="history">历史事件设定</Select.Option>
-                <Select.Option value="ability">能力设定</Select.Option>
-                <Select.Option value="race">种族设定</Select.Option>
-                <Select.Option value="creature">生物设定</Select.Option>
-                <Select.Option value="timeline">时间线设定</Select.Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item label="创意提示">
-              <TextArea
-                rows={4}
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="请输入你的创意提示，越详细越好"
-              />
-            </Form.Item>
-
-            <Form.Item>
-              <Button
-                type="primary"
-                onClick={handleAiGenerate}
-                loading={isAiLoading}
-                style={{ width: '100%' }}
-              >
-                开始生成
-              </Button>
-            </Form.Item>
-          </Form>
-        </div>
-
-        <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, maxHeight: 400, overflowY: 'auto' }}>
-          <Typography.Title level={5} style={{ marginBottom: 16 }}>
-            生成结果
-          </Typography.Title>
-          <Typography.Paragraph>
-            {aiResult || '生成结果将显示在这里...'}
-          </Typography.Paragraph>
-        </div>
-      </Modal>
+    <div style={{ width: '100%' }} key={refreshKey}>
+      {viewMode === 'list' ? (
+        <WorldManagementPanel onSelectWorld={handleSelectWorld} />
+      ) : (
+        <WorldDetailPanel world={selectedWorld} onBack={handleBackToList} onEditWorld={handleEditWorld} />
+      )}
     </div>
   );
 };

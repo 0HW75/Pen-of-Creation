@@ -1,8 +1,8 @@
 import React, { useState, useEffect, lazy, Suspense, useRef } from 'react';
-import { Layout, Menu, App, theme, Breadcrumb, Button, Modal, message, Spin, Drawer } from 'antd';
-import { 
-  FileTextOutlined, 
-  SettingOutlined, 
+import { Layout, Menu, App, theme, Breadcrumb, Button, Modal, message, Spin, Drawer, Select, Space } from 'antd';
+import {
+  FileTextOutlined,
+  SettingOutlined,
   EditOutlined,
   HomeOutlined,
   SaveOutlined,
@@ -14,26 +14,39 @@ import {
   CloseOutlined,
   CompassOutlined,
   LayoutOutlined,
-  GlobalOutlined
+  GlobalOutlined,
+  UserOutlined,
+  EnvironmentOutlined,
+  ToolOutlined,
+  TeamOutlined,
+  DatabaseOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from '@ant-design/icons';
+
+// 懒加载页面组件
 const ProjectManagement = lazy(() => import('./pages/ProjectManagement'));
 const SettingManagement = lazy(() => import('./pages/SettingManagement'));
 const EditorPage = lazy(() => import('./pages/EditorPage'));
 const SystemSetting = lazy(() => import('./pages/SystemSetting'));
 const NavigationPage = lazy(() => import('./pages/NavigationPage'));
 const BlueprintPage = lazy(() => import('./pages/BlueprintPage'));
-const WorldManagement = lazy(() => import('./pages/WorldManagement'));
+
 import { saveToLocalStorage, loadFromLocalStorage, backupData, restoreData } from './services/exportService';
 import DataVisualization from './components/DataVisualization';
 import WorkAnalysis from './components/WorkAnalysis';
-import { chapterApi, characterApi } from './services/api';
+import { chapterApi, characterApi, worldApi } from './services/api';
 import './App.css';
 
 const { Header, Content, Sider } = Layout;
+const { Title } = theme;
 
 function NovelEditorApp() {
   const [current, setCurrent] = useState('project');
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [selectedWorld, setSelectedWorld] = useState(null);
+  const [worlds, setWorlds] = useState([]);
+  const [worldsLoading, setWorldsLoading] = useState(false);
   const [isBackupModalVisible, setIsBackupModalVisible] = useState(false);
   const [isRestoreModalVisible, setIsRestoreModalVisible] = useState(false);
   const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
@@ -48,17 +61,19 @@ function NovelEditorApp() {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  // 侧边栏折叠状态
+  const [collapsed, setCollapsed] = useState(false);
 
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
+
+  // 菜单项
   const items = [
     {
       key: 'project',
       icon: <FileTextOutlined />,
       label: '项目管理',
-    },
-    {
-      key: 'world',
-      icon: <GlobalOutlined />,
-      label: '世界管理',
     },
     {
       key: 'editor',
@@ -77,8 +92,8 @@ function NovelEditorApp() {
     },
     {
       key: 'setting',
-      icon: <SettingOutlined />,
-      label: '设定管理',
+      icon: <DatabaseOutlined />,
+      label: '设定数据库',
     },
     {
       key: 'visualization',
@@ -97,57 +112,79 @@ function NovelEditorApp() {
     },
   ];
 
+  // 获取世界列表
+  const fetchWorlds = async () => {
+    setWorldsLoading(true);
+    try {
+      const response = await worldApi.getWorlds();
+      if (response.data.code === 200) {
+        setWorlds(response.data.data);
+      }
+    } catch (error) {
+      console.error('获取世界列表失败:', error);
+    } finally {
+      setWorldsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWorlds();
+  }, []);
+
   const handleMenuClick = (e) => {
     console.log('切换到页面:', e.key, '当前 selectedProjectId:', selectedProjectId);
     setCurrent(e.key);
   };
 
+  const handleWorldChange = (worldId) => {
+    const world = worlds.find(w => w.id === worldId);
+    setSelectedWorld(world || null);
+  };
+
   // 面包屑导航数据
   const getBreadcrumbItems = () => {
-    const items = [
+    const breadcrumbItems = [
       { title: <HomeOutlined /> },
     ];
-    
+
     switch (current) {
       case 'project':
-        items.push({ title: '项目管理' });
-        break;
-      case 'world':
-        items.push({ title: '世界管理' });
+        breadcrumbItems.push({ title: '项目管理' });
         break;
       case 'editor':
-        items.push({ title: '编辑器' });
+        breadcrumbItems.push({ title: '编辑器' });
         break;
       case 'blueprint':
-        items.push({ title: '故事蓝图' });
+        breadcrumbItems.push({ title: '故事蓝图' });
         break;
       case 'navigation':
-        items.push({ title: '创作导航' });
+        breadcrumbItems.push({ title: '创作导航' });
         break;
       case 'setting':
-        items.push({ title: '设定管理' });
+        breadcrumbItems.push({ title: '设定数据库' });
         break;
       case 'visualization':
-        items.push({ title: '数据可视化' });
+        breadcrumbItems.push({ title: '数据可视化' });
         break;
       case 'analysis':
-        items.push({ title: '作品分析' });
+        breadcrumbItems.push({ title: '作品分析' });
         break;
       case 'system':
-        items.push({ title: '系统设置' });
+        breadcrumbItems.push({ title: '系统设置' });
         break;
       default:
         break;
     }
-    
-    return items;
+
+    return breadcrumbItems;
   };
 
   // 保存数据到本地存储
   const handleSaveToLocal = () => {
     const appData = {
       current,
-      selectedProjectId
+      selectedProjectId,
+      selectedWorld
     };
     const success = saveToLocalStorage('novel_editor_app_data', appData);
     if (success) {
@@ -164,6 +201,7 @@ function NovelEditorApp() {
     if (appData) {
       setCurrent(appData.current || 'project');
       setSelectedProjectId(appData.selectedProjectId || null);
+      setSelectedWorld(appData.selectedWorld || null);
       message.success('已从本地存储加载数据');
     } else {
       message.error('从本地存储加载数据失败');
@@ -175,7 +213,8 @@ function NovelEditorApp() {
   const handleBackupToFile = () => {
     const appData = {
       current,
-      selectedProjectId
+      selectedProjectId,
+      selectedWorld
     };
     backupData(appData, backupName || 'novel_editor_backup');
     message.success('数据已备份到文件');
@@ -191,6 +230,7 @@ function NovelEditorApp() {
         if (data) {
           setCurrent(data.current || 'project');
           setSelectedProjectId(data.selectedProjectId || null);
+          setSelectedWorld(data.selectedWorld || null);
           message.success('已从文件恢复数据');
         } else {
           message.error('从文件恢复数据失败');
@@ -212,13 +252,13 @@ function NovelEditorApp() {
       // 当selectedProjectId为null时，不修改状态，避免不必要的渲染
       return;
     }
-    
+
     setLoadingData(true);
     try {
       // 加载章节数据
       const chaptersResponse = await chapterApi.getChapters(selectedProjectId);
       setChapters(chaptersResponse.data || []);
-      
+
       // 加载角色数据
       const charactersResponse = await characterApi.getCharacters(selectedProjectId);
       setCharacters(charactersResponse.data || []);
@@ -244,6 +284,9 @@ function NovelEditorApp() {
       const projectId = typeof appData.selectedProjectId === 'string' ? parseInt(appData.selectedProjectId) : appData.selectedProjectId;
       setCurrent(appData.current || 'project');
       setSelectedProjectId(projectId);
+      if (appData.selectedWorld) {
+        setSelectedWorld(appData.selectedWorld);
+      }
     }
   }, []);
 
@@ -258,12 +301,13 @@ function NovelEditorApp() {
     if (selectedProjectId !== null && selectedProjectId !== undefined) {
       const appData = {
         current: current,
-        selectedProjectId: selectedProjectId
+        selectedProjectId: selectedProjectId,
+        selectedWorld: selectedWorld
       };
       saveToLocalStorage('novel_editor_app_data', appData);
     }
-  }, [current, selectedProjectId]);
-  
+  }, [current, selectedProjectId, selectedWorld]);
+
   // 监听窗口大小变化，更新响应式状态
   useEffect(() => {
     const handleResize = () => {
@@ -271,7 +315,7 @@ function NovelEditorApp() {
       setScreenWidth(width);
       setIsMobile(width < 768);
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -284,7 +328,8 @@ function NovelEditorApp() {
     // 保存项目选择到本地存储
     const appData = {
       current: current,
-      selectedProjectId: projectId
+      selectedProjectId: projectId,
+      selectedWorld: selectedWorld
     };
     saveToLocalStorage('novel_editor_app_data', appData);
   };
@@ -304,6 +349,46 @@ function NovelEditorApp() {
     };
   }, []);
 
+  // 渲染内容区域
+  const renderContent = () => {
+    return (
+      <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}><Spin size="large" /></div>}>
+        {current === 'project' && (
+          <ProjectManagement onSelectProject={setSelectedProjectId} />
+        )}
+        {current === 'editor' && (
+          <EditorPage projectId={selectedProjectId} />
+        )}
+        {current === 'blueprint' && (
+          <BlueprintPage projectId={selectedProjectId} />
+        )}
+        {current === 'navigation' && (
+          <NavigationPage projectId={selectedProjectId} />
+        )}
+        {current === 'setting' && (
+          <SettingManagement projectId={selectedProjectId} />
+        )}
+        {current === 'visualization' && (
+          <DataVisualization
+            projectId={selectedProjectId}
+            chapters={chapters}
+            characters={characters}
+          />
+        )}
+        {current === 'analysis' && (
+          <WorkAnalysis
+            projectId={selectedProjectId}
+            chapters={chapters}
+            characters={characters}
+          />
+        )}
+        {current === 'system' && (
+          <SystemSetting />
+        )}
+      </Suspense>
+    );
+  };
+
   return (
     <App
       theme={{
@@ -312,9 +397,9 @@ function NovelEditorApp() {
         },
       }}
     >
-      <Layout className="app-container">
+      <Layout style={{ minHeight: '100vh' }}>
         {!isMobile ? (
-          // 桌面端布局
+          // 桌面端布局 - 顶部导航栏
           <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', padding: '0 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1890ff', marginRight: '24px' }}>
@@ -328,27 +413,46 @@ function NovelEditorApp() {
                 onClick={handleMenuClick}
               />
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Button 
-                icon={<SaveOutlined />} 
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {/* 世界选择器 */}
+              <Space>
+                <span style={{ color: '#666' }}>当前世界:</span>
+                <Select
+                  style={{ width: 180 }}
+                  placeholder="选择世界观"
+                  value={selectedWorld?.id}
+                  onChange={handleWorldChange}
+                  allowClear
+                  onClear={() => setSelectedWorld(null)}
+                  loading={worldsLoading}
+                >
+                  {worlds.map(world => (
+                    <Select.Option key={world.id} value={world.id}>
+                      {world.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Space>
+              <Button
+                icon={<SaveOutlined />}
                 onClick={() => setIsSaveModalVisible(true)}
                 title="保存到本地存储"
                 size="middle"
               />
-              <Button 
-                icon={<ReloadOutlined />} 
+              <Button
+                icon={<ReloadOutlined />}
                 onClick={() => setIsLoadModalVisible(true)}
                 title="从本地存储加载"
                 size="middle"
               />
-              <Button 
-                icon={<DownloadOutlined />} 
+              <Button
+                icon={<DownloadOutlined />}
                 onClick={() => setIsBackupModalVisible(true)}
                 title="备份到文件"
                 size="middle"
               />
-              <Button 
-                icon={<UploadOutlined />} 
+              <Button
+                icon={<UploadOutlined />}
                 onClick={() => setIsRestoreModalVisible(true)}
                 title="从文件恢复"
                 size="middle"
@@ -359,9 +463,9 @@ function NovelEditorApp() {
           // 移动端布局
           <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', padding: '0 16px' }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <Button 
-                type="text" 
-                icon={<MenuOutlined />} 
+              <Button
+                type="text"
+                icon={<MenuOutlined />}
                 onClick={() => setIsMobileMenuOpen(true)}
                 style={{ marginRight: '16px' }}
               />
@@ -370,14 +474,14 @@ function NovelEditorApp() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '4px' }}>
-              <Button 
-                icon={<SaveOutlined />} 
+              <Button
+                icon={<SaveOutlined />}
                 onClick={() => setIsSaveModalVisible(true)}
                 title="保存到本地存储"
                 size="small"
               />
-              <Button 
-                icon={<DownloadOutlined />} 
+              <Button
+                icon={<DownloadOutlined />}
                 onClick={() => setIsBackupModalVisible(true)}
                 title="备份到文件"
                 size="small"
@@ -385,64 +489,34 @@ function NovelEditorApp() {
             </div>
           </Header>
         )}
+
+        {/* 主内容区域 */}
         <Layout>
-          <Content className="content-container" style={{ 
-            margin: isMobile ? '16px' : '24px', 
-            padding: isMobile ? 16 : 24, 
-            background: '#fff', 
-            minHeight: 280, 
-            borderRadius: '8px', 
-            boxShadow: '0 2px 8px rgba(0,0,0,0.06)' 
+          <Content style={{
+            margin: isMobile ? '16px' : '24px',
+            padding: isMobile ? 16 : 24,
+            background: colorBgContainer,
+            minHeight: 'calc(100vh - 112px)',
+            borderRadius: borderRadiusLG,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+            overflow: 'auto',
+            width: '100%',
           }}>
             <Breadcrumb items={getBreadcrumbItems()} style={{ marginBottom: 16 }} />
-            <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}><Spin size="large" /></div>}>
-              {current === 'project' && (
-                <ProjectManagement onSelectProject={setSelectedProjectId} />
-              )}
-              {current === 'world' && (
-                <WorldManagement />
-              )}
-              {current === 'editor' && (
-                <EditorPage projectId={selectedProjectId} />
-              )}
-              {current === 'blueprint' && (
-                <BlueprintPage projectId={selectedProjectId} />
-              )}
-              {current === 'navigation' && (
-                <NavigationPage projectId={selectedProjectId} />
-              )}
-              {current === 'setting' && (
-                <SettingManagement projectId={selectedProjectId} />
-              )}
-              {current === 'visualization' && (
-                <DataVisualization 
-                  projectId={selectedProjectId}
-                  chapters={chapters}
-                  characters={characters}
-                />
-              )}
-              {current === 'analysis' && (
-                <WorkAnalysis 
-                  projectId={selectedProjectId}
-                  chapters={chapters}
-                  characters={characters}
-                />
-              )}
-              {current === 'system' && (
-                <SystemSetting />
-              )}
-            </Suspense>
+            <div style={{ width: '100%', minHeight: '100%' }}>
+              {renderContent()}
+            </div>
           </Content>
         </Layout>
-        
+
         {/* 移动端菜单抽屉 */}
         <Drawer
           title={
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
               <span>导航菜单</span>
-              <Button 
-                type="text" 
-                icon={<CloseOutlined />} 
+              <Button
+                type="text"
+                icon={<CloseOutlined />}
                 onClick={() => setIsMobileMenuOpen(false)}
               />
             </div>
@@ -464,8 +538,27 @@ function NovelEditorApp() {
             }}
           />
           <div style={{ padding: '16px', borderTop: '1px solid #f0f0f0' }}>
-            <Button 
-              icon={<ReloadOutlined />} 
+            {/* 移动端世界选择器 */}
+            <div style={{ marginBottom: 16 }}>
+              <span style={{ color: '#666', display: 'block', marginBottom: 8 }}>当前世界:</span>
+              <Select
+                style={{ width: '100%' }}
+                placeholder="选择世界观"
+                value={selectedWorld?.id}
+                onChange={handleWorldChange}
+                allowClear
+                onClear={() => setSelectedWorld(null)}
+                loading={worldsLoading}
+              >
+                {worlds.map(world => (
+                  <Select.Option key={world.id} value={world.id}>
+                    {world.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+            <Button
+              icon={<ReloadOutlined />}
               onClick={() => {
                 setIsLoadModalVisible(true);
                 setIsMobileMenuOpen(false);
@@ -474,8 +567,8 @@ function NovelEditorApp() {
             >
               从本地存储加载
             </Button>
-            <Button 
-              icon={<UploadOutlined />} 
+            <Button
+              icon={<UploadOutlined />}
               onClick={() => {
                 setIsRestoreModalVisible(true);
                 setIsMobileMenuOpen(false);
@@ -520,8 +613,8 @@ function NovelEditorApp() {
           destroyOnHidden
         >
           <p>请输入备份文件名：</p>
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={backupName}
             onChange={(e) => setBackupName(e.target.value)}
             placeholder="默认：novel_editor_backup"
@@ -539,8 +632,8 @@ function NovelEditorApp() {
           destroyOnHidden
         >
           <p>请选择要恢复的备份文件：</p>
-          <input 
-            type="file" 
+          <input
+            type="file"
             accept=".json"
             onChange={handleFileChange}
             style={{ width: '100%', marginBottom: '16px' }}
@@ -556,4 +649,4 @@ function NovelEditorApp() {
   );
 }
 
-export default NovelEditorApp
+export default NovelEditorApp;

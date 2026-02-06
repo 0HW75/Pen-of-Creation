@@ -5,7 +5,8 @@ from datetime import datetime
 
 worlds_bp = Blueprint('worlds', __name__)
 
-@worlds_bp.route('/worlds', methods=['GET'])
+@worlds_bp.route('', methods=['GET'])
+@worlds_bp.route('/', methods=['GET'])
 def get_worlds():
     """获取世界列表"""
     try:
@@ -21,7 +22,8 @@ def get_worlds():
             'message': f'获取世界列表失败: {str(e)}'
         }), 500
 
-@worlds_bp.route('/worlds', methods=['POST'])
+@worlds_bp.route('', methods=['POST'])
+@worlds_bp.route('/', methods=['POST'])
 def create_world():
     """创建新世界"""
     try:
@@ -58,7 +60,7 @@ def create_world():
             'message': f'创建世界失败: {str(e)}'
         }), 500
 
-@worlds_bp.route('/worlds/<int:world_id>', methods=['GET'])
+@worlds_bp.route('/<int:world_id>', methods=['GET'])
 def get_world(world_id):
     """获取单个世界详情"""
     try:
@@ -80,7 +82,7 @@ def get_world(world_id):
             'message': f'获取世界详情失败: {str(e)}'
         }), 500
 
-@worlds_bp.route('/worlds/<int:world_id>', methods=['PUT'])
+@worlds_bp.route('/<int:world_id>', methods=['PUT'])
 def update_world(world_id):
     """更新世界信息"""
     try:
@@ -94,7 +96,11 @@ def update_world(world_id):
         data = request.get_json()
         
         world.name = data.get('name', world.name)
-        world.core_concept = data.get('core_concept', world.core_concept)
+        # 支持core_concept和core_rules两个字段名
+        if 'core_concept' in data:
+            world.core_concept = data.get('core_concept', world.core_concept)
+        if 'core_rules' in data:
+            world.core_concept = data.get('core_rules', world.core_concept)
         world.world_type = data.get('world_type', world.world_type)
         world.description = data.get('description', world.description)
         world.creation_origin = data.get('creation_origin', world.creation_origin)
@@ -116,7 +122,7 @@ def update_world(world_id):
             'message': f'更新世界失败: {str(e)}'
         }), 500
 
-@worlds_bp.route('/worlds/<int:world_id>', methods=['DELETE'])
+@worlds_bp.route('/<int:world_id>', methods=['DELETE'])
 def delete_world(world_id):
     """删除世界"""
     try:

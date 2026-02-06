@@ -10,9 +10,17 @@ def get_characters():
     query = Character.query
     
     if project_id:
-        query = query.filter_by(project_id=project_id)
+        try:
+            project_id = int(project_id)
+            query = query.filter_by(project_id=project_id)
+        except ValueError:
+            pass
     if world_id:
-        query = query.filter_by(world_id=world_id)
+        try:
+            world_id = int(world_id)
+            query = query.filter_by(world_id=world_id)
+        except ValueError:
+            pass
     
     characters = query.all()
     return jsonify([character.to_dict() for character in characters])
@@ -289,13 +297,13 @@ def add_character_background(character_id):
     return jsonify(background.to_dict()), 201
 
 # 角色能力详情API
-@api_bp.route('/characters/<int:character_id>/abilities', methods=['GET'])
-def get_character_abilities(character_id):
+@api_bp.route('/characters/<int:character_id>/ability-details', methods=['GET'])
+def get_character_ability_details(character_id):
     abilities = CharacterAbilityDetail.query.filter_by(character_id=character_id).all()
     return jsonify([ability.to_dict() for ability in abilities])
 
-@api_bp.route('/characters/<int:character_id>/abilities', methods=['POST'])
-def add_character_ability(character_id):
+@api_bp.route('/characters/<int:character_id>/ability-details', methods=['POST'])
+def add_character_ability_detail(character_id):
     data = request.get_json()
     ability = CharacterAbilityDetail(
         character_id=character_id,

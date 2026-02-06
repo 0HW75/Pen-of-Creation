@@ -1,1 +1,0 @@
-PowerShell 5不支持&&语法，我需要使用PowerShell的语法来执行命令。

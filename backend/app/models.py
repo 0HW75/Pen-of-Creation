@@ -19,6 +19,7 @@ class World(db.Model):
             'id': self.id,
             'name': self.name,
             'core_concept': self.core_concept,
+            'core_rules': self.core_concept,  # 同时返回core_rules以便前端使用
             'world_type': self.world_type,
             'description': self.description,
             'creation_origin': self.creation_origin,
@@ -784,45 +785,6 @@ class WorldSetting(db.Model):
             'updated_at': self.updated_at.isoformat()
         }
 
-class EnergySystem(db.Model):
-    __tablename__ = 'energy_system'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
-    energy_types = db.Column(db.Text, default='')
-    energy_sources = db.Column(db.Text, default='')
-    energy_cycle = db.Column(db.Text, default='')
-    energy_levels = db.Column(db.Text, default='')
-    ability_classification = db.Column(db.Text, default='')
-    usage_principles = db.Column(db.Text, default='')
-    ability_limits = db.Column(db.Text, default='')
-    advancement_paths = db.Column(db.Text, default='')
-    basic_laws = db.Column(db.Text, default='')
-    taboos_and_costs = db.Column(db.Text, default='')
-    law_conflicts = db.Column(db.Text, default='')
-    world_balance = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'project_id': self.project_id,
-            'energy_types': self.energy_types,
-            'energy_sources': self.energy_sources,
-            'energy_cycle': self.energy_cycle,
-            'energy_levels': self.energy_levels,
-            'ability_classification': self.ability_classification,
-            'usage_principles': self.usage_principles,
-            'ability_limits': self.ability_limits,
-            'advancement_paths': self.advancement_paths,
-            'basic_laws': self.basic_laws,
-            'taboos_and_costs': self.taboos_and_costs,
-            'law_conflicts': self.law_conflicts,
-            'world_balance': self.world_balance,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
-        }
-
 class SocietyCulture(db.Model):
     __tablename__ = 'society_culture'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -1252,6 +1214,500 @@ class CharacterTrait(db.Model):
             'updated_at': self.updated_at.isoformat()
         }
 
+
+# ==================== 任务2：能量与社会体系数据库 ====================
+
+class EnergySystem(db.Model):
+    """能量体系表 - 存储世界的能量类型和体系"""
+    __tablename__ = 'energy_systems'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    energy_type = db.Column(db.String(100), default='魔法')  # 魔法/斗气/灵气/科技/混合
+    description = db.Column(db.Text, default='')
+    source = db.Column(db.Text, default='')  # 能量来源
+    acquisition_method = db.Column(db.Text, default='')  # 获取方式
+    storage_method = db.Column(db.Text, default='')  # 储存方式
+    usage_limitations = db.Column(db.Text, default='')  # 使用限制
+    common_applications = db.Column(db.Text, default='')  # 常见应用
+    rarity = db.Column(db.String(50), default='常见')  # 稀有度
+    stability = db.Column(db.String(50), default='稳定')  # 稳定性
+    interaction_with_other_energies = db.Column(db.Text, default='')  # 与其他能量交互
+    cultivation_method = db.Column(db.Text, default='')  # 修炼方法
+    typical_manifestations = db.Column(db.Text, default='')  # 典型表现形式
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'name': self.name,
+            'energy_type': self.energy_type,
+            'description': self.description,
+            'source': self.source,
+            'acquisition_method': self.acquisition_method,
+            'storage_method': self.storage_method,
+            'usage_limitations': self.usage_limitations,
+            'common_applications': self.common_applications,
+            'rarity': self.rarity,
+            'stability': self.stability,
+            'interaction_with_other_energies': self.interaction_with_other_energies,
+            'cultivation_method': self.cultivation_method,
+            'typical_manifestations': self.typical_manifestations,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class PowerLevel(db.Model):
+    """力量等级表 - 存储修炼等级体系"""
+    __tablename__ = 'power_levels'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    level = db.Column(db.Integer, nullable=False)  # 等级数值
+    level_name = db.Column(db.String(255), nullable=False)  # 等级名称
+    description = db.Column(db.Text, default='')
+    requirements = db.Column(db.Text, default='')  # 晋升要求
+    characteristics = db.Column(db.Text, default='')  # 等级特征
+    abilities = db.Column(db.Text, default='')  # 获得能力
+    lifespan_extension = db.Column(db.String(100), default='')  # 寿命延长
+    typical_combat_power = db.Column(db.Text, default='')  # 典型战斗力
+    rarity = db.Column(db.String(50), default='常见')  # 稀有度
+    social_status = db.Column(db.String(100), default='')  # 社会地位
+    energy_system_id = db.Column(db.Integer, default=None)  # 关联能量体系
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'name': self.name,
+            'level': self.level,
+            'level_name': self.level_name,
+            'description': self.description,
+            'requirements': self.requirements,
+            'characteristics': self.characteristics,
+            'abilities': self.abilities,
+            'lifespan_extension': self.lifespan_extension,
+            'typical_combat_power': self.typical_combat_power,
+            'rarity': self.rarity,
+            'social_status': self.social_status,
+            'energy_system_id': self.energy_system_id,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class CommonSkill(db.Model):
+    """通用技能表 - 存储世界通用技能"""
+    __tablename__ = 'common_skills'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    skill_type = db.Column(db.String(100), default='战斗')  # 战斗/生活/辅助/特殊
+    description = db.Column(db.Text, default='')
+    difficulty = db.Column(db.String(50), default='普通')  # 简单/普通/困难/极难
+    requirements = db.Column(db.Text, default='')  # 学习要求
+    learning_time = db.Column(db.String(100), default='')  # 学习时间
+    commonality = db.Column(db.String(50), default='常见')  # 普及程度
+    power_level_required = db.Column(db.Integer, default=0)  # 所需等级
+    energy_consumption = db.Column(db.String(100), default='')  # 能量消耗
+    effects = db.Column(db.Text, default='')  # 技能效果
+    limitations = db.Column(db.Text, default='')  # 使用限制
+    typical_users = db.Column(db.Text, default='')  # 典型使用者
+    energy_system_id = db.Column(db.Integer, default=None)  # 关联能量体系
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'name': self.name,
+            'skill_type': self.skill_type,
+            'description': self.description,
+            'difficulty': self.difficulty,
+            'requirements': self.requirements,
+            'learning_time': self.learning_time,
+            'commonality': self.commonality,
+            'power_level_required': self.power_level_required,
+            'energy_consumption': self.energy_consumption,
+            'effects': self.effects,
+            'limitations': self.limitations,
+            'typical_users': self.typical_users,
+            'energy_system_id': self.energy_system_id,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class Civilization(db.Model):
+    """文明/文化表 - 存储世界文明类型"""
+    __tablename__ = 'civilizations'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    civilization_type = db.Column(db.String(100), default='魔法文明')  # 魔法/科技/修真/混合等
+    description = db.Column(db.Text, default='')
+    development_level = db.Column(db.String(100), default='中世纪')  # 发展阶段
+    population_scale = db.Column(db.String(100), default='')  # 人口规模
+    territory_size = db.Column(db.String(100), default='')  # 领土范围
+    political_system = db.Column(db.Text, default='')  # 政治体制
+    economic_system = db.Column(db.Text, default='')  # 经济体制
+    technological_level = db.Column(db.String(100), default='')  # 科技水平
+    magical_level = db.Column(db.String(100), default='')  # 魔法水平
+    cultural_characteristics = db.Column(db.Text, default='')  # 文化特征
+    religious_beliefs = db.Column(db.Text, default='')  # 宗教信仰
+    taboos = db.Column(db.Text, default='')  # 禁忌
+    values = db.Column(db.Text, default='')  # 价值观
+    historical_origin = db.Column(db.Text, default='')  # 历史起源
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'name': self.name,
+            'civilization_type': self.civilization_type,
+            'description': self.description,
+            'development_level': self.development_level,
+            'population_scale': self.population_scale,
+            'territory_size': self.territory_size,
+            'political_system': self.political_system,
+            'economic_system': self.economic_system,
+            'technological_level': self.technological_level,
+            'magical_level': self.magical_level,
+            'cultural_characteristics': self.cultural_characteristics,
+            'religious_beliefs': self.religious_beliefs,
+            'taboos': self.taboos,
+            'values': self.values,
+            'historical_origin': self.historical_origin,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class CivilizationRegion(db.Model):
+    """文明区域关联表 - 多对多关联"""
+    __tablename__ = 'civilization_regions'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    civilization_id = db.Column(db.Integer, db.ForeignKey('civilizations.id'), nullable=False)
+    region_id = db.Column(db.Integer, db.ForeignKey('regions.id'), nullable=False)
+    relationship_type = db.Column(db.String(100), default='统治')  # 统治/影响/贸易/敌对
+    influence_level = db.Column(db.Integer, default=5)  # 影响力等级1-10
+    description = db.Column(db.Text, default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'civilization_id': self.civilization_id,
+            'region_id': self.region_id,
+            'relationship_type': self.relationship_type,
+            'influence_level': self.influence_level,
+            'description': self.description,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class SocialClass(db.Model):
+    """社会阶级表 - 存储社会阶层结构"""
+    __tablename__ = 'social_classes'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    civilization_id = db.Column(db.Integer, db.ForeignKey('civilizations.id'), nullable=True)
+    name = db.Column(db.String(255), nullable=False)
+    class_level = db.Column(db.Integer, default=1)  # 阶级层级
+    description = db.Column(db.Text, default='')
+    typical_occupations = db.Column(db.Text, default='')  # 典型职业
+    privileges = db.Column(db.Text, default='')  # 特权
+    obligations = db.Column(db.Text, default='')  # 义务
+    living_standards = db.Column(db.Text, default='')  # 生活水平
+    education_access = db.Column(db.String(100), default='')  # 教育机会
+    social_mobility = db.Column(db.String(100), default='')  # 社会流动性
+    percentage_of_population = db.Column(db.String(50), default='')  # 人口比例
+    typical_power_level = db.Column(db.Integer, default=0)  # 典型力量等级
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'civilization_id': self.civilization_id,
+            'name': self.name,
+            'class_level': self.class_level,
+            'description': self.description,
+            'typical_occupations': self.typical_occupations,
+            'privileges': self.privileges,
+            'obligations': self.obligations,
+            'living_standards': self.living_standards,
+            'education_access': self.education_access,
+            'social_mobility': self.social_mobility,
+            'percentage_of_population': self.percentage_of_population,
+            'typical_power_level': self.typical_power_level,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class CulturalCustom(db.Model):
+    """文化习俗表 - 存储文化传统和习俗"""
+    __tablename__ = 'cultural_customs'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    civilization_id = db.Column(db.Integer, db.ForeignKey('civilizations.id'), nullable=True)
+    name = db.Column(db.String(255), nullable=False)
+    custom_type = db.Column(db.String(100), default='节日')  # 节日/仪式/礼仪/禁忌/传统
+    description = db.Column(db.Text, default='')
+    origin = db.Column(db.Text, default='')  # 起源
+    significance = db.Column(db.Text, default='')  # 意义
+    participants = db.Column(db.Text, default='')  # 参与者
+    time_period = db.Column(db.String(100), default='')  # 时间周期
+    location = db.Column(db.Text, default='')  # 地点
+    procedures = db.Column(db.Text, default='')  # 流程
+    related_beliefs = db.Column(db.Text, default='')  # 相关信仰
+    variations = db.Column(db.Text, default='')  # 变体形式
+    importance_level = db.Column(db.Integer, default=5)  # 重要性1-10
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'civilization_id': self.civilization_id,
+            'name': self.name,
+            'custom_type': self.custom_type,
+            'description': self.description,
+            'origin': self.origin,
+            'significance': self.significance,
+            'participants': self.participants,
+            'time_period': self.time_period,
+            'location': self.location,
+            'procedures': self.procedures,
+            'related_beliefs': self.related_beliefs,
+            'variations': self.variations,
+            'importance_level': self.importance_level,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+# ==================== 第二阶段：世界观设定模块扩展 ====================
+
+class Dimension(db.Model):
+    """维度/位面表 - 存储世界的不同维度或位面信息"""
+    __tablename__ = 'dimensions'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    dimension_type = db.Column(db.String(100), default='主世界')  # 主世界/位面/维度/异空间
+    description = db.Column(db.Text, default='')
+    entry_conditions = db.Column(db.Text, default='')  # 进入条件
+    physical_properties = db.Column(db.Text, default='')  # 物理特性
+    time_flow = db.Column(db.String(100), default='1:1')  # 时间流速
+    spatial_hierarchy = db.Column(db.Integer, default=1)  # 空间层级
+    special_rules = db.Column(db.Text, default='')  # 特殊规则
+    magic_concentration = db.Column(db.String(50), default='中等')  # 魔法浓度
+    element_activity = db.Column(db.Text, default='')  # 元素活跃度
+    gravity = db.Column(db.String(50), default='1.0G')  # 重力
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'name': self.name,
+            'dimension_type': self.dimension_type,
+            'description': self.description,
+            'entry_conditions': self.entry_conditions,
+            'physical_properties': self.physical_properties,
+            'time_flow': self.time_flow,
+            'spatial_hierarchy': self.spatial_hierarchy,
+            'special_rules': self.special_rules,
+            'magic_concentration': self.magic_concentration,
+            'element_activity': self.element_activity,
+            'gravity': self.gravity,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class Region(db.Model):
+    """地理区域表 - 支持自关联树状结构"""
+    __tablename__ = 'regions'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    parent_region_id = db.Column(db.Integer, db.ForeignKey('regions.id'), nullable=True)
+    name = db.Column(db.String(255), nullable=False)
+    region_type = db.Column(db.String(100), default='大陆')  # 大陆/国家/省份/城市/区域
+    description = db.Column(db.Text, default='')
+    geographical_coordinates = db.Column(db.Text, default='')  # JSON格式存储坐标
+    climate = db.Column(db.String(100), default='温带')
+    terrain = db.Column(db.Text, default='')  # 地形特征
+    area_size = db.Column(db.String(100), default='')  # 面积
+    population = db.Column(db.Integer, default=0)
+    resources = db.Column(db.Text, default='')  # 资源分布
+    strategic_importance = db.Column(db.Integer, default=5)  # 战略重要性1-10
+    controlling_faction_id = db.Column(db.Integer, default=None)  # 控制势力
+    danger_level = db.Column(db.String(50), default='安全')  # 安全/低危/中危/高危/禁地
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 自关联关系
+    parent = db.relationship('Region', remote_side=[id], backref='children')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'parent_region_id': self.parent_region_id,
+            'name': self.name,
+            'region_type': self.region_type,
+            'description': self.description,
+            'geographical_coordinates': self.geographical_coordinates,
+            'climate': self.climate,
+            'terrain': self.terrain,
+            'area_size': self.area_size,
+            'population': self.population,
+            'resources': self.resources,
+            'strategic_importance': self.strategic_importance,
+            'controlling_faction_id': self.controlling_faction_id,
+            'danger_level': self.danger_level,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class CelestialBody(db.Model):
+    """天体表 - 存储星球、卫星、恒星等天体信息"""
+    __tablename__ = 'celestial_bodies'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    body_type = db.Column(db.String(100), default='行星')  # 恒星/行星/卫星/彗星/星云
+    description = db.Column(db.Text, default='')
+    size = db.Column(db.String(100), default='')  # 大小
+    mass = db.Column(db.String(100), default='')  # 质量
+    orbit_period = db.Column(db.String(100), default='')  # 公转周期
+    rotation_period = db.Column(db.String(100), default='')  # 自转周期
+    distance_from_star = db.Column(db.String(100), default='')  # 距恒星距离
+    surface_temperature = db.Column(db.String(100), default='')  # 表面温度
+    atmosphere = db.Column(db.Text, default='')  # 大气成分
+    satellites = db.Column(db.Text, default='')  # 卫星列表JSON
+    magical_properties = db.Column(db.Text, default='')  # 魔法属性
+    cultural_significance = db.Column(db.Text, default='')  # 文化意义
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'name': self.name,
+            'body_type': self.body_type,
+            'description': self.description,
+            'size': self.size,
+            'mass': self.mass,
+            'orbit_period': self.orbit_period,
+            'rotation_period': self.rotation_period,
+            'distance_from_star': self.distance_from_star,
+            'surface_temperature': self.surface_temperature,
+            'atmosphere': self.atmosphere,
+            'satellites': self.satellites,
+            'magical_properties': self.magical_properties,
+            'cultural_significance': self.cultural_significance,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class NaturalLaw(db.Model):
+    """自然法则表 - 存储世界的物理法则、魔法规则等"""
+    __tablename__ = 'natural_laws'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    law_type = db.Column(db.String(100), default='物理法则')  # 物理法则/魔法规则/时间法则/空间法则
+    description = db.Column(db.Text, default='')
+    basic_principles = db.Column(db.Text, default='')  # 基本原理
+    exceptions = db.Column(db.Text, default='')  # 例外情况
+    limitations = db.Column(db.Text, default='')  # 限制条件
+    interactions = db.Column(db.Text, default='')  # 与其他法则的交互
+    common_applications = db.Column(db.Text, default='')  # 常见应用
+    taboos = db.Column(db.Text, default='')  # 禁忌
+    consequences = db.Column(db.Text, default='')  # 违反后果
+    importance_level = db.Column(db.Integer, default=5)  # 重要性1-10
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'name': self.name,
+            'law_type': self.law_type,
+            'description': self.description,
+            'basic_principles': self.basic_principles,
+            'exceptions': self.exceptions,
+            'limitations': self.limitations,
+            'interactions': self.interactions,
+            'common_applications': self.common_applications,
+            'taboos': self.taboos,
+            'consequences': self.consequences,
+            'importance_level': self.importance_level,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
 class CharacterAbility(db.Model):
     __tablename__ = 'character_ability'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -1400,6 +1856,445 @@ class SpecialItem(db.Model):
             'project_id': self.project_id,
             'name': self.name,
             'description': self.description,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+# ==================== 任务3：扩展世界观体系表 ====================
+
+class EnergyForm(db.Model):
+    """能量形态表 - 具体能量形态（一个体系可有多种形态）"""
+    __tablename__ = 'energy_forms'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    energy_system_id = db.Column(db.Integer, db.ForeignKey('energy_systems.id'), nullable=True)
+    name = db.Column(db.String(255), nullable=False)
+    form_type = db.Column(db.String(100), default='元素')  # 元素/生命/概念/复合
+    description = db.Column(db.Text, default='')
+    basic_properties = db.Column(db.Text, default='')  # 基本属性
+    interaction_rules = db.Column(db.Text, default='')  # 相互作用规则
+    purification_method = db.Column(db.Text, default='')  # 提纯方法
+    corruption_effects = db.Column(db.Text, default='')  # 污染/腐化效果
+    visual_manifestation = db.Column(db.Text, default='')  # 视觉表现
+    sensory_perception = db.Column(db.Text, default='')  # 感官感知
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'energy_system_id': self.energy_system_id,
+            'name': self.name,
+            'form_type': self.form_type,
+            'description': self.description,
+            'basic_properties': self.basic_properties,
+            'interaction_rules': self.interaction_rules,
+            'purification_method': self.purification_method,
+            'corruption_effects': self.corruption_effects,
+            'visual_manifestation': self.visual_manifestation,
+            'sensory_perception': self.sensory_perception,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class PowerCost(db.Model):
+    """力量代价表 - 使用力量的代价系统"""
+    __tablename__ = 'power_costs'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    cost_type = db.Column(db.String(100), default='寿命')  # 寿命/记忆/情感/理智/随机
+    description = db.Column(db.Text, default='')
+    trigger_conditions = db.Column(db.Text, default='')  # 触发条件
+    payment_mechanism = db.Column(db.Text, default='')  # 支付机制
+    severity_level = db.Column(db.Integer, default=5)  # 严重程度1-10
+    reversible = db.Column(db.Boolean, default=False)  # 是否可逆
+    mitigation_methods = db.Column(db.Text, default='')  # 缓解方法
+    accumulation_effect = db.Column(db.Text, default='')  # 累积效应
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'cost_type': self.cost_type,
+            'description': self.description,
+            'trigger_conditions': self.trigger_conditions,
+            'payment_mechanism': self.payment_mechanism,
+            'severity_level': self.severity_level,
+            'reversible': self.reversible,
+            'mitigation_methods': self.mitigation_methods,
+            'accumulation_effect': self.accumulation_effect,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class EconomicSystem(db.Model):
+    """经济体系表 - 文明的经济运行方式"""
+    __tablename__ = 'economic_systems'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    civilization_id = db.Column(db.Integer, db.ForeignKey('civilizations.id'), nullable=True)
+    name = db.Column(db.String(255), nullable=False)
+    economic_model = db.Column(db.String(100), default='市场经济')  # 物物交换/市场经济/计划经济/混合
+    description = db.Column(db.Text, default='')
+    currency_name = db.Column(db.String(255), default='')  # 货币名称
+    currency_material = db.Column(db.Text, default='')  # 货币材质
+    denomination_system = db.Column(db.Text, default='')  # 面额体系
+    exchange_rates = db.Column(db.Text, default='')  # 汇率体系JSON
+    major_industries = db.Column(db.Text, default='')  # 主要产业JSON
+    trade_routes = db.Column(db.Text, default='')  # 主要商路
+    trade_partners = db.Column(db.Text, default='')  # 贸易伙伴
+    resource_dependencies = db.Column(db.Text, default='')  # 资源依赖
+    wealth_distribution = db.Column(db.Text, default='')  # 财富分布
+    taxation_system = db.Column(db.Text, default='')  # 税收系统
+    banking_system = db.Column(db.Text, default='')  # 银行系统
+    economic_challenges = db.Column(db.Text, default='')  # 经济挑战
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'civilization_id': self.civilization_id,
+            'name': self.name,
+            'economic_model': self.economic_model,
+            'description': self.description,
+            'currency_name': self.currency_name,
+            'currency_material': self.currency_material,
+            'denomination_system': self.denomination_system,
+            'exchange_rates': self.exchange_rates,
+            'major_industries': self.major_industries,
+            'trade_routes': self.trade_routes,
+            'trade_partners': self.trade_partners,
+            'resource_dependencies': self.resource_dependencies,
+            'wealth_distribution': self.wealth_distribution,
+            'taxation_system': self.taxation_system,
+            'banking_system': self.banking_system,
+            'economic_challenges': self.economic_challenges,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class PoliticalSystem(db.Model):
+    """政治体系表 - 文明的政治结构"""
+    __tablename__ = 'political_systems'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    civilization_id = db.Column(db.Integer, db.ForeignKey('civilizations.id'), nullable=True)
+    name = db.Column(db.String(255), nullable=False)
+    government_type = db.Column(db.String(100), default='君主制')  # 君主制/共和制/神权制/寡头制
+    description = db.Column(db.Text, default='')
+    power_structure = db.Column(db.Text, default='')  # 权力结构描述
+    succession_system = db.Column(db.Text, default='')  # 继承制度
+    decision_process = db.Column(db.Text, default='')  # 决策流程
+    administrative_divisions = db.Column(db.Text, default='')  # 行政区划
+    legal_system = db.Column(db.Text, default='')  # 法律体系
+    military_organization = db.Column(db.Text, default='')  # 军事组织
+    diplomatic_style = db.Column(db.Text, default='')  # 外交风格
+    internal_conflicts = db.Column(db.Text, default='')  # 内部矛盾
+    external_threats = db.Column(db.Text, default='')  # 外部威胁
+    political_stability = db.Column(db.String(50), default='稳定')  # 政治稳定性
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'civilization_id': self.civilization_id,
+            'name': self.name,
+            'government_type': self.government_type,
+            'description': self.description,
+            'power_structure': self.power_structure,
+            'succession_system': self.succession_system,
+            'decision_process': self.decision_process,
+            'administrative_divisions': self.administrative_divisions,
+            'legal_system': self.legal_system,
+            'military_organization': self.military_organization,
+            'diplomatic_style': self.diplomatic_style,
+            'internal_conflicts': self.internal_conflicts,
+            'external_threats': self.external_threats,
+            'political_stability': self.political_stability,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+# ==================== 任务4：历史脉络模块 ====================
+
+class HistoricalEra(db.Model):
+    """历史纪元表 - 划分大的历史时期"""
+    __tablename__ = 'historical_eras'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    start_year = db.Column(db.String(100), default='')  # 开始年份，可自定义纪年
+    end_year = db.Column(db.String(100), default='')  # 结束年份
+    duration_description = db.Column(db.Text, default='')  # 持续时间描述
+    main_characteristics = db.Column(db.Text, default='')  # 时代特征
+    key_technologies = db.Column(db.Text, default='')  # 关键技术
+    dominant_civilizations = db.Column(db.Text, default='')  # 主导文明
+    ending_cause = db.Column(db.Text, default='')  # 结束原因
+    legacy_impact = db.Column(db.Text, default='')  # 遗留影响
+    description = db.Column(db.Text, default='')
+    order_index = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(50), default='active')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'name': self.name,
+            'start_year': self.start_year,
+            'end_year': self.end_year,
+            'duration_description': self.duration_description,
+            'main_characteristics': self.main_characteristics,
+            'key_technologies': self.key_technologies,
+            'dominant_civilizations': self.dominant_civilizations,
+            'ending_cause': self.ending_cause,
+            'legacy_impact': self.legacy_impact,
+            'description': self.description,
+            'order_index': self.order_index,
+            'status': self.status,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class HistoricalEvent(db.Model):
+    """历史事件表 - 具体的历史事件"""
+    __tablename__ = 'historical_events'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    era_id = db.Column(db.Integer, db.ForeignKey('historical_eras.id'), nullable=True)
+    name = db.Column(db.String(255), nullable=False)
+    event_type = db.Column(db.String(100), default='战争')  # 战争/灾难/发现/发明/条约/革命
+    description = db.Column(db.Text, default='')
+    start_year = db.Column(db.String(100), default='')  # 开始年份
+    end_year = db.Column(db.String(100), default='')  # 结束年份
+    location_ids = db.Column(db.Text, default='')  # 发生地点ID列表JSON
+    primary_causes = db.Column(db.Text, default='')  # 主要原因
+    key_participants = db.Column(db.Text, default='')  # 主要参与者
+    event_sequence = db.Column(db.Text, default='')  # 事件过程
+    immediate_outcomes = db.Column(db.Text, default='')  # 直接结果
+    long_term_consequences = db.Column(db.Text, default='')  # 长期影响
+    historical_significance = db.Column(db.Text, default='')  # 历史意义
+    conflicting_accounts = db.Column(db.Text, default='')  # 矛盾记载
+    importance_level = db.Column(db.Integer, default=5)  # 重要性1-10
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'era_id': self.era_id,
+            'name': self.name,
+            'event_type': self.event_type,
+            'description': self.description,
+            'start_year': self.start_year,
+            'end_year': self.end_year,
+            'location_ids': self.location_ids,
+            'primary_causes': self.primary_causes,
+            'key_participants': self.key_participants,
+            'event_sequence': self.event_sequence,
+            'immediate_outcomes': self.immediate_outcomes,
+            'long_term_consequences': self.long_term_consequences,
+            'historical_significance': self.historical_significance,
+            'conflicting_accounts': self.conflicting_accounts,
+            'importance_level': self.importance_level,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class HistoricalFigure(db.Model):
+    """历史人物表 - 历史上有记载的人物"""
+    __tablename__ = 'historical_figures'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    civilization_id = db.Column(db.Integer, db.ForeignKey('civilizations.id'), nullable=True)
+    character_id = db.Column(db.Integer, db.ForeignKey('character.id'), nullable=True)  # 关联角色
+    name = db.Column(db.String(255), nullable=False)
+    birth_year = db.Column(db.String(100), default='')  # 出生年份
+    death_year = db.Column(db.String(100), default='')  # 死亡年份
+    birth_place_id = db.Column(db.Integer, default=None)  # 出生地
+    death_place_id = db.Column(db.Integer, default=None)  # 死亡地
+    primary_role = db.Column(db.String(100), default='')  # 主要身份：统治者/将军/学者/艺术家
+    social_class = db.Column(db.String(100), default='')  # 社会阶级
+    key_achievements = db.Column(db.Text, default='')  # 主要成就
+    controversies = db.Column(db.Text, default='')  # 争议
+    historical_legacy = db.Column(db.Text, default='')  # 历史遗产
+    description = db.Column(db.Text, default='')
+    importance_level = db.Column(db.Integer, default=5)  # 重要性1-10
+    status = db.Column(db.String(50), default='active')
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'civilization_id': self.civilization_id,
+            'character_id': self.character_id,
+            'name': self.name,
+            'birth_year': self.birth_year,
+            'death_year': self.death_year,
+            'birth_place_id': self.birth_place_id,
+            'death_place_id': self.death_place_id,
+            'primary_role': self.primary_role,
+            'social_class': self.social_class,
+            'key_achievements': self.key_achievements,
+            'controversies': self.controversies,
+            'historical_legacy': self.historical_legacy,
+            'description': self.description,
+            'importance_level': self.importance_level,
+            'status': self.status,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class EventParticipant(db.Model):
+    """事件-人物关联表 - 多对多，记录人物在事件中的角色"""
+    __tablename__ = 'event_participants'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    event_id = db.Column(db.Integer, db.ForeignKey('historical_events.id'), nullable=False)
+    figure_id = db.Column(db.Integer, db.ForeignKey('historical_figures.id'), nullable=False)
+    role_type = db.Column(db.String(100), default='参与者')  # 领导者/参与者/反对者/受害者/旁观者
+    contribution_level = db.Column(db.Integer, default=5)  # 贡献程度1-10
+    motivation = db.Column(db.Text, default='')  # 动机
+    outcome_for_participant = db.Column(db.Text, default='')  # 对参与者的结果
+    description = db.Column(db.Text, default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'event_id': self.event_id,
+            'figure_id': self.figure_id,
+            'role_type': self.role_type,
+            'contribution_level': self.contribution_level,
+            'motivation': self.motivation,
+            'outcome_for_participant': self.outcome_for_participant,
+            'description': self.description,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+# ==================== 任务5：标签与关系系统 ====================
+
+class Tag(db.Model):
+    """标签表 - 用于分类和检索"""
+    __tablename__ = 'tags'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    tag_type = db.Column(db.String(100), default='通用')  # 通用/角色/地点/物品/事件
+    description = db.Column(db.Text, default='')
+    color = db.Column(db.String(50), default='#1890ff')  # 标签颜色
+    usage_count = db.Column(db.Integer, default=0)  # 使用次数
+    status = db.Column(db.String(50), default='active')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'name': self.name,
+            'tag_type': self.tag_type,
+            'description': self.description,
+            'color': self.color,
+            'usage_count': self.usage_count,
+            'status': self.status,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class EntityTag(db.Model):
+    """实体标签关联表 - 多对多关联"""
+    __tablename__ = 'entity_tags'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=False)
+    entity_type = db.Column(db.String(50), nullable=False)  # character/location/item/event等
+    entity_id = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tag_id': self.tag_id,
+            'entity_type': self.entity_type,
+            'entity_id': self.entity_id,
+            'created_at': self.created_at.isoformat()
+        }
+
+
+class EntityRelation(db.Model):
+    """实体关系表 - 通用关系网络"""
+    __tablename__ = 'entity_relations'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=False)
+    source_type = db.Column(db.String(50), nullable=False)  # character/location/item等
+    source_id = db.Column(db.Integer, nullable=False)
+    target_type = db.Column(db.String(50), nullable=False)
+    target_id = db.Column(db.Integer, nullable=False)
+    relation_type = db.Column(db.String(100), nullable=False)  # 关系类型：友谊/敌对/师徒等
+    strength = db.Column(db.Integer, default=5)  # 关系强度1-10
+    description = db.Column(db.Text, default='')
+    is_bidirectional = db.Column(db.Boolean, default=True)  # 是否双向关系
+    status = db.Column(db.String(50), default='active')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_id': self.world_id,
+            'source_type': self.source_type,
+            'source_id': self.source_id,
+            'target_type': self.target_type,
+            'target_id': self.target_id,
+            'relation_type': self.relation_type,
+            'strength': self.strength,
+            'description': self.description,
+            'is_bidirectional': self.is_bidirectional,
+            'status': self.status,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }

@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorldForge - 小说设定数据库</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans SC', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        accent: {
+                            purple: '#8b5cf6',
+                            teal: '#14b8a6',
+                            rose: '#f43f5e',
+                            amber: '#f59e0b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { scrollbar-width: thin; scrollbar-color: #475569 #1e293b; }
+        *::-webkit-scrollbar { width: 6px; height: 6px; }
+        *::-webkit-scrollbar-track { background: #1e293b; }
+        *::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        
+        .entity-card {
+            transition: all 0.2s ease;
+        }
+        .entity-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+        }
+        
+        .timeline-line {
+            background: linear-gradient(to bottom, #3b82f6, #8b5cf6, #f43f5e);
+        }
+        
+        .relationship-line {
+            stroke-dasharray: 5,5;
+            animation: dash 20s linear infinite;
+        }
+        
+        @keyframes dash {
+            to { stroke-dashoffset: -100; }
+        }
+        
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 font-sans h-screen overflow-hidden">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center px-4 justify-between z-50">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 text-primary-500">
+                <i class="fa-solid fa-cube text-xl"></i>
+                <span class="font-bold text-lg tracking-tight text-white">WorldForge</span>
+            </div>
+            
+            <!-- 世界选择器 -->
+            <div class="relative ml-6">
+                <select id="worldSelector" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-primary-500 min-w-[160px]">
+                    <option value="azeroth">艾泽拉斯 (当前)</option>
+                    <option value="tamriel">泰姆瑞尔</option>
+                    <option value="middle-earth">中土世界</option>
+                    <option value="new">+ 创建新世界</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 flex-1 max-w-2xl mx-8">
+            <div class="relative w-full">
+                <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                <input type="text" placeholder="搜索角色、地点、事件、物品..." 
+                    class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-1.5 text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+                    id="globalSearch">
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 hidden md:block">
+                    <kbd class="bg-slate-700 px-1.5 py-0.5 rounded">Ctrl</kbd>
+                    <kbd class="bg-slate-700 px-1.5 py-0.5 rounded">K</kbd>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors relative">
+                <i class="fa-solid fa-bell"></i>
+                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-accent-rose rounded-full"></span>
+            </button>
+            <button class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors">
+                <i class="fa-solid fa-code-branch"></i>
+            </button>
+            <div class="flex items-center gap-2 ml-2 pl-3 border-l border-slate-700">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-8 h-8 rounded-full bg-slate-700">
+                <span class="text-sm font-medium hidden md:block">创作者</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-[calc(100vh-56px)]">
+        <!-- 左侧导航 - 基于数据库模块结构 -->
+        <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
+            <div class="p-4">
+                <button onclick="createNewEntity()" class="w-full bg-primary-600 hover:bg-primary-700 text-white rounded-lg py-2 px-4 flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary-900/20">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>新建实体</span>
+                </button>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto px-3 space-y-1" id="moduleNav">
+                <!-- 模块导航项 -->
+                <div class="space-y-1">
+                    <button onclick="switchModule('dashboard')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium bg-primary-500/10 text-primary-400 border border-primary-500/20">
+                        <i class="fa-solid fa-chart-pie w-5"></i>
+                        <span>概览面板</span>
+                    </button>
+                    
+                    <button onclick="switchModule('worlds')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                        <i class="fa-solid fa-globe w-5"></i>
+                        <span>世界架构</span>
+                        <span class="ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-500">1</span>
+                    </button>
+
+                    <button onclick="switchModule('characters')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                        <i class="fa-solid fa-user-group w-5"></i>
+                        <span>角色设定</span>
+                        <span class="ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-500">1,234</span>
+                    </button>
+
+                    <button onclick="switchModule('organizations')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                        <i class="fa-solid fa-sitemap w-5"></i>
+                        <span>势力组织</span>
+                        <span class="ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-500">456</span>
+                    </button>
+
+                    <button onclick="switchModule('locations')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                        <i class="fa-solid fa-map-location-dot w-5"></i>
+                        <span>地点场景</span>
+                        <span class="ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-500">789</span>
+                    </button>
+
+                    <button onclick="switchModule('items')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                        <i class="fa-solid fa-box-open w-5"></i>
+                        <span>物品资源</span>
+                        <span class="ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-500">2,345</span>
+                    </button>
+
+                    <button onclick="switchModule('creatures')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                        <i class="fa-solid fa-dragon w-5"></i>
+                        <span>生物图鉴</span>
+                        <span class="ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-500">567</span>
+                    </button>
+
+                    <button onclick="switchModule('timeline')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                        <i class="fa-solid fa-clock-rotate-left w-5"></i>
+                        <span>时间脉络</span>
+                        <span class="ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-500">23</span>
+                    </button>
+
+                    <button onclick="switchModule('energy')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                        <i class="fa-solid fa-bolt w-5"></i>
+                        <span>能量体系</span>
+                        <span class="ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-500">12</span>
+                    </button>
+                </div>
+
+                <div class="pt-4 mt-4 border-t border-slate-800">
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">工具</div>
+                    <button onclick="switchModule('graph')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                        <i class="fa-solid fa-circle-nodes w-5"></i>
+                        <span>关系图谱</span>
+                    </button>
+                    <button onclick="switchModule('consistency')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                        <i class="fa-solid fa-check-double w-5"></i>
+                        <span>一致性检查</span>
+                    </button>
+                </div>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800">
+                <div class="glass-panel rounded-lg p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-slate-400">存储使用</span>
+                        <span class="text-xs font-medium text-primary-400">78%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 rounded-full h-1.5">
+                        <div class="bg-primary-500 h-1.5 rounded-full" style="width: 78%"></div>
+                    </div>
+                    <div class="mt-2 text-xs text-slate-500">7.8 GB / 10 GB</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="flex-1 flex overflow-hidden bg-slate-950">
+            <!-- 列表/浏览区 -->
+            <div class="flex-1 flex flex-col min-w-0" id="mainContent">
+                
+                <!-- 概览面板 -->
+                <div id="dashboardView" class="flex-1 overflow-y-auto p-6 fade-in">
+                    <div class="max-w-7xl mx-auto space-y-6">
+                        <!-- 头部统计 -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="glass-panel rounded-xl p-4 border border-slate-800">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-slate-400 text-sm">总角色数</span>
+                                    <div class="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                                        <i class="fa-solid fa-users"></i>
+                                    </div>
+                                </div>
+                                <div class="text-2xl font-bold text-white">1,234</div>
+                                <div class="text-xs text-emerald-400 mt-1">+12 本周新增</div>
+                            </div>
+                            
+                            <div class="glass-panel rounded-xl p-4 border border-slate-800">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-slate-400 text-sm">势力组织</span>
+                                    <div class="p-2 bg-purple-500/10 rounded-lg text-purple-400">
+                                        <i class="fa-solid fa-chess-rook"></i>
+                                    </div>
+                                </div>
+                                <div class="text-2xl font-bold text-white">456</div>
+                                <div class="text-xs text-emerald-400 mt-1">+5 本周新增</div>
+                            </div>
+
+                            <div class="glass-panel rounded-xl p-4 border border-slate-800">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-slate-400 text-sm">地点场景</span>
+                                    <div class="p-2 bg-teal-500/10 rounded-lg text-teal-400">
+                                        <i class="fa-solid fa-map"></i>
+                                    </div>
+                                </div>
+                                <div class="text-2xl font-bold text-white">789</div>
+                                <div class="text-xs text-slate-500 mt-1">无变化</div>
+                            </div>
+
+                            <div class="glass-panel rounded-xl p-4 border border-slate-800">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-slate-400 text-sm">历史事件</span>
+                                    <div class="p-2 bg-amber-500/10 rounded-lg text-amber-400">
+                                        <i class="fa-solid fa-scroll"></i>
+                                    </div>
+                                </div>
+                                <div class="text-2xl font-bold text-white">156</div>
+                                <div class="text-xs text-emerald-400 mt-1">+23 本周新增</div>
+                            </div>
+                        </div>
+
+                        <!-- 最近编辑 & 快捷操作 -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="lg:col-span-2 glass-panel rounded-xl border border-slate-800">
+                                <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                                    <h3 class="font-semibold text-white">最近更新</h3>
+                                    <button class="text-sm text-primary-400 hover:text-primary-300">查看全部</button>
+                                </div>
+                                <div class="divide-y divide-slate-800">
+                                    <div class="p-4 flex items-center gap-4 hover:bg-slate-800/50 transition-colors cursor-pointer group">
+                                        <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                                            <i class="fa-solid fa-user"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-medium text-white group-hover:text-primary-400 transition-colors">吉安娜·普罗德摩尔</span>
+                                                <span class="text-xs text-slate-500">角色</span>
+                                            </div>
+                                            <div class="text-sm text-slate-400 truncate">更新了背景故事：添加了塞拉摩陷落章节</div>
+                                        </div>
+                                        <div class="text-xs text-slate-500">5分钟前</div>
+                                    </div>
+                                    
+                                    <div class="p-4 flex items-center gap-4 hover:bg-slate-800/50 transition-colors cursor-pointer group">
+                                        <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                                            <i class="fa-solid fa-building"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-medium text-white group-hover:text-primary-400 transition-colors">暴风城</span>
+                                                <span class="text-xs text-slate-500">地点</span>
+                                            </div>
+                                            <div class="text-sm text-slate-400 truncate">修改了防御设施描述，添加了城门结构图</div>
+                                        </div>
+                                        <div class="text-xs text-slate-500">2小时前</div>
+                                    </div>
+
+                                    <div class="p-4 flex items-center gap-4 hover:bg-slate-800/50 transition-colors cursor-pointer group">
+                                        <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                                            <i class="fa-solid fa-bolt"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-medium text-white group-hover:text-primary-400 transition-colors">奥术魔法体系</span>
+                                                <span class="text-xs text-slate-500">能量</span>
+                                            </div>
+                                            <div class="text-sm text-slate-400 truncate">调整了魔力潮汐周期计算方式</div>
+                                        </div>
+                                        <div class="text-xs text-slate-500">昨天</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="glass-panel rounded-xl p-4 border border-slate-800">
+                                    <h3 class="font-semibold text-white mb-4">快速创建</h3>
+                                    <div class="space-y-2">
+                                        <button onclick="quickCreate('character')" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors text-left group">
+                                            <i class="fa-solid fa-user-plus text-blue-400 group-hover:scale-110 transition-transform"></i>
+                                            <div>
+                                                <div class="text-sm font-medium text-white">新建角色</div>
+                                                <div class="text-xs text-slate-500">添加故事人物</div>
+                                            </div>
+                                        </button>
+                                        <button onclick="quickCreate('location')" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors text-left group">
+                                            <i class="fa-solid fa-location-dot text-teal-400 group-hover:scale-110 transition-transform"></i>
+                                            <div>
+                                                <div class="text-sm font-medium text-white">新建地点</div>
+                                                <div class="text-xs text-slate-500">添加场景设定</div>
+                                            </div>
+                                        </button>
+                                        <button onclick="quickCreate('event')" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors text-left group">
+                                            <i class="fa-solid fa-calendar-plus text-amber-400 group-hover:scale-110 transition-transform"></i>
+                                            <div>
+                                                <div class="text-sm font-medium text-white">新建事件</div>
+                                                <div class="text-xs text-slate-500">添加历史节点</div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="glass-panel rounded-xl p-4 border border-slate-800">
+                                    <h3 class="font-semibold text-white mb-3">活跃度</h3>
+                                    <div class="flex items-end gap-1 h-24">
+                                        <div class="flex-1 bg-slate-800 rounded-t hover:bg-primary-500/50 transition-colors" style="height: 40%"></div>
+                                        <div class="flex-1 bg-slate-800 rounded-t hover:bg-primary-500/50 transition-colors" style="height: 65%"></div>
+                                        <div class="flex-1 bg-slate-800 rounded-t hover:bg-primary-500/50 transition-colors" style="height: 45%"></div>
+                                        <div class="flex-1 bg-slate-800 rounded-t hover:bg-primary-500/50 transition-colors" style="height: 80%"></div>
+                                        <div class="flex-1 bg-slate-800 rounded-t hover:bg-primary-500/50 transition-colors" style="height: 60%"></div>
+                                        <div class="flex-1 bg-slate-800 rounded-t hover:bg-primary-500/50 transition-colors" style="height: 90%"></div>
+                                        <div class="flex-1 bg-primary-500 rounded-t" style="height: 75%"></div>
+                                    </div>
+                                    <div class="flex justify-between mt-2 text-xs text-slate-500">
+                                        <span>周一</span>
+                                        <span>周日</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 时间线预览 -->
+                        <div class="glass-panel rounded-xl border border-slate-800 p-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="font-semibold text-white">关键历史节点</h3>
+                                <div class="flex gap-2">
+                                    <button class="px-3 py-1 rounded-lg bg-slate-800 text-xs text-slate-400 hover:text-white transition-colors">全部</button>
+                                    <button class="px-3 py-1 rounded-lg bg-primary-500/20 text-xs text-primary-400 border border-primary-500/30">战争</button>
+                                    <button class="px-3 py-1 rounded-lg bg-slate-800 text-xs text-slate-400 hover:text-white transition-colors">发现</button>
+                                </div>
+                            </div>
+                            
+                            <div class="relative">
+                                <div class="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-800 -translate-y-1/2"></div>
+                                <div class="relative flex justify-between">
+                                    <div class="relative group cursor-pointer">
+                                        <div class="w-4 h-4 rounded-full bg-blue-500 border-4 border-slate-900 group-hover:scale-125 transition-transform"></div>
+                                        <div class="absolute top-6 left-1/2 -translate-x-1/2 w-32 text-center">
+                                            <div class="text-xs font-medium text-blue-400">黑暗之门开启</div>
+                                            <div class="text-xs text-slate-500">元年</div>
+                                        </div>
+                                    </div>
+                                    <div class="relative group cursor-pointer">
+                                        <div class="w-4 h-4 rounded-full bg-amber-500 border-4 border-slate-900 group-hover:scale-125 transition-transform"></div>
+                                        <div class="absolute top-6 left-1/2 -translate-x-1/2 w-32 text-center">
+                                            <div class="text-xs font-medium text-amber-400">第一次战争</div>
+                                            <div class="text-xs text-slate-500">3年</div>
+                                        </div>
+                                    </div>
+                                    <div class="relative group cursor-pointer">
+                                        <div class="w-4 h-4 rounded-full bg-accent-rose border-4 border-slate-900 group-hover:scale-125 transition-transform"></div>
+                                        <div class="absolute top-6 left-1/2 -translate-x-1/2 w-32 text-center">
+                                            <div class="text-xs font-medium text-accent-rose">第二次战争</div>
+                                            <div class="text-xs text-slate-500">6年</div>
+                                        </div>
+                                    </div>
+                                    <div class="relative group cursor-pointer">
+                                        <div class="w-4 h-4 rounded-full bg-purple-500 border-4 border-slate-900 group-hover:scale-125 transition-transform"></div>
+                                        <div class="absolute top-6 left-1/2 -translate-x-1/2 w-32 text-center">
+                                            <div class="text-xs font-medium text-purple-400">第三次战争</div>
+                                            <div class="text-xs text-slate-500">20年</div>
+                                        </div>
+                                    </div>
+                                    <div class="relative group cursor-pointer">
+                                        <div class="w-4 h-4 rounded-full bg-accent-teal border-4 border-slate-900 group-hover:scale-125 transition-transform"></div>
+                                        <div class="absolute top-6 left-1/2 -translate-x-1/2 w-32 text-center">
+                                            <div class="text-xs font-medium text-accent-teal">当前时间线</div>
+                                            <div class="text-xs text-slate-500">31年</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 角色列表视图（示例） -->
+                <div id="charactersView" class="hidden flex-1 flex flex-col">
+                    <!-- 工具栏 -->
+                    <div class="h-14 border-b border-slate-800 flex items-center px-6 justify-between bg-slate-900/50">
+                        <div class="flex items-center gap-4">
+                            <h2 class="text-lg font-semibold text-white">角色设定</h2>
+                            <div class="h-6 w-px bg-slate-700"></div>
+                            <div class="flex gap-2">
+                                <button class="px-3 py-1.5 rounded-lg bg-primary-500/20 text-primary-400 text-sm border border-primary-500/30">全部</button>
+                                <button class="px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-400 text-sm transition-colors">主角</button>
+                                <button class="px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-400 text-sm transition-colors">配角</button>
+                                <button class="px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-400 text-sm transition-colors">反派</button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                                <input type="text" placeholder="筛选..." class="bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-primary-500 w-48">
+                            </div>
+                            <div class="flex bg-slate-800 rounded-lg p-1">
+                                <button onclick="setViewMode('grid')" id="gridViewBtn" class="p-1.5 rounded bg-slate-700 text-white">
+                                    <i class="fa-solid fa-grid-2"></i>
+                                </button>
+                                <button onclick="setViewMode('list')" id="listViewBtn" class="p-1.5 rounded text-slate-400 hover:text-white">
+                                    <i class="fa-solid fa-list"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 筛选面板 -->
+                    <div class="px-6 py-3 border-b border-slate-800 bg-slate-900/30 flex gap-4 overflow-x-auto">
+                        <select class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-300 focus:outline-none focus:border-primary-500">
+                            <option>所有种族</option>
+                            <option>人类</option>
+                            <option>精灵</option>
+                            <option>兽人</option>
+                        </select>
+                        <select class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-300 focus:outline-none focus:border-primary-500">
+                            <option>所有势力</option>
+                            <option>联盟</option>
+                            <option>部落</option>
+                            <option>中立</option>
+                        </select>
+                        <select class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-300 focus:outline-none focus:border-primary-500">
+                            <option>重要程度</option>
+                            <option>核心角色</option>
+                            <option>重要角色</option>
+                            <option>普通角色</option>
+                        </select>
+                        <div class="flex items-center gap-2 ml-auto">
+                            <span class="text-sm text-slate-500">排序：</span>
+                            <select class="bg-transparent text-sm text-slate-300 focus:outline-none cursor-pointer">
+                                <option>最近更新</option>
+                                <option>创建时间</option>
+                                <option>名称</option>
+                                <option>重要程度</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 内容区 -->
+                    <div class="flex-1 overflow-y-auto p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="characterGrid">
+                            <!-- 角色卡片 1 -->
+                            <div class="entity-card glass-panel rounded-xl border border-slate-800 overflow-hidden cursor-pointer group" onclick="openEntityDetail('character', 1)">
+                                <div class="h-32 bg-gradient-to-br from-blue-600/20 to-purple-600/20 relative overflow-hidden">
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <i class="fa-solid fa-user text-4xl text-slate-700 group-hover:text-blue-400/50 transition-colors"></i>
+                                    </div>
+                                    <div class="absolute top-3 right-3">
+                                        <span class="px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs border border-blue-500/30">主角</span>
+                                    </div>
+                                    <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-900 to-transparent"></div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <div>
+                                            <h3 class="font-semibold text-white group-hover:text-primary-400 transition-colors">吉安娜·普罗德摩尔</h3>
+                                            <div class="text-xs text-slate-400 mt-0.5">大法师 · 塞拉摩统治者</div>
+                                        </div>
+                                        <span class="text-amber-400 text-xs">⭐⭐⭐⭐⭐</span>
+                                    </div>
+                                    
+                                    <div class="flex flex-wrap gap-2 mb-3">
+                                        <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-xs">人类</span>
+                                        <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-xs">法师</span>
+                                        <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 text-xs">联盟</span>
+                                    </div>
+
+                                    <div class="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-800">
+                                        <span>等级 85</span>
+                                        <span class="flex items-center gap-1">
+                                            <i class="fa-solid fa-location-dot"></i>
+                                            塞拉摩
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 角色卡片 2 -->
+                            <div class="entity-card glass-panel rounded-xl border border-slate-800 overflow-hidden cursor-pointer group" onclick="openEntityDetail('character', 2)">
+                                <div class="h-32 bg-gradient-to-br from-accent-rose/20 to-purple-600/20 relative overflow-hidden">
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <i class="fa-solid fa-user text-4xl text-slate-700 group-hover:text-accent-rose/50 transition-colors"></i>
+                                    </div>
+                                    <div class="absolute top-3 right-3">
+                                        <span class="px-2 py-1 rounded-full bg-accent-rose/20 text-accent-rose text-xs border border-accent-rose/30">反派</span>
+                                    </div>
+                                    <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-900 to-transparent"></div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <div>
+                                            <h3 class="font-semibold text-white group-hover:text-primary-400 transition-colors">阿尔萨斯·米奈希尔</h3>
+                                            <div class="text-xs text-slate-400 mt-0.5">巫妖王 · 死亡骑士</div>
+                                        </div>
+                                        <span class="text-amber-400 text-xs">⭐⭐⭐⭐⭐</span>
+                                    </div>
+                                    
+                                    <div class="flex flex-wrap gap-2 mb-3">
+                                        <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-xs">人类→亡灵</span>
+                                        <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-xs">死亡骑士</span>
+                                        <span class="px-2 py-0.5 rounded bg-accent-rose/10 text-accent-rose text-xs">天灾军团</span>
+                                    </div>
+
+                                    <div class="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-800">
+                                        <span>等级 83</span>
+                                        <span class="flex items-center gap-1 text-accent-rose">
+                                            <i class="fa-solid fa-skull"></i>
+                                            已死亡
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 角色卡片 3 -->
+                            <div class="entity-card glass-panel rounded-xl border border-slate-800 overflow-hidden cursor-pointer group" onclick="openEntityDetail('character', 3)">
+                                <div class="h-32 bg-gradient-to-br from-accent-teal/20 to-green-600/20 relative overflow-hidden">
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <i class="fa-solid fa-user text-4xl text-slate-700 group-hover:text-accent-teal/50 transition-colors"></i>
+                                    </div>
+                                    <div class="absolute top-3 right-3">
+                                        <span class="px-2 py-1 rounded-full bg-accent-teal/20 text-accent-teal text-xs border border-accent-teal/30">配角</span>
+                                    </div>
+                                    <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-900 to-transparent"></div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <div>
+                                            <h3 class="font-semibold text-white group-hover:text-primary-400 transition-colors">萨尔</h3>
+                                            <div class="text-xs text-slate-400 mt-0.5">部落大酋长 · 萨满</div>
+                                        </div>
+                                        <span class="text-amber-400 text-xs">⭐⭐⭐⭐</span>
+                                    </div>
+                                    
+                                    <div class="flex flex-wrap gap-2 mb-3">
+                                        <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-xs">兽人</span>
+                                        <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-xs">萨满</span>
+                                        <span class="px-2 py-0.5 rounded bg-accent-rose/10 text-accent-rose text-xs">部落</span>
+                                    </div>
+
+                                    <div class="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-800">
+                                        <span>等级 88</span>
+                                        <span class="flex items-center gap-1">
+                                            <i class="fa-solid fa-location-dot"></i>
+                                            奥格瑞玛
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 添加更多卡片 -->
+                            <div class="entity-card glass-panel rounded-xl border border-slate-800 border-dashed flex flex-col items-center justify-center h-64 cursor-pointer hover:border-primary-500/50 hover:bg-slate-800/30 transition-all group" onclick="quickCreate('character')">
+                                <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-3 group-hover:bg-primary-500/20 group-hover:scale-110 transition-all">
+                                    <i class="fa-solid fa-plus text-2xl text-slate-600 group-hover:text-primary-400"></i>
+                                </div>
+                                <span class="text-slate-400 font-medium">新建角色</span>
+                                <span class="text-xs text-slate-600 mt-1">创建新的故事人物</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 右侧详情面板（可折叠） -->
+            <aside id="detailPanel" class="w-96 bg-slate-900 border-l border-slate-800 flex flex-col transform transition-transform duration-300 translate-x-full">
+                <div class="h-14 border-b border-slate-800 flex items-center justify-between px-4">
+                    <span class="font-semibold text-white">详情</span>
+                    <button onclick="closeDetailPanel()" class="p-2 hover:bg-slate-800 rounded-lg text-slate-400">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4" id="detailContent">
+                    <!-- 动态加载详情内容 -->
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- 新建实体模态框 -->
+    <div id="createModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl m-4 shadow-2xl transform scale-95 opacity-0 transition-all duration-200" id="createModalContent">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-white">新建实体</h2>
+                <button onclick="closeCreateModal()" class="p-2 hover:bg-slate-800 rounded-lg text-slate-400">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button onclick="selectEntityType('character')" class="p-6 rounded-xl border border-slate-800 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group text-center">
+                        <i class="fa-solid fa-user text-3xl text-slate-600 group-hover:text-blue-400 mb-3 block"></i>
+                        <div class="font-medium text-white">角色</div>
+                        <div class="text-xs text-slate-500 mt-1">故事人物</div>
+                    </button>
+                    <button onclick="selectEntityType('organization')" class="p-6 rounded-xl border border-slate-800 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all group text-center">
+                        <i class="fa-solid fa-sitemap text-3xl text-slate-600 group-hover:text-purple-400 mb-3 block"></i>
+                        <div class="font-medium text-white">组织</div>
+                        <div class="text-xs text-slate-500 mt-1">势力团体</div>
+                    </button>
+                    <button onclick="selectEntityType('location')" class="p-6 rounded-xl border border-slate-800 hover:border-teal-500/50 hover:bg-teal-500/5 transition-all group text-center">
+                        <i class="fa-solid fa-map-location-dot text-3xl text-slate-600 group-hover:text-teal-400 mb-3 block"></i>
+                        <div class="font-medium text-white">地点</div>
+                        <div class="text-xs text-slate-500 mt-1">场景地点</div>
+                    </button>
+                    <button onclick="selectEntityType('item')" class="p-6 rounded-xl border border-slate-800 hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group text-center">
+                        <i class="fa-solid fa-box-open text-3xl text-slate-600 group-hover:text-amber-400 mb-3 block"></i>
+                        <div class="font-medium text-white">物品</div>
+                        <div class="text-xs text-slate-500 mt-1">装备道具</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let currentModule = 'dashboard';
+        let currentViewMode = 'grid';
+        let selectedEntity = null;
+
+        // 模块切换
+        function switchModule(module) {
+            // 更新导航状态
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('bg-primary-500/10', 'text-primary-400', 'border', 'border-primary-500/20');
+                item.classList.add('text-slate-400');
+            });
+            event.currentTarget.classList.remove('text-slate-400');
+            event.currentTarget.classList.add('bg-primary-500/10', 'text-primary-400', 'border', 'border-primary-500/20');
+
+            // 隐藏所有视图
+            document.querySelectorAll('[id$="View"]').forEach(view => {
+                view.classList.add('hidden');
+            });
+
+            // 显示对应视图
+            const viewMap = {
+                'dashboard': 'dashboardView',
+                'characters': 'charactersView',
+                'organizations': 'charactersView', // 复用布局
+                'locations': 'charactersView',
+                'items': 'charactersView',
+                'timeline': 'charactersView'
+            };
+
+            const targetView = viewMap[module] || 'dashboardView';
+            document.getElementById(targetView).classList.remove('hidden');
+            
+            currentModule = module;
+        }
+
+        // 视图模式切换
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            document.getElementById('gridViewBtn').classList.toggle('bg-slate-700', mode === 'grid');
+            document.getElementById('gridViewBtn').classList.toggle('text-white', mode === 'grid');
+            document.getElementById('gridViewBtn').classList.toggle('text-slate-400', mode !== 'grid');
+            
+            document.getElementById('listViewBtn').classList.toggle('bg-slate-700', mode === 'list');
+            document.getElementById('listViewBtn').classList.toggle('text-white', mode === 'list');
+            document.getElementById('listViewBtn').classList.toggle('text-slate-400', mode !== 'list');
+        }
+
+        // 打开详情面板
+        function openEntityDetail(type, id) {
+            const panel = document.getElementById('detailPanel');
+            const content = document.getElementById('detailContent');
+            
+            // 模拟加载详情数据
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div class="text-center">
+                        <div class="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600/20 to-purple-600/20 mx-auto mb-4 flex items-center justify-center border-2 border-slate-700">
+                            <i class="fa-solid fa-user text-4xl text-slate-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">吉安娜·普罗德摩尔</h3>
+                        <p class="text-slate-400 text-sm mt-1">大法师 · 塞拉摩的统治者</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-800/50 rounded-lg p-3">
+                            <div class="text-xs text-slate-500 mb-1">种族</div>
+                            <div class="text-sm text-white font-medium">人类</div>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-3">
+                            <div class="text-xs text-slate-500 mb-1">职业</div>
+                            <div class="text-sm text-white font-medium">法师</div>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-3">
+                            <div class="text-xs text-slate-500 mb-1">等级</div>
+                            <div class="text-sm text-white font-medium">85</div>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-3">
+                            <div class="text-xs text-slate-500 mb-1">阵营</div>
+                            <div class="text-sm text-blue-400 font-medium">联盟</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-simple text-primary-400"></i>
+                            属性数值
+                        </h4>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">智力</span>
+                                    <span class="text-white">95/100</span>
+                                </div>
+                                <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-blue-500 rounded-full" style="width: 95%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">魅力</span>
+                                    <span class="text-white">88/100</span>
+                                </div>
+                                <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-purple-500 rounded-full" style="width: 88%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">力量</span>
+                                    <span class="text-white">45/100</span>
+                                </div>
+                                <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-red-500 rounded-full" style="width: 45%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-link text-accent-teal"></i>
+                            关联关系
+                        </h4>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800/50 cursor-pointer transition-colors">
+                                <div class="w-8 h-8 rounded-full bg-accent-rose/20 flex items-center justify-center">
+                                    <i class="fa-solid fa-user text-xs text-accent-rose"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-sm text-white">阿尔萨斯</div>
+                                    <div class="text-xs text-slate-500">初恋 → 敌对</div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-xs text-slate-600"></i>
+                            </div>
+                            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800/50 cursor-pointer transition-colors">
+                                <div class="w-8 h-8 rounded-full bg-accent-teal/20 flex items-center justify-center">
+                                    <i class="fa-solid fa-user text-xs text-accent-teal"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-sm text-white">萨尔</div>
+                                    <div class="text-xs text-slate-500">盟友 / 尊重</div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-xs text-slate-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 flex gap-2">
+                        <button class="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg text-sm font-medium transition-colors">
+                            编辑详情
+                        </button>
+                        <button class="px-3 py-2 border border-slate-700 hover:bg-slate-800 rounded-lg text-slate-400 transition-colors">
+                            <i class="fa-solid fa-ellipsis"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            panel.classList.remove('translate-x-full');
+        }
+
+        // 关闭详情面板
+        function closeDetailPanel() {
+            document.getElementById('detailPanel').classList.add('translate-x-full');
+        }
+
+        // 创建新实体
+        function createNewEntity() {
+            const modal = document.getElementById('createModal');
+            const content = document.getElementById('createModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeCreateModal() {
+            const modal = document.getElementById('createModal');
+            const content = document.getElementById('createModalContent');
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function selectEntityType(type) {
+            closeCreateModal();
+            // 这里可以打开具体的创建表单
+            alert(`创建新的 ${type} 实体`);
+        }
+
+        function quickCreate(type) {
+            createNewEntity();
+        }
+
+        // 搜索功能
+        document.getElementById('globalSearch')?.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                alert('搜索: ' + this.value);
+            }
+        });
+
+        // 快捷键
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('globalSearch')?.focus();
+            }
+            if (e.key === 'Escape') {
+                closeDetailPanel();
+                closeCreateModal();
+            }
+        });
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 默认选中概览
+            document.querySelector('.nav-item').classList.add('bg-primary-500/10', 'text-primary-400', 'border', 'border-primary-500/20');
+        });
+    </script>
+</body>
+</html>

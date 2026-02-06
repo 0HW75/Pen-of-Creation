@@ -150,7 +150,7 @@ const WorldManagement = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ width: '100%', height: '100%' }}>
       <Card
         title="世界管理"
         extra={
@@ -162,6 +162,7 @@ const WorldManagement = () => {
             创建世界
           </Button>
         }
+        style={{ width: '100%' }}
       >
         <Table
           columns={columns}
@@ -169,6 +170,7 @@ const WorldManagement = () => {
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10 }}
+          scroll={{ x: 'max-content' }}
         />
       </Card>
 
