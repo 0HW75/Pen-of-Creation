@@ -535,8 +535,71 @@ const SettingManagement = ({ projectId }) => {
           <Form.Item key="name" name="name" label="角色名称" rules={[{ required: true, message: '请输入角色名称' }]}>
             <Input placeholder="请输入角色名称" />
           </Form.Item>,
-          <Form.Item key="description" name="description" label="角色描述">
-            <TextArea rows={4} placeholder="请输入角色描述" />
+          <Form.Item key="alternative_names" name="alternative_names" label="别名">
+            <Input placeholder="多个别名用逗号分隔" />
+          </Form.Item>,
+          <Form.Item key="role_type" name="role_type" label="角色类型" rules={[{ required: true, message: '请选择角色类型' }]}>
+            <Select placeholder="选择角色类型">
+              <Select.Option value="主角">主角</Select.Option>
+              <Select.Option value="配角">配角</Select.Option>
+              <Select.Option value="反派">反派</Select.Option>
+              <Select.Option value="龙套">龙套</Select.Option>
+            </Select>
+          </Form.Item>,
+          <Form.Item key="importance_level" name="importance_level" label="重要程度">
+            <Select placeholder="选择重要程度">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => (
+                <Select.Option key={level} value={level}>{level}级</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>,
+          <Form.Item key="race" name="race" label="种族">
+            <Input placeholder="请输入种族" />
+          </Form.Item>,
+          <Form.Item key="gender" name="gender" label="性别">
+            <Select placeholder="选择性别">
+              <Select.Option value="男">男</Select.Option>
+              <Select.Option value="女">女</Select.Option>
+              <Select.Option value="未知">未知</Select.Option>
+            </Select>
+          </Form.Item>,
+          <Form.Item key="age" name="age" label="年龄">
+            <Input type="number" placeholder="请输入年龄" />
+          </Form.Item>,
+          <Form.Item key="birth_date" name="birth_date" label="出生日期">
+            <Input placeholder="例如：1990年1月1日" />
+          </Form.Item>,
+          <Form.Item key="death_date" name="death_date" label="死亡日期">
+            <Input placeholder="例如：2020年12月31日（如适用）" />
+          </Form.Item>,
+          <Form.Item key="appearance" name="appearance" label="外貌描述">
+            <TextArea rows={3} placeholder="描述角色的外貌特征" />
+          </Form.Item>,
+          <Form.Item key="appearance_age" name="appearance_age" label="外貌年龄">
+            <Input type="number" placeholder="角色看起来多少岁" />
+          </Form.Item>,
+          <Form.Item key="distinguishing_features" name="distinguishing_features" label="显著特征">
+            <TextArea rows={2} placeholder="描述角色的显著特征，如疤痕、胎记等" />
+          </Form.Item>,
+          <Form.Item key="personality" name="personality" label="性格特点">
+            <TextArea rows={3} placeholder="描述角色的性格特点" />
+          </Form.Item>,
+          <Form.Item key="background" name="background" label="背景故事">
+            <TextArea rows={4} placeholder="描述角色的背景故事" />
+          </Form.Item>,
+          <Form.Item key="motivation" name="motivation" label="动机">
+            <TextArea rows={2} placeholder="描述角色的动机和目标" />
+          </Form.Item>,
+          <Form.Item key="current_location" name="current_location" label="当前位置">
+            <Input placeholder="角色当前所在位置" />
+          </Form.Item>,
+          <Form.Item key="status" name="status" label="状态">
+            <Select placeholder="选择状态">
+              <Select.Option value="存活">存活</Select.Option>
+              <Select.Option value="死亡">死亡</Select.Option>
+              <Select.Option value="失踪">失踪</Select.Option>
+              <Select.Option value="其他">其他</Select.Option>
+            </Select>
           </Form.Item>
         );
         break;
@@ -832,7 +895,7 @@ const SettingManagement = ({ projectId }) => {
 
   // 渲染表格列
   const getColumns = (type) => {
-    const columns = [
+    let columns = [
       {
         title: '名称',
         dataIndex: 'name',
@@ -861,7 +924,102 @@ const SettingManagement = ({ projectId }) => {
         ),
       },
     ];
-    
+
+    // 角色模块的特殊列
+    if (type === 'characters') {
+      columns = [
+        {
+          title: '角色名称',
+          dataIndex: 'name',
+          key: 'name',
+          width: 150,
+        },
+        {
+          title: '角色类型',
+          dataIndex: 'role_type',
+          key: 'role_type',
+          width: 100,
+          render: (type) => {
+            const colorMap = {
+              '主角': 'gold',
+              '配角': 'blue',
+              '反派': 'red',
+              '龙套': 'default'
+            };
+            return <span style={{ color: colorMap[type] || 'default' }}>{type}</span>;
+          },
+        },
+        {
+          title: '重要程度',
+          dataIndex: 'importance_level',
+          key: 'importance_level',
+          width: 100,
+          render: (level) => (
+            <span style={{ 
+              color: level >= 8 ? '#ff4d4f' : level >= 5 ? '#faad14' : '#52c41a',
+              fontWeight: 'bold'
+            }}>
+              {level}级
+            </span>
+          ),
+        },
+        {
+          title: '种族',
+          dataIndex: 'race',
+          key: 'race',
+          width: 100,
+        },
+        {
+          title: '性别',
+          dataIndex: 'gender',
+          key: 'gender',
+          width: 80,
+        },
+        {
+          title: '年龄',
+          dataIndex: 'age',
+          key: 'age',
+          width: 80,
+        },
+        {
+          title: '状态',
+          dataIndex: 'status',
+          key: 'status',
+          width: 80,
+          render: (status) => {
+            const colorMap = {
+              '存活': 'green',
+              '死亡': 'red',
+              '失踪': 'orange',
+              '其他': 'default'
+            };
+            return <span style={{ color: colorMap[status] || 'default' }}>{status}</span>;
+          },
+        },
+        {
+          title: '当前位置',
+          dataIndex: 'current_location',
+          key: 'current_location',
+          width: 150,
+          ellipsis: true,
+        },
+        {
+          title: '操作',
+          key: 'action',
+          width: 150,
+          fixed: 'right',
+          render: (_, record) => (
+            <Space size="middle">
+              <Button icon={<EditOutlined />} onClick={() => showModal(record)} title="编辑" />
+              <Popconfirm title="确定要删除这个角色吗？" onConfirm={() => handleDelete(record.id)}>
+                <Button icon={<DeleteOutlined />} danger title="删除" />
+              </Popconfirm>
+            </Space>
+          ),
+        },
+      ];
+    }
+
     return columns;
   };
 

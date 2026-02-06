@@ -124,7 +124,12 @@ export const chapterApi = {
 
 // 角色相关API
 export const characterApi = {
-  getCharacters: (projectId, cancelToken) => api.get('/characters', { params: { project_id: projectId }, cancelToken: cancelToken }),
+  getCharacters: (projectId, worldId, cancelToken) => {
+    const params = {};
+    if (projectId) params.project_id = projectId;
+    if (worldId) params.world_id = worldId;
+    return api.get('/characters', { params, cancelToken: cancelToken });
+  },
   getCharacter: (id, cancelToken) => api.get(`/characters/${id}`, { cancelToken: cancelToken }),
   createCharacter: async (data) => {
     const response = await api.post('/characters', data);
@@ -139,6 +144,20 @@ export const characterApi = {
   deleteCharacter: async (id) => {
     const response = await api.delete(`/characters/${id}`);
     clearCache(); // 清除缓存以确保下次获取最新数据
+    return response;
+  },
+  // 角色背景故事
+  getCharacterBackgrounds: (characterId) => api.get(`/characters/${characterId}/backgrounds`),
+  addCharacterBackground: async (characterId, data) => {
+    const response = await api.post(`/characters/${characterId}/backgrounds`, data);
+    clearCache();
+    return response;
+  },
+  // 角色能力详情
+  getCharacterAbilities: (characterId) => api.get(`/characters/${characterId}/abilities`),
+  addCharacterAbility: async (characterId, data) => {
+    const response = await api.post(`/characters/${characterId}/abilities`, data);
+    clearCache();
     return response;
   },
 };
@@ -624,6 +643,27 @@ export const settingApi = {
   },
   deleteSpecialItem: async (id) => {
     const response = await api.delete(`/settings/special-item/${id}`);
+    clearCache();
+    return response;
+  },
+};
+
+// 世界管理API
+export const worldApi = {
+  getWorlds: () => api.get('/worlds'),
+  getWorld: (id) => api.get(`/worlds/${id}`),
+  createWorld: async (data) => {
+    const response = await api.post('/worlds', data);
+    clearCache();
+    return response;
+  },
+  updateWorld: async (id, data) => {
+    const response = await api.put(`/worlds/${id}`, data);
+    clearCache();
+    return response;
+  },
+  deleteWorld: async (id) => {
+    const response = await api.delete(`/worlds/${id}`);
     clearCache();
     return response;
   },

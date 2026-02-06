@@ -13,7 +13,8 @@ import {
   MenuOutlined,
   CloseOutlined,
   CompassOutlined,
-  LayoutOutlined
+  LayoutOutlined,
+  GlobalOutlined
 } from '@ant-design/icons';
 const ProjectManagement = lazy(() => import('./pages/ProjectManagement'));
 const SettingManagement = lazy(() => import('./pages/SettingManagement'));
@@ -21,6 +22,7 @@ const EditorPage = lazy(() => import('./pages/EditorPage'));
 const SystemSetting = lazy(() => import('./pages/SystemSetting'));
 const NavigationPage = lazy(() => import('./pages/NavigationPage'));
 const BlueprintPage = lazy(() => import('./pages/BlueprintPage'));
+const WorldManagement = lazy(() => import('./pages/WorldManagement'));
 import { saveToLocalStorage, loadFromLocalStorage, backupData, restoreData } from './services/exportService';
 import DataVisualization from './components/DataVisualization';
 import WorkAnalysis from './components/WorkAnalysis';
@@ -52,6 +54,11 @@ function NovelEditorApp() {
       key: 'project',
       icon: <FileTextOutlined />,
       label: '项目管理',
+    },
+    {
+      key: 'world',
+      icon: <GlobalOutlined />,
+      label: '世界管理',
     },
     {
       key: 'editor',
@@ -104,6 +111,9 @@ function NovelEditorApp() {
     switch (current) {
       case 'project':
         items.push({ title: '项目管理' });
+        break;
+      case 'world':
+        items.push({ title: '世界管理' });
         break;
       case 'editor':
         items.push({ title: '编辑器' });
@@ -388,6 +398,9 @@ function NovelEditorApp() {
             <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}><Spin size="large" /></div>}>
               {current === 'project' && (
                 <ProjectManagement onSelectProject={setSelectedProjectId} />
+              )}
+              {current === 'world' && (
+                <WorldManagement />
               )}
               {current === 'editor' && (
                 <EditorPage projectId={selectedProjectId} />

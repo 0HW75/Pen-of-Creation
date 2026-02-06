@@ -1,21 +1,36 @@
 from flask import jsonify, request
 from app import db
-from app.models import Character, Project
+from app.models import Character, Project, CharacterBackground, CharacterAbilityDetail
 from app.api import api_bp
 
 @api_bp.route('/characters', methods=['GET'])
 def get_characters():
     project_id = request.args.get('project_id')
+    world_id = request.args.get('world_id')
+    query = Character.query
+    
     if project_id:
-        characters = Character.query.filter_by(project_id=project_id).all()
-    else:
-        characters = Character.query.all()
+        query = query.filter_by(project_id=project_id)
+    if world_id:
+        query = query.filter_by(world_id=world_id)
+    
+    characters = query.all()
     return jsonify([character.to_dict() for character in characters])
 
 @api_bp.route('/characters/<int:character_id>', methods=['GET'])
 def get_character(character_id):
     character = Character.query.get_or_404(character_id)
-    return jsonify(character.to_dict())
+    result = character.to_dict()
+    
+    # 获取角色的背景故事
+    backgrounds = CharacterBackground.query.filter_by(character_id=character_id).all()
+    result['backgrounds'] = [bg.to_dict() for bg in backgrounds]
+    
+    # 获取角色的能力详情
+    abilities = CharacterAbilityDetail.query.filter_by(character_id=character_id).all()
+    result['abilities'] = [ability.to_dict() for ability in abilities]
+    
+    return jsonify(result)
 
 @api_bp.route('/characters', methods=['POST'])
 def create_character():
@@ -36,12 +51,20 @@ def create_character():
         print(f'找到项目: {project.title}')
         new_character = Character(
             name=data['name'],
+            world_id=data.get('world_id'),
+            alternative_names=data.get('alternative_names', ''),
             character_type=data.get('character_type', '配角'),
+            role_type=data.get('role_type', '配角'),
             status=data.get('status', '存活'),
+            importance_level=data.get('importance_level', 5),
             race=data.get('race', ''),
             gender=data.get('gender', ''),
             age=data.get('age', 0),
+            birth_date=data.get('birth_date', ''),
+            death_date=data.get('death_date', ''),
             appearance=data.get('appearance', ''),
+            appearance_age=data.get('appearance_age', 0),
+            distinguishing_features=data.get('distinguishing_features', ''),
             personality=data.get('personality', ''),
             background=data.get('background', ''),
             character_arc=data.get('character_arc', ''),
@@ -84,9 +107,45 @@ def create_character():
         )
         db.session.add(new_character)
         db.session.commit()
+        
+        # 创建背景故事
+        if 'backgrounds' in data and data['backgrounds']:
+            for bg_data in data['backgrounds']:
+                background = CharacterBackground(
+                    character_id=new_character.id,
+                    period_name=bg_data.get('period_name', ''),
+                    start_age=bg_data.get('start_age', 0),
+                    end_age=bg_data.get('end_age', 0),
+                    key_events=bg_data.get('key_events', ''),
+                    influential_people=bg_data.get('influential_people', ''),
+                    traumas=bg_data.get('traumas', ''),
+                    turning_points=bg_data.get('turning_points', ''),
+                    core_memory=bg_data.get('core_memory', ''),
+                    description=bg_data.get('description', '')
+                )
+                db.session.add(background)
+        
+        # 创建能力详情
+        if 'abilities' in data and data['abilities']:
+            for ability_data in data['abilities']:
+                ability = CharacterAbilityDetail(
+                    character_id=new_character.id,
+                    ability_type=ability_data.get('ability_type', ''),
+                    ability_name=ability_data.get('ability_name', ''),
+                    proficiency_level=ability_data.get('proficiency_level', '入门'),
+                    acquired_age=ability_data.get('acquired_age', 0),
+                    acquired_method=ability_data.get('acquired_method', ''),
+                    usage_restrictions=ability_data.get('usage_restrictions', ''),
+                    is_signature=ability_data.get('is_signature', False),
+                    description=ability_data.get('description', '')
+                )
+                db.session.add(ability)
+        
+        db.session.commit()
         print(f'创建成功，ID: {new_character.id}')
         return jsonify(new_character.to_dict()), 201
     except Exception as e:
+        db.session.rollback()
         print(f'创建失败: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
@@ -94,13 +153,23 @@ def create_character():
 def update_character(character_id):
     character = Character.query.get_or_404(character_id)
     data = request.get_json()
+    
+    # 更新基本字段
     character.name = data.get('name', character.name)
+    character.world_id = data.get('world_id', character.world_id)
+    character.alternative_names = data.get('alternative_names', character.alternative_names)
     character.character_type = data.get('character_type', character.character_type)
+    character.role_type = data.get('role_type', character.role_type)
     character.status = data.get('status', character.status)
+    character.importance_level = data.get('importance_level', character.importance_level)
     character.race = data.get('race', character.race)
     character.gender = data.get('gender', character.gender)
     character.age = data.get('age', character.age)
+    character.birth_date = data.get('birth_date', character.birth_date)
+    character.death_date = data.get('death_date', character.death_date)
     character.appearance = data.get('appearance', character.appearance)
+    character.appearance_age = data.get('appearance_age', character.appearance_age)
+    character.distinguishing_features = data.get('distinguishing_features', character.distinguishing_features)
     character.personality = data.get('personality', character.personality)
     character.background = data.get('background', character.background)
     character.character_arc = data.get('character_arc', character.character_arc)
@@ -139,12 +208,106 @@ def update_character(character_id):
     character.complex_emotions = data.get('complex_emotions', character.complex_emotions)
     character.unrequited_love = data.get('unrequited_love', character.unrequited_love)
     character.emotional_changes = data.get('emotional_changes', character.emotional_changes)
+    
+    # 更新背景故事
+    if 'backgrounds' in data:
+        # 删除旧的背景故事
+        CharacterBackground.query.filter_by(character_id=character_id).delete()
+        # 创建新的背景故事
+        for bg_data in data['backgrounds']:
+            background = CharacterBackground(
+                character_id=character_id,
+                period_name=bg_data.get('period_name', ''),
+                start_age=bg_data.get('start_age', 0),
+                end_age=bg_data.get('end_age', 0),
+                key_events=bg_data.get('key_events', ''),
+                influential_people=bg_data.get('influential_people', ''),
+                traumas=bg_data.get('traumas', ''),
+                turning_points=bg_data.get('turning_points', ''),
+                core_memory=bg_data.get('core_memory', ''),
+                description=bg_data.get('description', '')
+            )
+            db.session.add(background)
+    
+    # 更新能力详情
+    if 'abilities' in data:
+        # 删除旧的能力详情
+        CharacterAbilityDetail.query.filter_by(character_id=character_id).delete()
+        # 创建新的能力详情
+        for ability_data in data['abilities']:
+            ability = CharacterAbilityDetail(
+                character_id=character_id,
+                ability_type=ability_data.get('ability_type', ''),
+                ability_name=ability_data.get('ability_name', ''),
+                proficiency_level=ability_data.get('proficiency_level', '入门'),
+                acquired_age=ability_data.get('acquired_age', 0),
+                acquired_method=ability_data.get('acquired_method', ''),
+                usage_restrictions=ability_data.get('usage_restrictions', ''),
+                is_signature=ability_data.get('is_signature', False),
+                description=ability_data.get('description', '')
+            )
+            db.session.add(ability)
+    
     db.session.commit()
     return jsonify(character.to_dict())
 
 @api_bp.route('/characters/<int:character_id>', methods=['DELETE'])
 def delete_character(character_id):
     character = Character.query.get_or_404(character_id)
+    
+    # 删除相关的背景故事和能力详情
+    CharacterBackground.query.filter_by(character_id=character_id).delete()
+    CharacterAbilityDetail.query.filter_by(character_id=character_id).delete()
+    
     db.session.delete(character)
     db.session.commit()
     return jsonify({'message': 'Character deleted successfully'}), 200
+
+# 角色背景故事API
+@api_bp.route('/characters/<int:character_id>/backgrounds', methods=['GET'])
+def get_character_backgrounds(character_id):
+    backgrounds = CharacterBackground.query.filter_by(character_id=character_id).all()
+    return jsonify([bg.to_dict() for bg in backgrounds])
+
+@api_bp.route('/characters/<int:character_id>/backgrounds', methods=['POST'])
+def add_character_background(character_id):
+    data = request.get_json()
+    background = CharacterBackground(
+        character_id=character_id,
+        period_name=data.get('period_name', ''),
+        start_age=data.get('start_age', 0),
+        end_age=data.get('end_age', 0),
+        key_events=data.get('key_events', ''),
+        influential_people=data.get('influential_people', ''),
+        traumas=data.get('traumas', ''),
+        turning_points=data.get('turning_points', ''),
+        core_memory=data.get('core_memory', ''),
+        description=data.get('description', '')
+    )
+    db.session.add(background)
+    db.session.commit()
+    return jsonify(background.to_dict()), 201
+
+# 角色能力详情API
+@api_bp.route('/characters/<int:character_id>/abilities', methods=['GET'])
+def get_character_abilities(character_id):
+    abilities = CharacterAbilityDetail.query.filter_by(character_id=character_id).all()
+    return jsonify([ability.to_dict() for ability in abilities])
+
+@api_bp.route('/characters/<int:character_id>/abilities', methods=['POST'])
+def add_character_ability(character_id):
+    data = request.get_json()
+    ability = CharacterAbilityDetail(
+        character_id=character_id,
+        ability_type=data.get('ability_type', ''),
+        ability_name=data.get('ability_name', ''),
+        proficiency_level=data.get('proficiency_level', '入门'),
+        acquired_age=data.get('acquired_age', 0),
+        acquired_method=data.get('acquired_method', ''),
+        usage_restrictions=data.get('usage_restrictions', ''),
+        is_signature=data.get('is_signature', False),
+        description=data.get('description', '')
+    )
+    db.session.add(ability)
+    db.session.commit()
+    return jsonify(ability.to_dict()), 201

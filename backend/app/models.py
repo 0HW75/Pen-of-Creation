@@ -1,6 +1,33 @@
 from app import db
 from datetime import datetime
 
+class World(db.Model):
+    __tablename__ = 'worlds'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(255), nullable=False)
+    core_concept = db.Column(db.Text, default='')
+    world_type = db.Column(db.String(100), default='单一世界')
+    description = db.Column(db.Text, default='')
+    creation_origin = db.Column(db.Text, default='')
+    world_essence = db.Column(db.Text, default='')
+    status = db.Column(db.String(50), default='active')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'core_concept': self.core_concept,
+            'world_type': self.world_type,
+            'description': self.description,
+            'creation_origin': self.creation_origin,
+            'world_essence': self.world_essence,
+            'status': self.status,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     title = db.Column(db.String(255), nullable=False)
@@ -131,14 +158,22 @@ class Character(db.Model):
     __tablename__ = 'character'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
+    alternative_names = db.Column(db.Text, default='')  # JSON格式存储别名
     description = db.Column(db.Text, default='')
     character_type = db.Column(db.String(50), default='配角')
+    role_type = db.Column(db.String(50), default='配角')  # 主角/配角/反派/龙套
     status = db.Column(db.String(50), default='存活')
+    importance_level = db.Column(db.Integer, default=5)  # 1-10重要程度
     race = db.Column(db.String(100), default='')
     gender = db.Column(db.String(50), default='')
     age = db.Column(db.Integer, default=0)
+    birth_date = db.Column(db.String(100), default='')
+    death_date = db.Column(db.String(100), default='')
     appearance = db.Column(db.Text, default='')
+    appearance_age = db.Column(db.Integer, default=0)  # 外貌年龄
+    distinguishing_features = db.Column(db.Text, default='')  # 显著特征
     personality = db.Column(db.Text, default='')
     background = db.Column(db.Text, default='')
     character_arc = db.Column(db.Text, default='')
@@ -184,14 +219,22 @@ class Character(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
+            'alternative_names': self.alternative_names,
             'description': self.description,
             'character_type': self.character_type,
+            'role_type': self.role_type,
             'status': self.status,
+            'importance_level': self.importance_level,
             'race': self.race,
             'gender': self.gender,
             'age': self.age,
+            'birth_date': self.birth_date,
+            'death_date': self.death_date,
             'appearance': self.appearance,
+            'appearance_age': self.appearance_age,
+            'distinguishing_features': self.distinguishing_features,
             'personality': self.personality,
             'background': self.background,
             'character_arc': self.character_arc,
@@ -230,6 +273,70 @@ class Character(db.Model):
             'complex_emotions': self.complex_emotions,
             'unrequited_love': self.unrequited_love,
             'emotional_changes': self.emotional_changes,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+class CharacterBackground(db.Model):
+    __tablename__ = 'character_backgrounds'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    character_id = db.Column(db.Integer, db.ForeignKey('character.id'), nullable=False)
+    period_name = db.Column(db.String(100), default='')  # 童年/少年/成年
+    start_age = db.Column(db.Integer, default=0)
+    end_age = db.Column(db.Integer, default=0)
+    key_events = db.Column(db.Text, default='')  # JSON格式
+    influential_people = db.Column(db.Text, default='')
+    traumas = db.Column(db.Text, default='')
+    turning_points = db.Column(db.Text, default='')
+    core_memory = db.Column(db.Text, default='')
+    description = db.Column(db.Text, default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'character_id': self.character_id,
+            'period_name': self.period_name,
+            'start_age': self.start_age,
+            'end_age': self.end_age,
+            'key_events': self.key_events,
+            'influential_people': self.influential_people,
+            'traumas': self.traumas,
+            'turning_points': self.turning_points,
+            'core_memory': self.core_memory,
+            'description': self.description,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+class CharacterAbilityDetail(db.Model):
+    __tablename__ = 'character_ability_details'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    character_id = db.Column(db.Integer, db.ForeignKey('character.id'), nullable=False)
+    ability_type = db.Column(db.String(50), default='')  # 天赋/学习/觉醒/装备
+    ability_name = db.Column(db.String(255), default='')
+    proficiency_level = db.Column(db.String(50), default='入门')  # 入门/熟练/精通/大师
+    acquired_age = db.Column(db.Integer, default=0)
+    acquired_method = db.Column(db.Text, default='')
+    usage_restrictions = db.Column(db.Text, default='')
+    is_signature = db.Column(db.Boolean, default=False)
+    description = db.Column(db.Text, default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'character_id': self.character_id,
+            'ability_type': self.ability_type,
+            'ability_name': self.ability_name,
+            'proficiency_level': self.proficiency_level,
+            'acquired_age': self.acquired_age,
+            'acquired_method': self.acquired_method,
+            'usage_restrictions': self.usage_restrictions,
+            'is_signature': self.is_signature,
+            'description': self.description,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
