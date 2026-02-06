@@ -23,8 +23,17 @@ def create_item():
     project = Project.query.get_or_404(data['project_id'])
     new_item = Item(
         name=data['name'],
-        description=data.get('description', ''),
-        type=data.get('type', '普通'),
+        item_type=data.get('item_type', '普通'),
+        rarity_level=data.get('rarity_level', '普通'),
+        physical_properties=data.get('physical_properties', ''),
+        special_effects=data.get('special_effects', ''),
+        usage_requirements=data.get('usage_requirements', ''),
+        durability=data.get('durability', 100),
+        creator=data.get('creator', ''),
+        source=data.get('source', ''),
+        historical_heritage=data.get('historical_heritage', ''),
+        current_owner=data.get('current_owner', ''),
+        acquisition_method=data.get('acquisition_method', ''),
         importance=data.get('importance', 0),
         project_id=data['project_id']
     )
@@ -37,8 +46,17 @@ def update_item(item_id):
     item = Item.query.get_or_404(item_id)
     data = request.get_json()
     item.name = data.get('name', item.name)
-    item.description = data.get('description', item.description)
-    item.type = data.get('type', item.type)
+    item.item_type = data.get('item_type', item.item_type)
+    item.rarity_level = data.get('rarity_level', item.rarity_level)
+    item.physical_properties = data.get('physical_properties', item.physical_properties)
+    item.special_effects = data.get('special_effects', item.special_effects)
+    item.usage_requirements = data.get('usage_requirements', item.usage_requirements)
+    item.durability = data.get('durability', item.durability)
+    item.creator = data.get('creator', item.creator)
+    item.source = data.get('source', item.source)
+    item.historical_heritage = data.get('historical_heritage', item.historical_heritage)
+    item.current_owner = data.get('current_owner', item.current_owner)
+    item.acquisition_method = data.get('acquisition_method', item.acquisition_method)
     item.importance = data.get('importance', item.importance)
     db.session.commit()
     return jsonify(item.to_dict())

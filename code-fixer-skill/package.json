@@ -1,0 +1,16 @@
+{
+  "name": "code-fixer-skill",
+  "version": "1.0.0",
+  "description": "长代码文件修复工具",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "code",
+    "fixer",
+    "skill"
+  ],
+  "author": "",
+  "license": "ISC"
+}

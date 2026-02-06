@@ -22,6 +22,7 @@ def create_relationship():
     data = request.get_json()
     project = Project.query.get_or_404(data['project_id'])
     new_relationship = Relationship(
+        name=data['name'],
         project_id=data['project_id'],
         source_type=data['source_type'],
         source_id=data['source_id'],
@@ -39,6 +40,7 @@ def create_relationship():
 def update_relationship(relationship_id):
     relationship = Relationship.query.get_or_404(relationship_id)
     data = request.get_json()
+    relationship.name = data.get('name', relationship.name)
     relationship.source_type = data.get('source_type', relationship.source_type)
     relationship.source_id = data.get('source_id', relationship.source_id)
     relationship.target_type = data.get('target_type', relationship.target_type)

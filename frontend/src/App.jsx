@@ -214,6 +214,13 @@ function NovelEditorApp() {
       setCharacters(charactersResponse.data || []);
     } catch (error) {
       console.error('加载项目数据失败:', error);
+      // 检查是否是404错误
+      if (error.response && error.response.status === 404) {
+        // 项目不存在，清除选中的项目ID
+        setSelectedProjectId(null);
+        // 导航到项目管理页面
+        setCurrent('project');
+      }
     } finally {
       setLoadingData(false);
     }

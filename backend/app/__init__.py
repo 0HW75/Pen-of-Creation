@@ -19,7 +19,7 @@ def create_app():
     CORS(app)
     
     # 配置数据库
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../novel_editor.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///novel_editor.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # 配置压缩
