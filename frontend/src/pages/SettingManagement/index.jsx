@@ -12,6 +12,7 @@ import WorldArchitecture from '../../components/WorldSetting/WorldArchitecture';
 import EnergySystem from '../../components/WorldSetting/EnergySystem';
 import SocietySystem from '../../components/WorldSetting/SocietySystem';
 import HistoryTimeline from '../../components/WorldSetting/HistoryTimeline';
+import CharacterCard from '../../components/CharacterCard';
 
 const { TextArea } = Input;
 const { Content } = Layout;
@@ -589,7 +590,13 @@ const CharacterManagementPanel = ({ worldId }) => {
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [detailVisible, setDetailVisible] = useState(false);
   const [editingCharacter, setEditingCharacter] = useState(null);
+  const [viewingCharacter, setViewingCharacter] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
+  const [searchText, setSearchText] = useState('');
+  const [filterRole, setFilterRole] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [form] = Form.useForm();
 
   const fetchCharacters = async () => {
@@ -636,9 +643,9 @@ const CharacterManagementPanel = ({ worldId }) => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (character) => {
     try {
-      await characterApi.deleteCharacter(id);
+      await characterApi.deleteCharacter(character.id);
       message.success('删除角色成功');
       fetchCharacters();
     } catch (error) {
@@ -646,89 +653,268 @@ const CharacterManagementPanel = ({ worldId }) => {
     }
   };
 
-  const getRoleTypeColor = (type) => {
-    const colors = {
-      '主角': '#1890ff',
-      '配角': '#52c41a',
-      '反派': '#f5222d',
-      '龙套': '#8c8c8c',
-      '背景': '#d9d9d9'
-    };
-    return colors[type] || '#1890ff';
+  const handleView = (character) => {
+    setViewingCharacter(character);
+    setDetailVisible(true);
   };
+
+  // 过滤角色
+  const filteredCharacters = characters.filter(character => {
+    const matchSearch = !searchText ||
+      character.name?.toLowerCase().includes(searchText.toLowerCase()) ||
+      character.title?.toLowerCase().includes(searchText.toLowerCase());
+    const matchRole = filterRole === 'all' || character.role === filterRole;
+    const matchStatus = filterStatus === 'all' || character.status === filterStatus;
+    return matchSearch && matchRole && matchStatus;
+  });
+
+  // 统计信息
+  const totalCharacters = characters.length;
+  const importantCharacters = characters.filter(c => c.is_important).length;
+  const aliveCharacters = characters.filter(c => c.status === 'alive').length;
+  const deadCharacters = characters.filter(c => c.status === 'dead').length;
 
   return (
     <div className="character-management">
-      <div className="panel-header">
-        <Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>
-            创建角色
-          </Button>
-          <Button icon={<FilterOutlined />}>筛选</Button>
-        </Space>
-        <Space>
-          <Input.Search placeholder="搜索角色..." style={{ width: 200 }} />
-        </Space>
-      </div>
-
-      <Row gutter={[24, 24]} className="characters-grid">
-        {characters.map(character => (
-          <Col xs={24} sm={12} lg={8} xl={6} key={character.id}>
-            <EntityCard
-              title={character.name}
-              subtitle={character.role_type}
-              tags={[character.race, character.gender, character.status].filter(Boolean)}
-              icon={<UserOutlined />}
-              color={getRoleTypeColor(character.role_type)}
-              extra={
-                <Tag color={character.status === '存活' ? 'success' : 'error'}>
-                  {character.status}
-                </Tag>
-              }
+      {/* 统计面板 */}
+      <Row gutter={16} className="stats-row" style={{ marginBottom: 16 }}>
+        <Col xs={12} sm={6}>
+          <Card className="stat-card" size="small">
+            <Statistic
+              title="角色总数"
+              value={totalCharacters}
+              prefix={<UserOutlined />}
+              styles={{ content: { color: '#1890ff' } }}
             />
-          </Col>
-        ))}
-        
-        <Col xs={24} sm={12} lg={8} xl={6}>
-          <div className="create-entity-card" onClick={() => showModal()}>
-            <PlusOutlined />
-            <span>创建新角色</span>
-          </div>
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card className="stat-card" size="small">
+            <Statistic
+              title="重要角色"
+              value={importantCharacters}
+              prefix={<StarOutlined />}
+              styles={{ content: { color: '#faad14' } }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card className="stat-card" size="small">
+            <Statistic
+              title="存活"
+              value={aliveCharacters}
+              prefix={<UserOutlined />}
+              styles={{ content: { color: '#52c41a' } }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card className="stat-card" size="small">
+            <Statistic
+              title="已死亡"
+              value={deadCharacters}
+              prefix={<UserOutlined />}
+              styles={{ content: { color: '#ff4d4f' } }}
+            />
+          </Card>
         </Col>
       </Row>
 
+      {/* 工具栏 */}
+      <Card className="toolbar-card" style={{ marginBottom: 16 }}>
+        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <Space wrap>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>
+              创建角色
+            </Button>
+            <Select
+              placeholder="角色类型"
+              value={filterRole}
+              onChange={setFilterRole}
+              style={{ width: 120 }}
+              allowClear
+            >
+              <Select.Option value="all">全部类型</Select.Option>
+              <Select.Option value="主角">主角</Select.Option>
+              <Select.Option value="配角">配角</Select.Option>
+              <Select.Option value="反派">反派</Select.Option>
+              <Select.Option value="NPC">NPC</Select.Option>
+            </Select>
+            <Select
+              placeholder="状态"
+              value={filterStatus}
+              onChange={setFilterStatus}
+              style={{ width: 120 }}
+              allowClear
+            >
+              <Select.Option value="all">全部状态</Select.Option>
+              <Select.Option value="alive">存活</Select.Option>
+              <Select.Option value="dead">已死亡</Select.Option>
+            </Select>
+          </Space>
+          <Space wrap>
+            <Input.Search
+              placeholder="搜索角色..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 200 }}
+              allowClear
+            />
+            <Select
+              value={viewMode}
+              onChange={setViewMode}
+              style={{ width: 100 }}
+            >
+              <Select.Option value="grid">网格</Select.Option>
+              <Select.Option value="list">列表</Select.Option>
+            </Select>
+          </Space>
+        </div>
+      </Card>
+
+      {/* 角色列表 */}
+      <div className="characters-container">
+        {filteredCharacters.length === 0 ? (
+          <Empty
+            description={
+              searchText || filterRole !== 'all' || filterStatus !== 'all'
+                ? '没有找到匹配的角色'
+                : '还没有创建任何角色，点击"创建角色"开始吧！'
+            }
+            className="empty-state"
+          />
+        ) : viewMode === 'grid' ? (
+          <Row gutter={[16, 16]}>
+            {filteredCharacters.map(character => (
+              <Col xs={24} sm={12} lg={8} xl={6} key={character.id}>
+                <CharacterCard
+                  character={character}
+                  viewMode="grid"
+                  onView={handleView}
+                  onEdit={showModal}
+                  onDelete={handleDelete}
+                />
+              </Col>
+            ))}
+          </Row>
+        ) : (
+          <div className="characters-list">
+            {filteredCharacters.map(character => (
+              <CharacterCard
+                key={character.id}
+                character={character}
+                viewMode="list"
+                onView={handleView}
+                onEdit={showModal}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 创建/编辑模态框 */}
       <Modal
         title={editingCharacter ? '编辑角色' : '创建角色'}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
-        width={700}
+        width={800}
+        destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item name="name" label="角色名称" rules={[{ required: true }]}>
-            <Input placeholder="例如：阿尔萨斯" />
-          </Form.Item>
-          <Form.Item name="role_type" label="角色类型" rules={[{ required: true }]}>
-            <Select placeholder="选择角色类型">
-              <Select.Option value="主角">主角</Select.Option>
-              <Select.Option value="配角">配角</Select.Option>
-              <Select.Option value="反派">反派</Select.Option>
-              <Select.Option value="龙套">龙套</Select.Option>
-              <Select.Option value="背景">背景</Select.Option>
-            </Select>
-          </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
+              <Form.Item name="name" label="角色名称" rules={[{ required: true, message: '请输入角色名称' }]}>
+                <Input placeholder="例如：阿尔萨斯" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="title" label="称号">
+                <Input placeholder="例如：巫妖王" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="role" label="角色类型" rules={[{ required: true }]}>
+                <Select placeholder="选择角色类型">
+                  <Select.Option value="主角">主角</Select.Option>
+                  <Select.Option value="配角">配角</Select.Option>
+                  <Select.Option value="反派">反派</Select.Option>
+                  <Select.Option value="NPC">NPC</Select.Option>
+                  <Select.Option value="领袖">领袖</Select.Option>
+                  <Select.Option value="战士">战士</Select.Option>
+                  <Select.Option value="法师">法师</Select.Option>
+                  <Select.Option value="治疗">治疗</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
               <Form.Item name="race" label="种族">
                 <Input placeholder="例如：人类、精灵" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
+              <Form.Item name="character_class" label="职业">
+                <Select placeholder="选择职业">
+                  <Select.Option value="战士">战士</Select.Option>
+                  <Select.Option value="法师">法师</Select.Option>
+                  <Select.Option value="牧师">牧师</Select.Option>
+                  <Select.Option value="盗贼">盗贼</Select.Option>
+                  <Select.Option value="猎人">猎人</Select.Option>
+                  <Select.Option value="骑士">骑士</Select.Option>
+                  <Select.Option value="术士">术士</Select.Option>
+                  <Select.Option value="德鲁伊">德鲁伊</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}>
               <Form.Item name="gender" label="性别">
                 <Select placeholder="选择性别">
                   <Select.Option value="男">男</Select.Option>
                   <Select.Option value="女">女</Select.Option>
                   <Select.Option value="其他">其他</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="alignment" label="阵营">
+                <Select placeholder="选择阵营">
+                  <Select.Option value="守序善良">守序善良</Select.Option>
+                  <Select.Option value="中立善良">中立善良</Select.Option>
+                  <Select.Option value="混乱善良">混乱善良</Select.Option>
+                  <Select.Option value="守序中立">守序中立</Select.Option>
+                  <Select.Option value="绝对中立">绝对中立</Select.Option>
+                  <Select.Option value="混乱中立">混乱中立</Select.Option>
+                  <Select.Option value="守序邪恶">守序邪恶</Select.Option>
+                  <Select.Option value="中立邪恶">中立邪恶</Select.Option>
+                  <Select.Option value="混乱邪恶">混乱邪恶</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="status" label="状态">
+                <Select placeholder="选择状态">
+                  <Select.Option value="alive">存活</Select.Option>
+                  <Select.Option value="dead">已死亡</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="level" label="等级">
+                <InputNumber min={1} max={100} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="is_important" valuePropName="checked">
+                <Select placeholder="重要程度">
+                  <Select.Option value={true}>重要角色</Select.Option>
+                  <Select.Option value={false}>普通角色</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -743,6 +929,82 @@ const CharacterManagementPanel = ({ worldId }) => {
             <TextArea rows={4} placeholder="描述角色的背景故事" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 详情模态框 */}
+      <Modal
+        title="角色详情"
+        open={detailVisible}
+        onCancel={() => setDetailVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setDetailVisible(false)}>
+            关闭
+          </Button>,
+          <Button
+            key="edit"
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setDetailVisible(false);
+              showModal(viewingCharacter);
+            }}
+          >
+            编辑
+          </Button>
+        ]}
+        width={800}
+      >
+        {viewingCharacter && (
+          <div className="character-detail">
+            <div className="character-detail-header">
+              <div
+                className="character-detail-avatar"
+                style={{
+                  background: viewingCharacter.avatar
+                    ? `url(${viewingCharacter.avatar}) center/cover`
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                }}
+              >
+                {!viewingCharacter.avatar && <UserOutlined />}
+              </div>
+              <div className="character-detail-info">
+                <h2>{viewingCharacter.name}</h2>
+                <p className="character-detail-title">{viewingCharacter.title || '无称号'}</p>
+                <div className="character-detail-tags">
+                  {viewingCharacter.role && <Tag color="blue">{viewingCharacter.role}</Tag>}
+                  {viewingCharacter.race && <Tag>{viewingCharacter.race}</Tag>}
+                  {viewingCharacter.character_class && <Tag>{viewingCharacter.character_class}</Tag>}
+                  {viewingCharacter.alignment && <Tag color="purple">{viewingCharacter.alignment}</Tag>}
+                  {viewingCharacter.status && (
+                    <Tag color={viewingCharacter.status === 'alive' ? 'success' : 'error'}>
+                      {viewingCharacter.status === 'alive' ? '存活' : '已死亡'}
+                    </Tag>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="character-detail-content">
+              <Descriptions column={2} bordered>
+                <Descriptions.Item label="等级">Lv.{viewingCharacter.level || 1}</Descriptions.Item>
+                <Descriptions.Item label="性别">{viewingCharacter.gender || '-'}</Descriptions.Item>
+                <Descriptions.Item label="所属势力">{viewingCharacter.faction_name || '-'}</Descriptions.Item>
+                <Descriptions.Item label="当前位置">{viewingCharacter.location_name || '-'}</Descriptions.Item>
+              </Descriptions>
+              <div className="character-detail-section">
+                <h4>外貌描述</h4>
+                <p>{viewingCharacter.appearance || '暂无描述'}</p>
+              </div>
+              <div className="character-detail-section">
+                <h4>性格描述</h4>
+                <p>{viewingCharacter.personality || '暂无描述'}</p>
+              </div>
+              <div className="character-detail-section">
+                <h4>背景故事</h4>
+                <p>{viewingCharacter.background || '暂无描述'}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
