@@ -128,7 +128,15 @@ const CivilizationManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingCiv(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                civilization_name: record.name,
+                civilization_type: record.civilization_type,
+                development_stage: record.development_level,
+                description: record.description,
+                history_summary: record.historical_origin,
+                cultural_features: record.cultural_characteristics,
+              });
               setModalVisible(true);
             }}
           >
@@ -353,7 +361,17 @@ const SocialClassManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingClass(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                class_name: record.name,
+                civilization_id: record.civilization_id,
+                class_level: record.class_level,
+                description: record.description,
+                privileges: record.privileges,
+                obligations: record.obligations,
+                population_ratio: record.percentage_of_population,
+                typical_power_level: record.typical_power_level,
+              });
               setModalVisible(true);
             }}
           >
@@ -579,7 +597,16 @@ const CulturalCustomsManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingCustom(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                custom_name: record.name,
+                civilization_id: record.civilization_id,
+                custom_type: record.custom_type,
+                description: record.description,
+                origin: record.origin,
+                significance: record.significance,
+                importance_level: record.importance_level,
+              });
               setModalVisible(true);
             }}
           >
@@ -814,7 +841,14 @@ const EconomicSystemManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingSystem(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                system_name: record.name,
+                civilization_id: record.civilization_id,
+                economic_model: record.economic_model,
+                description: record.description,
+                currency_name: record.currency_name,
+              });
               setModalVisible(true);
             }}
           >
@@ -1042,7 +1076,15 @@ const PoliticalSystemManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingSystem(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                political_system_name: record.name,
+                civilization_id: record.civilization_id,
+                government_type: record.government_type,
+                description: record.description,
+                power_structure: record.power_structure,
+                political_stability: record.political_stability,
+              });
               setModalVisible(true);
             }}
           >
