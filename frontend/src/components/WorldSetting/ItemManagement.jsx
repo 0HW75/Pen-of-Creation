@@ -41,7 +41,19 @@ const GeneralItemManagement = ({ worldId, projectId }) => {
 
   const handleSubmit = async (values) => {
     try {
-      const data = { ...values, world_id: worldId, project_id: projectId };
+      // 字段映射转换
+      const data = {
+        name: values.name,
+        world_id: worldId,
+        project_id: projectId,
+        item_type: values.item_type,
+        rarity_level: values.rarity,
+        current_owner: values.owner,
+        acquisition_method: values.source,
+        description: values.description,
+        physical_properties: values.effects,
+        historical_heritage: values.history,
+      };
       if (editingItem) {
         await itemApi.updateItem(editingItem.id, data);
         message.success('物品更新成功');
@@ -104,8 +116,8 @@ const GeneralItemManagement = ({ worldId, projectId }) => {
     },
     {
       title: '稀有度',
-      dataIndex: 'rarity',
-      key: 'rarity',
+      dataIndex: 'rarity_level',
+      key: 'rarity_level',
       render: (rarity) => {
         const colorMap = {
           '普通': 'default',
@@ -120,14 +132,14 @@ const GeneralItemManagement = ({ worldId, projectId }) => {
     },
     {
       title: '持有者',
-      dataIndex: 'owner',
-      key: 'owner',
+      dataIndex: 'current_owner',
+      key: 'current_owner',
       render: (owner) => owner || '-',
     },
     {
       title: '来源',
-      dataIndex: 'source',
-      key: 'source',
+      dataIndex: 'acquisition_method',
+      key: 'acquisition_method',
       render: (source) => source || '-',
     },
     {
@@ -148,7 +160,17 @@ const GeneralItemManagement = ({ worldId, projectId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingItem(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                name: record.name,
+                item_type: record.item_type,
+                rarity: record.rarity_level,
+                owner: record.current_owner,
+                source: record.acquisition_method,
+                description: record.description,
+                effects: record.physical_properties,
+                history: record.historical_heritage,
+              });
               setModalVisible(true);
             }}
           >
