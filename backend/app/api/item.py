@@ -38,7 +38,8 @@ def create_item():
         current_owner=data.get('current_owner', ''),
         acquisition_method=data.get('acquisition_method', ''),
         importance=data.get('importance', 0),
-        project_id=data['project_id']
+        project_id=data['project_id'],
+        world_id=data.get('world_id')
     )
     db.session.add(new_item)
     db.session.commit()
@@ -61,6 +62,8 @@ def update_item(item_id):
     item.current_owner = data.get('current_owner', item.current_owner)
     item.acquisition_method = data.get('acquisition_method', item.acquisition_method)
     item.importance = data.get('importance', item.importance)
+    if 'world_id' in data:
+        item.world_id = data['world_id']
     db.session.commit()
     return jsonify(item.to_dict())
 
