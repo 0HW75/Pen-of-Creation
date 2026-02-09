@@ -41,11 +41,21 @@ const DimensionManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 字段映射转换
+      const data = {
+        name: values.name,
+        world_id: worldId,
+        dimension_type: values.dimension_type,
+        description: values.description,
+        entry_conditions: values.access_method,
+        time_flow: values.time_flow_ratio ? `${values.time_flow_ratio}:1` : '1:1',
+        physical_properties: values.physical_properties,
+      };
       if (editingDimension) {
-        await worldSettingApi.updateDimension(editingDimension.id, values);
+        await worldSettingApi.updateDimension(editingDimension.id, data);
         message.success('维度更新成功');
       } else {
-        await worldSettingApi.createDimension({ ...values, world_id: worldId });
+        await worldSettingApi.createDimension(data);
         message.success('维度创建成功');
       }
       setModalVisible(false);
@@ -86,15 +96,15 @@ const DimensionManagement = ({ worldId }) => {
     },
     {
       title: '访问方式',
-      dataIndex: 'access_method',
-      key: 'access_method',
+      dataIndex: 'entry_conditions',
+      key: 'entry_conditions',
       ellipsis: true,
     },
     {
       title: '时间流速',
-      dataIndex: 'time_flow_ratio',
-      key: 'time_flow_ratio',
-      render: (ratio) => ratio ? `${ratio}x` : '-',
+      dataIndex: 'time_flow',
+      key: 'time_flow',
+      render: (ratio) => ratio || '-',
     },
     {
       title: '操作',
@@ -107,7 +117,15 @@ const DimensionManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingDimension(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                name: record.name,
+                dimension_type: record.dimension_type,
+                description: record.description,
+                access_method: record.entry_conditions,
+                time_flow_ratio: record.time_flow ? parseFloat(record.time_flow.split(':')[0]) : 1.0,
+                physical_properties: record.physical_properties,
+              });
               setModalVisible(true);
             }}
           >
@@ -268,11 +286,21 @@ const RegionManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 字段映射转换
+      const data = {
+        name: values.name,
+        world_id: worldId,
+        region_type: values.region_type,
+        parent_region_id: values.parent_id,
+        description: values.description,
+        terrain: values.geography,
+        climate: values.climate,
+      };
       if (editingRegion) {
-        await worldSettingApi.updateRegion(editingRegion.id, values);
+        await worldSettingApi.updateRegion(editingRegion.id, data);
         message.success('区域更新成功');
       } else {
-        await worldSettingApi.createRegion({ ...values, world_id: worldId });
+        await worldSettingApi.createRegion(data);
         message.success('区域创建成功');
       }
       setModalVisible(false);
@@ -336,7 +364,15 @@ const RegionManagement = ({ worldId }) => {
                     onClick={(e) => {
                       e.stopPropagation();
                       setEditingRegion(nodeData);
-                      form.setFieldsValue(nodeData);
+                      // 反向字段映射
+                      form.setFieldsValue({
+                        name: nodeData.name,
+                        region_type: nodeData.region_type,
+                        parent_id: nodeData.parent_region_id,
+                        description: nodeData.description,
+                        geography: nodeData.terrain,
+                        climate: nodeData.climate,
+                      });
                       setModalVisible(true);
                     }}
                   />
@@ -461,11 +497,22 @@ const CelestialBodyManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 字段映射转换
+      const data = {
+        name: values.name,
+        world_id: worldId,
+        body_type: values.body_type,
+        dimension_id: values.dimension_id,
+        description: values.description,
+        // properties 和 influence 字段需要进一步拆分，暂时直接存储
+        size: values.properties || '',
+        magical_properties: values.influence || '',
+      };
       if (editingBody) {
-        await worldSettingApi.updateCelestialBody(editingBody.id, values);
+        await worldSettingApi.updateCelestialBody(editingBody.id, data);
         message.success('天体更新成功');
       } else {
-        await worldSettingApi.createCelestialBody({ ...values, world_id: worldId });
+        await worldSettingApi.createCelestialBody(data);
         message.success('天体创建成功');
       }
       setModalVisible(false);
@@ -531,7 +578,15 @@ const CelestialBodyManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingBody(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                name: record.name,
+                body_type: record.body_type,
+                dimension_id: record.dimension_id,
+                description: record.description,
+                properties: record.size || record.mass || record.orbit_period,
+                influence: record.magical_properties || record.cultural_significance,
+              });
               setModalVisible(true);
             }}
           >
@@ -675,11 +730,20 @@ const NaturalLawManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 字段映射转换
+      const data = {
+        name: values.name,
+        world_id: worldId,
+        law_type: values.law_type,
+        description: values.description,
+        limitations: values.scope,
+        exceptions: values.exceptions,
+      };
       if (editingLaw) {
-        await worldSettingApi.updateNaturalLaw(editingLaw.id, values);
+        await worldSettingApi.updateNaturalLaw(editingLaw.id, data);
         message.success('法则更新成功');
       } else {
-        await worldSettingApi.createNaturalLaw({ ...values, world_id: worldId });
+        await worldSettingApi.createNaturalLaw(data);
         message.success('法则创建成功');
       }
       setModalVisible(false);
@@ -720,8 +784,8 @@ const NaturalLawManagement = ({ worldId }) => {
     },
     {
       title: '作用范围',
-      dataIndex: 'scope',
-      key: 'scope',
+      dataIndex: 'limitations',
+      key: 'limitations',
       ellipsis: true,
     },
     {
@@ -735,7 +799,14 @@ const NaturalLawManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingLaw(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                name: record.name,
+                law_type: record.law_type,
+                description: record.description,
+                scope: record.limitations,
+                exceptions: record.exceptions,
+              });
               setModalVisible(true);
             }}
           >
