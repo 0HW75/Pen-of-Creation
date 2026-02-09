@@ -42,7 +42,20 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
 
   const handleSubmit = async (values) => {
     try {
-      const data = { ...values, world_id: worldId, project_id: projectId };
+      // 字段映射转换
+      const data = {
+        name: values.name,
+        world_id: worldId,
+        project_id: projectId,
+        faction_type: values.faction_type,
+        description: values.description,
+        core_ideology: values.ideology,
+        member_size: values.member_count,
+        headquarters_location: values.headquarters,
+        leader: values.leader,
+        influence_level: values.influence_level,
+        // alignment 和 history 字段后端不存在，暂时不传递
+      };
       if (editingFaction) {
         await factionApi.updateFaction(editingFaction.id, data);
         message.success('势力更新成功');
@@ -107,25 +120,6 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
       },
     },
     {
-      title: '阵营',
-      dataIndex: 'alignment',
-      key: 'alignment',
-      render: (alignment) => {
-        const colorMap = {
-          '守序善良': 'blue',
-          '中立善良': 'cyan',
-          '混乱善良': 'geekblue',
-          '守序中立': 'green',
-          '绝对中立': 'default',
-          '混乱中立': 'lime',
-          '守序邪恶': 'orange',
-          '中立邪恶': 'gold',
-          '混乱邪恶': 'red',
-        };
-        return alignment ? <Tag color={colorMap[alignment]}>{alignment}</Tag> : '-';
-      },
-    },
-    {
       title: '影响力',
       dataIndex: 'influence_level',
       key: 'influence_level',
@@ -133,8 +127,8 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
     },
     {
       title: '成员规模',
-      dataIndex: 'member_count',
-      key: 'member_count',
+      dataIndex: 'member_size',
+      key: 'member_size',
       render: (count) => count || '-',
     },
     {
@@ -155,7 +149,17 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingFaction(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                name: record.name,
+                faction_type: record.faction_type,
+                leader: record.leader,
+                headquarters: record.headquarters_location,
+                member_count: record.member_size,
+                influence_level: record.influence_level,
+                description: record.description,
+                ideology: record.core_ideology,
+              });
               setModalVisible(true);
             }}
           >
