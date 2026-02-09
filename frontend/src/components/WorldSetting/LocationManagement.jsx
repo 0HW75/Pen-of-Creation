@@ -41,7 +41,20 @@ const LocationArchiveManagement = ({ worldId, projectId }) => {
 
   const handleSubmit = async (values) => {
     try {
-      const data = { ...values, world_id: worldId, project_id: projectId };
+      // 字段映射转换
+      const data = {
+        name: values.name,
+        world_id: worldId,
+        project_id: projectId,
+        location_type: values.location_type,
+        controlling_faction: values.controlling_faction,
+        population: values.population,
+        climate: values.climate,
+        terrain: values.terrain,
+        description: values.description,
+        geographical_location: values.geography,
+        resources: values.resources,
+      };
       if (editingLocation) {
         await locationApi.updateLocation(editingLocation.id, data);
         message.success('地点更新成功');
@@ -139,7 +152,18 @@ const LocationArchiveManagement = ({ worldId, projectId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingLocation(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                name: record.name,
+                location_type: record.location_type,
+                controlling_faction: record.controlling_faction,
+                population: record.population,
+                climate: record.climate,
+                terrain: record.terrain,
+                description: record.description,
+                geography: record.geographical_location,
+                resources: record.resources,
+              });
               setModalVisible(true);
             }}
           >
