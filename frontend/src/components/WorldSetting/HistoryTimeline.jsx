@@ -40,11 +40,24 @@ const HistoryEventManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 字段映射转换
+      const data = {
+        name: values.event_name,
+        world_id: worldId,
+        event_type: values.event_type,
+        start_year: values.event_time,
+        end_year: values.event_time,
+        importance_level: values.impact_level,
+        primary_causes: values.causes,
+        immediate_outcomes: values.consequences,
+        key_participants: values.related_characters,
+        description: values.description,
+      };
       if (editingEvent) {
-        await historyTimelineApi.updateHistoryEvent(editingEvent.id, values);
+        await historyTimelineApi.updateHistoryEvent(editingEvent.id, data);
         message.success('历史事件更新成功');
       } else {
-        await historyTimelineApi.createHistoryEvent({ ...values, world_id: worldId });
+        await historyTimelineApi.createHistoryEvent(data);
         message.success('历史事件创建成功');
       }
       setModalVisible(false);
@@ -68,8 +81,8 @@ const HistoryEventManagement = ({ worldId }) => {
   const columns = [
     {
       title: '事件名称',
-      dataIndex: 'event_name',
-      key: 'event_name',
+      dataIndex: 'name',
+      key: 'name',
       render: (text, record) => (
         <Space>
           <FlagOutlined style={{ color: '#f5222d' }} />
@@ -95,14 +108,14 @@ const HistoryEventManagement = ({ worldId }) => {
     },
     {
       title: '发生时间',
-      dataIndex: 'event_time',
-      key: 'event_time',
-      render: (time) => <Tag color="cyan">{time}</Tag>,
+      dataIndex: 'start_year',
+      key: 'start_year',
+      render: (time, record) => <Tag color="cyan">{time || record.end_year}</Tag>,
     },
     {
       title: '影响程度',
-      dataIndex: 'impact_level',
-      key: 'impact_level',
+      dataIndex: 'importance_level',
+      key: 'importance_level',
       render: (level) => {
         const colorMap = {
           1: 'green',
@@ -130,7 +143,17 @@ const HistoryEventManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingEvent(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                event_name: record.name,
+                event_type: record.event_type,
+                event_time: record.start_year || record.end_year,
+                impact_level: record.importance_level,
+                causes: record.primary_causes,
+                consequences: record.immediate_outcomes,
+                related_characters: record.key_participants,
+                description: record.description,
+              });
               setModalVisible(true);
             }}
           >
@@ -290,11 +313,20 @@ const TimelineManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 字段映射转换
+      const data = {
+        name: values.timeline_name,
+        world_id: worldId,
+        timeline_type: values.timeline_type,
+        start_year: values.time_span,
+        end_year: values.time_span,
+        description: values.description,
+      };
       if (editingTimeline) {
-        await historyTimelineApi.updateTimeline(editingTimeline.id, values);
+        await historyTimelineApi.updateTimeline(editingTimeline.id, data);
         message.success('时间线更新成功');
       } else {
-        await historyTimelineApi.createTimeline({ ...values, world_id: worldId });
+        await historyTimelineApi.createTimeline(data);
         message.success('时间线创建成功');
       }
       setModalVisible(false);
@@ -318,8 +350,8 @@ const TimelineManagement = ({ worldId }) => {
   const columns = [
     {
       title: '时间线名称',
-      dataIndex: 'timeline_name',
-      key: 'timeline_name',
+      dataIndex: 'name',
+      key: 'name',
       render: (text, record) => (
         <Space>
           <ClockCircleOutlined style={{ color: '#1890ff' }} />
@@ -344,9 +376,9 @@ const TimelineManagement = ({ worldId }) => {
     },
     {
       title: '时间跨度',
-      dataIndex: 'time_span',
-      key: 'time_span',
-      render: (span) => <Tag color="cyan">{span}</Tag>,
+      dataIndex: 'start_year',
+      key: 'start_year',
+      render: (span, record) => <Tag color="cyan">{span || record.end_year}</Tag>,
     },
     {
       title: '操作',
@@ -359,7 +391,13 @@ const TimelineManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingTimeline(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                timeline_name: record.name,
+                timeline_type: record.timeline_type,
+                time_span: record.start_year || record.end_year,
+                description: record.description,
+              });
               setModalVisible(true);
             }}
           >
