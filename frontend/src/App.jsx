@@ -35,7 +35,7 @@ const BlueprintPage = lazy(() => import('./pages/BlueprintPage'));
 import { saveToLocalStorage, loadFromLocalStorage, backupData, restoreData } from './services/exportService';
 import DataVisualization from './components/DataVisualization';
 import WorkAnalysis from './components/WorkAnalysis';
-import { chapterApi, characterApi, worldApi } from './services/api';
+import { chapterApi, characterApi, worldApi, projectApi } from './services/api';
 import './App.css';
 
 const { Header, Content, Sider } = Layout;
@@ -47,6 +47,8 @@ function NovelEditorApp() {
   const [selectedWorld, setSelectedWorld] = useState(null);
   const [worlds, setWorlds] = useState([]);
   const [worldsLoading, setWorldsLoading] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
   const [isBackupModalVisible, setIsBackupModalVisible] = useState(false);
   const [isRestoreModalVisible, setIsRestoreModalVisible] = useState(false);
   const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
@@ -127,8 +129,26 @@ function NovelEditorApp() {
     }
   };
 
+  // 获取项目列表
+  const fetchProjects = async () => {
+    setProjectsLoading(true);
+    try {
+      const response = await projectApi.getProjects();
+      console.log('获取项目列表响应:', response.data);
+      if (response.data) {
+        setProjects(response.data);
+        console.log('设置项目列表:', response.data);
+      }
+    } catch (error) {
+      console.error('获取项目列表失败:', error);
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchWorlds();
+    fetchProjects();
   }, []);
 
   const handleMenuClick = (e) => {
@@ -341,11 +361,17 @@ function NovelEditorApp() {
       setCurrent(key);
     };
 
+    const handleRefreshProjects = () => {
+      fetchProjects();
+    };
+
     window.addEventListener('navigateTo', handleNavigateTo);
     window.addEventListener('selectProject', handleSelectProject);
+    window.addEventListener('refreshProjects', handleRefreshProjects);
     return () => {
       window.removeEventListener('navigateTo', handleNavigateTo);
       window.removeEventListener('selectProject', handleSelectProject);
+      window.removeEventListener('refreshProjects', handleRefreshProjects);
     };
   }, []);
 
@@ -414,21 +440,21 @@ function NovelEditorApp() {
               />
             </div>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              {/* 世界选择器 */}
+              {/* 项目选择器 */}
               <Space>
-                <span style={{ color: '#666' }}>当前世界:</span>
+                <span style={{ color: '#666' }}>当前项目:</span>
                 <Select
                   style={{ width: 180 }}
-                  placeholder="选择世界观"
-                  value={selectedWorld?.id}
-                  onChange={handleWorldChange}
+                  placeholder="选择项目"
+                  value={selectedProjectId}
+                  onChange={setSelectedProjectId}
                   allowClear
-                  onClear={() => setSelectedWorld(null)}
-                  loading={worldsLoading}
+                  onClear={() => setSelectedProjectId(null)}
+                  loading={projectsLoading}
                 >
-                  {worlds.map(world => (
-                    <Select.Option key={world.id} value={world.id}>
-                      {world.name}
+                  {projects.map(project => (
+                    <Select.Option key={project.id} value={project.id}>
+                      {project.title}
                     </Select.Option>
                   ))}
                 </Select>
@@ -538,21 +564,21 @@ function NovelEditorApp() {
             }}
           />
           <div style={{ padding: '16px', borderTop: '1px solid #f0f0f0' }}>
-            {/* 移动端世界选择器 */}
+            {/* 移动端项目选择器 */}
             <div style={{ marginBottom: 16 }}>
-              <span style={{ color: '#666', display: 'block', marginBottom: 8 }}>当前世界:</span>
+              <span style={{ color: '#666', display: 'block', marginBottom: 8 }}>当前项目:</span>
               <Select
                 style={{ width: '100%' }}
-                placeholder="选择世界观"
-                value={selectedWorld?.id}
-                onChange={handleWorldChange}
+                placeholder="选择项目"
+                value={selectedProjectId}
+                onChange={setSelectedProjectId}
                 allowClear
-                onClear={() => setSelectedWorld(null)}
-                loading={worldsLoading}
+                onClear={() => setSelectedProjectId(null)}
+                loading={projectsLoading}
               >
-                {worlds.map(world => (
-                  <Select.Option key={world.id} value={world.id}>
-                    {world.name}
+                {projects.map(project => (
+                  <Select.Option key={project.id} value={project.id}>
+                    {project.title}
                   </Select.Option>
                 ))}
               </Select>

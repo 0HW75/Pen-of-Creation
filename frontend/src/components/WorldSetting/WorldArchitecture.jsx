@@ -12,7 +12,6 @@ import { worldSettingApi } from '../../services/api';
 
 const { TextArea } = Input;
 const { TabPane } = Tabs;
-const { Option } = Select;
 
 // 维度管理组件
 const DimensionManagement = ({ worldId }) => {
@@ -903,7 +902,7 @@ const WorldArchitecture = ({ worldId }) => {
               title="维度数量"
               value={stats.dimensions}
               prefix={<GlobalOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff'  } }}
             />
           </Card>
         </Col>
@@ -913,7 +912,7 @@ const WorldArchitecture = ({ worldId }) => {
               title="区域数量"
               value={stats.regions}
               prefix={<ApartmentOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a'  } }}
             />
           </Card>
         </Col>
@@ -923,7 +922,7 @@ const WorldArchitecture = ({ worldId }) => {
               title="天体数量"
               value={stats.celestialBodies}
               prefix={<StarOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14'  } }}
             />
           </Card>
         </Col>
@@ -933,7 +932,7 @@ const WorldArchitecture = ({ worldId }) => {
               title="自然法则"
               value={stats.naturalLaws}
               prefix={<ExperimentOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              styles={{ content: { color: '#722ed1'  } }}
             />
           </Card>
         </Col>

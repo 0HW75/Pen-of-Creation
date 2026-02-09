@@ -175,7 +175,7 @@ const WorldManagement = () => {
               title="世界总数"
               value={totalWorlds}
               prefix={<GlobalOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff'  } }}
             />
           </Card>
         </Col>
@@ -185,7 +185,7 @@ const WorldManagement = () => {
               title="活跃世界"
               value={activeWorlds}
               prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a'  } }}
             />
           </Card>
         </Col>
@@ -195,7 +195,7 @@ const WorldManagement = () => {
               title="总角色数"
               value={totalCharacters}
               prefix={<DatabaseOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              styles={{ content: { color: '#722ed1'  } }}
             />
           </Card>
         </Col>
@@ -205,7 +205,7 @@ const WorldManagement = () => {
               title="总地点数"
               value={totalLocations}
               prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#fa8c16' }}
+              styles={{ content: { color: '#fa8c16'  } }}
             />
           </Card>
         </Col>

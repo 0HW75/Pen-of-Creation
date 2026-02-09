@@ -426,7 +426,7 @@ const TimelineManagement = ({ worldId }) => {
               title="政治事件"
               value={stats.political}
               prefix={<FlagOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a'  } }}
             />
           </Card>
         </Col>

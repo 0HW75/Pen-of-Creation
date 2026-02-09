@@ -20,9 +20,14 @@ def get_location(location_id):
 @api_bp.route('/locations', methods=['POST'])
 def create_location():
     data = request.get_json()
-    project = Project.query.get_or_404(data['project_id'])
+    project_id = data.get('project_id')
+    world_id = data.get('world_id')
+    if project_id:
+        project = Project.query.get_or_404(project_id)
     new_location = Location(
         name=data['name'],
+        project_id=project_id,
+        world_id=world_id,
         location_type=data.get('location_type', '城市'),
         region=data.get('region', ''),
         geographical_location=data.get('geographical_location', ''),
@@ -45,8 +50,7 @@ def create_location():
         potential_dangers=data.get('potential_dangers', ''),
         access_restrictions=data.get('access_restrictions', ''),
         survival_conditions=data.get('survival_conditions', ''),
-        importance=data.get('importance', 0),
-        project_id=data['project_id']
+        importance=data.get('importance', 0)
     )
     db.session.add(new_location)
     db.session.commit()

@@ -13,7 +13,7 @@ import { locationApi } from '../../services/api';
 const { TextArea } = Input;
 
 // 地点档案管理组件
-const LocationArchiveManagement = ({ worldId }) => {
+const LocationArchiveManagement = ({ worldId, projectId }) => {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -25,7 +25,7 @@ const LocationArchiveManagement = ({ worldId }) => {
   const fetchLocations = async () => {
     setLoading(true);
     try {
-      const response = await locationApi.getLocations(null, worldId);
+      const response = await locationApi.getLocations(projectId);
       const data = response.data || [];
       setLocations(data);
     } catch (error) {
@@ -41,7 +41,7 @@ const LocationArchiveManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
-      const data = { ...values, world_id: worldId };
+      const data = { ...values, world_id: worldId, project_id: projectId };
       if (editingLocation) {
         await locationApi.updateLocation(editingLocation.id, data);
         message.success('地点更新成功');
@@ -321,7 +321,7 @@ const LocationManagement = ({ worldId }) => {
 
   useEffect(() => {
     if (worldId) {
-      locationApi.getLocations(null, worldId).then((response) => {
+      locationApi.getLocations(null).then((response) => {
         const data = response.data || [];
         setStats({
           total: data.length,
@@ -360,7 +360,7 @@ const LocationManagement = ({ worldId }) => {
               title="地点总数"
               value={stats.total}
               prefix={<EnvironmentOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff'  } }}
             />
           </Card>
         </Col>
@@ -370,7 +370,7 @@ const LocationManagement = ({ worldId }) => {
               title="城市"
               value={stats.cities}
               prefix={<HomeOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a'  } }}
             />
           </Card>
         </Col>
@@ -380,7 +380,7 @@ const LocationManagement = ({ worldId }) => {
               title="村庄"
               value={stats.villages}
               prefix={<ApartmentOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14'  } }}
             />
           </Card>
         </Col>
@@ -390,7 +390,7 @@ const LocationManagement = ({ worldId }) => {
               title="特殊地点"
               value={stats.special}
               prefix={<StarOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              styles={{ content: { color: '#722ed1'  } }}
             />
           </Card>
         </Col>

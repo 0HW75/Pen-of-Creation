@@ -4,6 +4,7 @@ from datetime import datetime
 class World(db.Model):
     __tablename__ = 'worlds'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     core_concept = db.Column(db.Text, default='')
     world_type = db.Column(db.String(100), default='单一世界')
@@ -13,10 +14,11 @@ class World(db.Model):
     status = db.Column(db.String(50), default='active')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     def to_dict(self):
         return {
             'id': self.id,
+            'project_id': self.project_id,
             'name': self.name,
             'core_concept': self.core_concept,
             'core_rules': self.core_concept,  # 同时返回core_rules以便前端使用
@@ -67,7 +69,7 @@ class Project(db.Model):
 
 class Outline(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
     title = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text, default='')
     story_model = db.Column(db.String(100), default='')
@@ -158,7 +160,7 @@ class Chapter(db.Model):
 class Character(db.Model):
     __tablename__ = 'character'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
     world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     alternative_names = db.Column(db.Text, default='')  # JSON格式存储别名
@@ -345,7 +347,8 @@ class CharacterAbilityDetail(db.Model):
 class Location(db.Model):
     __tablename__ = 'location'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
     location_type = db.Column(db.String(100), default='城市')
@@ -378,6 +381,7 @@ class Location(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
             'description': self.description,
             'location_type': self.location_type,
@@ -411,6 +415,7 @@ class Item(db.Model):
     __tablename__ = 'item'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
     item_type = db.Column(db.String(100), default='普通')
@@ -432,6 +437,7 @@ class Item(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
             'description': self.description,
             'item_type': self.item_type,
@@ -454,6 +460,7 @@ class Faction(db.Model):
     __tablename__ = 'faction'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
     faction_type = db.Column(db.String(100), default='国家')
@@ -498,6 +505,7 @@ class Faction(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
             'description': self.description,
             'faction_type': self.faction_type,
@@ -543,6 +551,7 @@ class Relationship(db.Model):
     __tablename__ = 'relationship'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     source_type = db.Column(db.String(50), nullable=False)
     source_id = db.Column(db.Integer, nullable=False)
@@ -558,6 +567,7 @@ class Relationship(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
             'source_type': self.source_type,
             'source_id': self.source_id,
@@ -867,6 +877,7 @@ class Ability(db.Model):
     __tablename__ = 'ability'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
     ability_type = db.Column(db.String(100), default='')
@@ -886,6 +897,7 @@ class Ability(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
             'description': self.description,
             'ability_type': self.ability_type,
@@ -906,6 +918,7 @@ class Skill(db.Model):
     __tablename__ = 'skill'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
     skill_type = db.Column(db.String(100), default='')
@@ -922,11 +935,12 @@ class Skill(db.Model):
     skill_tree = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     def to_dict(self):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
             'description': self.description,
             'skill_type': self.skill_type,
@@ -949,6 +963,7 @@ class Talent(db.Model):
     __tablename__ = 'talent'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
     talent_type = db.Column(db.String(100), default='先天')
@@ -972,6 +987,7 @@ class Talent(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
             'description': self.description,
             'talent_type': self.talent_type,
@@ -996,6 +1012,7 @@ class Race(db.Model):
     __tablename__ = 'race'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
     origin_legend = db.Column(db.Text, default='')
@@ -1017,6 +1034,7 @@ class Race(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
             'description': self.description,
             'origin_legend': self.origin_legend,
@@ -1039,6 +1057,7 @@ class Creature(db.Model):
     __tablename__ = 'creature'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
     creature_type = db.Column(db.String(100), default='野兽')
@@ -1059,6 +1078,7 @@ class Creature(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
             'description': self.description,
             'creature_type': self.creature_type,
@@ -1080,6 +1100,7 @@ class SpecialCreature(db.Model):
     __tablename__ = 'special_creature'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
     creature_type = db.Column(db.String(100), default='异界生物')
@@ -1099,6 +1120,7 @@ class SpecialCreature(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
             'description': self.description,
             'creature_type': self.creature_type,
@@ -1119,6 +1141,7 @@ class Timeline(db.Model):
     __tablename__ = 'timeline'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
     timeline_type = db.Column(db.String(100), default='个人时间线')
@@ -1145,6 +1168,7 @@ class Timeline(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'world_id': self.world_id,
             'name': self.name,
             'description': self.description,
             'timeline_type': self.timeline_type,

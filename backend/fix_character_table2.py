@@ -1,8 +1,11 @@
 import sqlite3
 import os
 
-# 数据库路径
-db_path = os.path.join(os.path.dirname(__file__), 'novel_editor.db')
+# 正确的数据库路径
+db_path = r'D:\个人\myproj\AI_novel_editor\backend\app\novel_editor.db'
+
+print(f'数据库路径: {db_path}')
+print(f'文件存在: {os.path.exists(db_path)}')
 
 # 连接数据库
 conn = sqlite3.connect(db_path)
@@ -11,9 +14,10 @@ cursor = conn.cursor()
 # 检查当前表结构
 cursor.execute("PRAGMA table_info(character)")
 columns = cursor.fetchall()
-print("当前表结构:")
+print("\n当前表结构:")
 for col in columns:
-    print(f"  {col[1]}: {col[2]} (nullable: {not col[3]})")
+    if col[1] == 'project_id':
+        print(f"  {col[1]}: type={col[2]}, notnull={col[3]}, dflt_value={col[4]}")
 
 # 修改 project_id 字段为可空
 try:
@@ -102,10 +106,11 @@ try:
     columns = cursor.fetchall()
     print("\n修改后的表结构:")
     for col in columns:
-        print(f"  {col[1]}: {col[2]} (nullable: {not col[3]})")
+        if col[1] == 'project_id':
+            print(f"  {col[1]}: type={col[2]}, notnull={col[3]}, dflt_value={col[4]}")
         
 except Exception as e:
-    print(f"错误: {e}")
+    print(f"\n错误: {e}")
     conn.rollback()
 finally:
     conn.close()

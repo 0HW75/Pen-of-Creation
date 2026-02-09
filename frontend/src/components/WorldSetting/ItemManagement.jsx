@@ -373,7 +373,7 @@ const ItemManagement = ({ worldId }) => {
               title="物品总数"
               value={stats.total}
               prefix={<ShoppingOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff'  } }}
             />
           </Card>
         </Col>
@@ -383,7 +383,7 @@ const ItemManagement = ({ worldId }) => {
               title="武器"
               value={stats.weapons}
               prefix={<ThunderboltOutlined />}
-              valueStyle={{ color: '#ff4d4f' }}
+              styles={{ content: { color: '#ff4d4f'  } }}
             />
           </Card>
         </Col>
@@ -393,7 +393,7 @@ const ItemManagement = ({ worldId }) => {
               title="防具"
               value={stats.armors}
               prefix={<SafetyOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a'  } }}
             />
           </Card>
         </Col>
@@ -403,7 +403,7 @@ const ItemManagement = ({ worldId }) => {
               title="消耗品"
               value={stats.consumables}
               prefix={<StarOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14'  } }}
             />
           </Card>
         </Col>

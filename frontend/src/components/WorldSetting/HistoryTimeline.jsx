@@ -511,7 +511,7 @@ const HistoryTimeline = ({ worldId }) => {
               title="历史事件"
               value={stats.events}
               prefix={<FlagOutlined />}
-              valueStyle={{ color: '#f5222d' }}
+              styles={{ content: { color: '#f5222d'  } }}
             />
           </Card>
         </Col>
@@ -521,7 +521,7 @@ const HistoryTimeline = ({ worldId }) => {
               title="时间线"
               value={stats.timelines}
               prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff'  } }}
             />
           </Card>
         </Col>
@@ -531,7 +531,7 @@ const HistoryTimeline = ({ worldId }) => {
               title="历史深度"
               value={`${Math.round((stats.events + stats.timelines) / 2)}`}
               prefix={<HistoryOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a'  } }}
             />
           </Card>
         </Col>

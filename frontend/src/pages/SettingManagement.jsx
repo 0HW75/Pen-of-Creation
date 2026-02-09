@@ -34,7 +34,7 @@ import SocietySystem from '../components/WorldSetting/SocietySystem';
 const { Title, Text } = Typography;
 
 // 世界管理组件
-const WorldManagementPanel = ({ onSelectWorld }) => {
+const WorldManagementPanel = ({ onSelectWorld, projectId }) => {
   const [worlds, setWorlds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -47,7 +47,12 @@ const WorldManagementPanel = ({ onSelectWorld }) => {
     try {
       const response = await worldApi.getWorlds();
       if (response.data.code === 200) {
-        setWorlds(response.data.data);
+        // 如果有 projectId，过滤属于该项目的世界
+        let worldList = response.data.data;
+        if (projectId) {
+          worldList = worldList.filter(w => w.project_id === projectId);
+        }
+        setWorlds(worldList);
       }
     } catch (error) {
       message.error('获取世界列表失败');
@@ -62,11 +67,12 @@ const WorldManagementPanel = ({ onSelectWorld }) => {
 
   const handleCreate = async (values) => {
     try {
+      const data = { ...values, project_id: projectId };
       if (isEditing && currentWorld) {
-        await worldApi.updateWorld(currentWorld.id, values);
+        await worldApi.updateWorld(currentWorld.id, data);
         message.success('世界更新成功');
       } else {
-        await worldApi.createWorld(values);
+        await worldApi.createWorld(data);
         message.success('世界创建成功');
       }
       setIsModalVisible(false);
@@ -244,7 +250,7 @@ const WorldManagementPanel = ({ onSelectWorld }) => {
 };
 
 // 世界详情组件
-const WorldDetailPanel = ({ world, onBack, onEditWorld }) => {
+const WorldDetailPanel = ({ world, onBack, onEditWorld, projectId }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isSettingModalVisible, setIsSettingModalVisible] = useState(false);
@@ -556,12 +562,12 @@ const WorldDetailPanel = ({ world, onBack, onEditWorld }) => {
     {
       key: 'locations',
       label: '地点场景',
-      children: <LocationManagement worldId={world.id} />,
+      children: <LocationManagement worldId={world.id} projectId={projectId} />,
     },
     {
       key: 'factions',
       label: '组织势力',
-      children: <FactionManagement worldId={world.id} />,
+      children: <FactionManagement worldId={world.id} projectId={projectId} />,
     },
     {
       key: 'items',
@@ -1003,9 +1009,9 @@ const SettingManagement = ({ projectId }) => {
   return (
     <div style={{ width: '100%' }} key={refreshKey}>
       {viewMode === 'list' ? (
-        <WorldManagementPanel onSelectWorld={handleSelectWorld} />
+        <WorldManagementPanel onSelectWorld={handleSelectWorld} projectId={projectId} />
       ) : (
-        <WorldDetailPanel world={selectedWorld} onBack={handleBackToList} onEditWorld={handleEditWorld} />
+        <WorldDetailPanel world={selectedWorld} onBack={handleBackToList} onEditWorld={handleEditWorld} projectId={projectId} />
       )}
     </div>
   );

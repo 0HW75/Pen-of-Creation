@@ -124,13 +124,13 @@ export const chapterApi = {
 
 // 角色相关API
 export const characterApi = {
-  getCharacters: (projectId, worldId, signal) => {
+  getCharacters: (projectId, worldId, cancelToken) => {
     const params = {};
     if (projectId) params.project_id = projectId;
     if (worldId) params.world_id = worldId;
-    return api.get('/characters', { params, signal });
+    return api.get('/characters', { params, cancelToken });
   },
-  getCharacter: (id, signal) => api.get(`/characters/${id}`, { signal }),
+  getCharacter: (id, cancelToken) => api.get(`/characters/${id}`, { cancelToken }),
   createCharacter: async (data) => {
     const response = await api.post('/characters', data);
     clearCache(); // 清除缓存以确保下次获取最新数据
@@ -164,8 +164,8 @@ export const characterApi = {
 
 // 地点相关API
 export const locationApi = {
-  getLocations: (projectId, signal) => api.get('/locations', { params: { project_id: projectId }, signal }),
-  getLocation: (id, signal) => api.get(`/locations/${id}`, { signal }),
+  getLocations: (projectId, cancelToken) => api.get('/locations', { params: { project_id: projectId }, cancelToken }),
+  getLocation: (id, cancelToken) => api.get(`/locations/${id}`, { cancelToken }),
   createLocation: async (data) => {
     const response = await api.post('/locations', data);
     clearCache(); // 清除缓存以确保下次获取最新数据
@@ -206,8 +206,8 @@ export const itemApi = {
 
 // 势力相关API
 export const factionApi = {
-  getFactions: (projectId, signal) => api.get('/factions', { params: { project_id: projectId }, signal }),
-  getFaction: (id, signal) => api.get(`/factions/${id}`, { signal }),
+  getFactions: (projectId, cancelToken) => api.get('/factions', { params: { project_id: projectId }, cancelToken }),
+  getFaction: (id, cancelToken) => api.get(`/factions/${id}`, { cancelToken }),
   createFaction: async (data) => {
     const response = await api.post('/factions', data);
     clearCache(); // 清除缓存以确保下次获取最新数据

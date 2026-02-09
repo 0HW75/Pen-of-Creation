@@ -1142,7 +1142,7 @@ const SocietySystem = ({ worldId }) => {
               title="文明数量"
               value={stats.civilizations}
               prefix={<GlobalOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff'  } }}
             />
           </Card>
         </Col>
@@ -1152,7 +1152,7 @@ const SocietySystem = ({ worldId }) => {
               title="社会阶层"
               value={stats.socialClasses}
               prefix={<TeamOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a'  } }}
             />
           </Card>
         </Col>
@@ -1162,7 +1162,7 @@ const SocietySystem = ({ worldId }) => {
               title="文化习俗"
               value={stats.culturalCustoms}
               prefix={<SmileOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14'  } }}
             />
           </Card>
         </Col>
@@ -1172,7 +1172,7 @@ const SocietySystem = ({ worldId }) => {
               title="经济体系"
               value={stats.economicSystems}
               prefix={<DollarOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a'  } }}
             />
           </Card>
         </Col>
@@ -1182,7 +1182,7 @@ const SocietySystem = ({ worldId }) => {
               title="政治体系"
               value={stats.politicalSystems}
               prefix={<CrownOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14'  } }}
             />
           </Card>
         </Col>

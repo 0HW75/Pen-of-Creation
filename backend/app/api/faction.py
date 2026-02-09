@@ -20,9 +20,14 @@ def get_faction(faction_id):
 @api_bp.route('/factions', methods=['POST'])
 def create_faction():
     data = request.get_json()
-    project = Project.query.get_or_404(data['project_id'])
+    project_id = data.get('project_id')
+    world_id = data.get('world_id')
+    if project_id:
+        project = Project.query.get_or_404(project_id)
     new_faction = Faction(
         name=data['name'],
+        project_id=project_id,
+        world_id=world_id,
         faction_type=data.get('faction_type', '国家'),
         faction_status=data.get('faction_status', '活跃'),
         logo=data.get('logo', ''),
@@ -57,8 +62,7 @@ def create_faction():
         enemy_relationships=data.get('enemy_relationships', ''),
         subordinate_relationships=data.get('subordinate_relationships', ''),
         neutral_relationships=data.get('neutral_relationships', ''),
-        importance=data.get('importance', 0),
-        project_id=data['project_id']
+        importance=data.get('importance', 0)
     )
     db.session.add(new_faction)
     db.session.commit()

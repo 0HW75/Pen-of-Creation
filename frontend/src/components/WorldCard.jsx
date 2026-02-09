@@ -137,25 +137,25 @@ const WorldCard = ({
             title="角色"
             value={stats.character_count || 0}
             prefix={<UserOutlined />}
-            valueStyle={{ fontSize: '16px' }}
+            styles={{ content: { fontSize: '16px'  } }}
           />
           <Statistic
             title="地点"
             value={stats.location_count || 0}
             prefix={<EnvironmentOutlined />}
-            valueStyle={{ fontSize: '16px' }}
+            styles={{ content: { fontSize: '16px'  } }}
           />
           <Statistic
             title="势力"
             value={stats.faction_count || 0}
             prefix={<FlagOutlined />}
-            valueStyle={{ fontSize: '16px' }}
+            styles={{ content: { fontSize: '16px'  } }}
           />
           <Statistic
             title="事件"
             value={stats.event_count || 0}
             prefix={<ClockCircleOutlined />}
-            valueStyle={{ fontSize: '16px' }}
+            styles={{ content: { fontSize: '16px'  } }}
           />
         </div>
 

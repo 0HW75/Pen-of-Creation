@@ -14,7 +14,7 @@ import { factionApi } from '../../services/api';
 const { TextArea } = Input;
 
 // 组织概况管理组件
-const FactionOverviewManagement = ({ worldId }) => {
+const FactionOverviewManagement = ({ worldId, projectId }) => {
   const [factions, setFactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -26,7 +26,7 @@ const FactionOverviewManagement = ({ worldId }) => {
   const fetchFactions = async () => {
     setLoading(true);
     try {
-      const response = await factionApi.getFactions(null, worldId);
+      const response = await factionApi.getFactions(null);
       const data = response.data || [];
       setFactions(data);
     } catch (error) {
@@ -42,7 +42,7 @@ const FactionOverviewManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
-      const data = { ...values, world_id: worldId };
+      const data = { ...values, world_id: worldId, project_id: projectId };
       if (editingFaction) {
         await factionApi.updateFaction(editingFaction.id, data);
         message.success('势力更新成功');
@@ -379,7 +379,7 @@ const FactionManagement = ({ worldId }) => {
 
   useEffect(() => {
     if (worldId) {
-      factionApi.getFactions(null, worldId).then((response) => {
+      factionApi.getFactions(null).then((response) => {
         const data = response.data || [];
         setStats({
           total: data.length,
@@ -418,7 +418,7 @@ const FactionManagement = ({ worldId }) => {
               title="势力总数"
               value={stats.total}
               prefix={<TeamOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff'  } }}
             />
           </Card>
         </Col>
@@ -428,7 +428,7 @@ const FactionManagement = ({ worldId }) => {
               title="国家/政权"
               value={stats.nations}
               prefix={<CrownOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14'  } }}
             />
           </Card>
         </Col>
@@ -438,7 +438,7 @@ const FactionManagement = ({ worldId }) => {
               title="公会/组织"
               value={stats.guilds}
               prefix={<ApartmentOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a'  } }}
             />
           </Card>
         </Col>
@@ -448,7 +448,7 @@ const FactionManagement = ({ worldId }) => {
               title="宗教/教派"
               value={stats.religions}
               prefix={<SafetyOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              styles={{ content: { color: '#722ed1'  } }}
             />
           </Card>
         </Col>

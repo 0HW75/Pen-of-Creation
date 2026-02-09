@@ -18,8 +18,10 @@ def create_app():
     # 配置CORS
     CORS(app)
     
-    # 配置数据库
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///novel_editor.db'
+    # 配置数据库 - 使用绝对路径确保数据库位置一致
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    db_path = os.path.join(basedir, 'novel_editor.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # 配置压缩

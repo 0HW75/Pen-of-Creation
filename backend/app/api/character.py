@@ -48,18 +48,20 @@ def create_character():
     if not data:
         print('没有接收到数据')
         return jsonify({'error': 'No data received'}), 400
-    if 'project_id' not in data:
-        print('缺少project_id')
-        return jsonify({'error': 'Missing project_id'}), 400
     if 'name' not in data:
         print('缺少name')
         return jsonify({'error': 'Missing name'}), 400
     try:
-        project = Project.query.get_or_404(data['project_id'])
-        print(f'找到项目: {project.title}')
+        # project_id 现在是可选的
+        project_id = data.get('project_id')
+        if project_id:
+            project = Project.query.get_or_404(project_id)
+            print(f'找到项目: {project.title}')
+        
         new_character = Character(
             name=data['name'],
             world_id=data.get('world_id'),
+            project_id=project_id,
             alternative_names=data.get('alternative_names', ''),
             character_type=data.get('character_type', '配角'),
             role_type=data.get('role_type', '配角'),
@@ -110,8 +112,7 @@ def create_character():
             love_relationships=data.get('love_relationships', ''),
             complex_emotions=data.get('complex_emotions', ''),
             unrequited_love=data.get('unrequited_love', ''),
-            emotional_changes=data.get('emotional_changes', ''),
-            project_id=data['project_id']
+            emotional_changes=data.get('emotional_changes', '')
         )
         db.session.add(new_character)
         db.session.commit()

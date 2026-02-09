@@ -1147,7 +1147,7 @@ const EnergySystem = ({ worldId }) => {
               title="能量体系"
               value={stats.energySystems}
               prefix={<FireOutlined />}
-              valueStyle={{ color: '#fa541c' }}
+              styles={{ content: { color: '#fa541c'  } }}
             />
           </Card>
         </Col>
@@ -1157,7 +1157,7 @@ const EnergySystem = ({ worldId }) => {
               title="能量形态"
               value={stats.energyForms}
               prefix={<ThunderboltOutlined />}
-              valueStyle={{ color: '#108ee9' }}
+              styles={{ content: { color: '#108ee9'  } }}
             />
           </Card>
         </Col>
@@ -1167,7 +1167,7 @@ const EnergySystem = ({ worldId }) => {
               title="力量等级"
               value={stats.powerLevels}
               prefix={<StarOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14'  } }}
             />
           </Card>
         </Col>
@@ -1177,7 +1177,7 @@ const EnergySystem = ({ worldId }) => {
               title="力量代价"
               value={stats.powerCosts}
               prefix={<WarningOutlined />}
-              valueStyle={{ color: '#f5222d' }}
+              styles={{ content: { color: '#f5222d'  } }}
             />
           </Card>
         </Col>
@@ -1187,7 +1187,7 @@ const EnergySystem = ({ worldId }) => {
               title="通用技能"
               value={stats.commonSkills}
               prefix={<BookOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              styles={{ content: { color: '#722ed1'  } }}
             />
           </Card>
         </Col>

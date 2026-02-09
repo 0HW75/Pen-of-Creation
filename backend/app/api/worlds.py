@@ -28,15 +28,16 @@ def create_world():
     """创建新世界"""
     try:
         data = request.get_json()
-        
+
         if not data or not data.get('name'):
             return jsonify({
                 'code': 400,
                 'message': '世界名称不能为空'
             }), 400
-        
+
         world = World(
             name=data.get('name'),
+            project_id=data.get('project_id'),
             core_concept=data.get('core_concept', ''),
             world_type=data.get('world_type', '单一世界'),
             description=data.get('description', ''),

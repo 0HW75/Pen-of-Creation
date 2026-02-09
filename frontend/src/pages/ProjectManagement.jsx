@@ -10,7 +10,6 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, FileOutlined } from '@ant-d
 import { projectApi } from '../services/api';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 const ProjectManagement = ({ onSelectProject }) => {
   const [projects, setProjects] = useState([]);
@@ -141,14 +140,14 @@ const ProjectManagement = ({ onSelectProject }) => {
           rules={[{ required: true, message: '请选择小说类型' }]}
         >
           <Select placeholder="请选择小说类型" style={{ width: '100%' }}>
-            <Option value="玄幻">玄幻</Option>
-            <Option value="科幻">科幻</Option>
-            <Option value="都市">都市</Option>
-            <Option value="历史">历史</Option>
-            <Option value="武侠">武侠</Option>
-            <Option value="悬疑">悬疑</Option>
-            <Option value="言情">言情</Option>
-            <Option value="其他">其他</Option>
+            <Select.Option value="玄幻">玄幻</Select.Option>
+            <Select.Option value="科幻">科幻</Select.Option>
+            <Select.Option value="都市">都市</Select.Option>
+            <Select.Option value="历史">历史</Select.Option>
+            <Select.Option value="武侠">武侠</Select.Option>
+            <Select.Option value="悬疑">悬疑</Select.Option>
+            <Select.Option value="言情">言情</Select.Option>
+            <Select.Option value="其他">其他</Select.Option>
           </Select>
         </Form.Item>
 
@@ -158,9 +157,9 @@ const ProjectManagement = ({ onSelectProject }) => {
           rules={[{ required: true, message: '请选择目标读者' }]}
         >
           <Select placeholder="请选择目标读者" style={{ width: '100%' }}>
-            <Option value="青少年">青少年</Option>
-            <Option value="成人">成人</Option>
-            <Option value="全年龄">全年龄</Option>
+            <Select.Option value="青少年">青少年</Select.Option>
+            <Select.Option value="成人">成人</Select.Option>
+            <Select.Option value="全年龄">全年龄</Select.Option>
           </Select>
         </Form.Item>
 
@@ -241,6 +240,8 @@ const ProjectManagement = ({ onSelectProject }) => {
       }
       setIsModalVisible(false);
       loadProjects();
+      // 通知 App.jsx 刷新项目列表
+      window.dispatchEvent(new CustomEvent('refreshProjects'));
     } catch (error) {
       message.error(isEditing ? '更新项目失败' : '创建项目失败');
       console.error('Error:', error);
@@ -253,6 +254,8 @@ const ProjectManagement = ({ onSelectProject }) => {
       await projectApi.deleteProject(projectId);
       message.success('项目删除成功');
       loadProjects();
+      // 通知 App.jsx 刷新项目列表
+      window.dispatchEvent(new CustomEvent('refreshProjects'));
     } catch (error) {
       message.error('删除项目失败');
       console.error('Error deleting project:', error);
