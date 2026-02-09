@@ -13,7 +13,7 @@ import { itemApi } from '../../services/api';
 const { TextArea } = Input;
 
 // 通用物品管理组件
-const GeneralItemManagement = ({ worldId }) => {
+const GeneralItemManagement = ({ worldId, projectId }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -41,7 +41,7 @@ const GeneralItemManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
-      const data = { ...values, world_id: worldId };
+      const data = { ...values, world_id: worldId, project_id: projectId };
       if (editingItem) {
         await itemApi.updateItem(editingItem.id, data);
         message.success('物品更新成功');
@@ -323,7 +323,7 @@ const GeneralItemManagement = ({ worldId }) => {
 };
 
 // 物品资源管理主组件
-const ItemManagement = ({ worldId }) => {
+const ItemManagement = ({ worldId, projectId }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [stats, setStats] = useState({
     total: 0,
@@ -350,7 +350,7 @@ const ItemManagement = ({ worldId }) => {
     {
       key: 'general',
       label: '通用物品',
-      children: <GeneralItemManagement worldId={worldId} />,
+      children: <GeneralItemManagement worldId={worldId} projectId={projectId} />,
     },
     {
       key: 'equipment',

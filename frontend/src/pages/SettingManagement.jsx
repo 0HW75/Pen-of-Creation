@@ -572,7 +572,7 @@ const WorldDetailPanel = ({ world, onBack, onEditWorld, projectId }) => {
     {
       key: 'items',
       label: '物品资源',
-      children: <ItemManagement worldId={world.id} />,
+      children: <ItemManagement worldId={world.id} projectId={projectId} />,
     },
     {
       key: 'timeline',

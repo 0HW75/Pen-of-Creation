@@ -352,7 +352,7 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
 };
 
 // 组织结构管理组件
-const FactionStructureManagement = ({ worldId }) => {
+const FactionStructureManagement = ({ worldId, projectId }) => {
   const [structure, setStructure] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -368,7 +368,7 @@ const FactionStructureManagement = ({ worldId }) => {
 };
 
 // 组织势力管理主组件
-const FactionManagement = ({ worldId }) => {
+const FactionManagement = ({ worldId, projectId }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState({
     total: 0,
@@ -395,12 +395,12 @@ const FactionManagement = ({ worldId }) => {
     {
       key: 'overview',
       label: '组织概况',
-      children: <FactionOverviewManagement worldId={worldId} />,
+      children: <FactionOverviewManagement worldId={worldId} projectId={projectId} />,
     },
     {
       key: 'structure',
       label: '组织结构',
-      children: <FactionStructureManagement worldId={worldId} />,
+      children: <FactionStructureManagement worldId={worldId} projectId={projectId} />,
     },
     {
       key: 'goals',

@@ -1,15 +1,14 @@
+#!/usr/bin/env python3
+"""
+检查 Flask 路由注册情况
+"""
+
 from app import create_app
 
-# 创建应用实例
 app = create_app()
 
-# 打印所有路由
-print('后端服务器的所有路由:')
-print('-' * 80)
-
+print("已注册的路由:")
+print("-" * 50)
 for rule in app.url_map.iter_rules():
-    methods = ', '.join(sorted(rule.methods))
-    print(f'{rule.endpoint:50s} {methods:20s} {rule}')
-
-print('-' * 80)
-print('路由检查完成！')
+    if 'api' in str(rule):
+        print(f"{rule.endpoint:40s} {rule.methods} {rule}")

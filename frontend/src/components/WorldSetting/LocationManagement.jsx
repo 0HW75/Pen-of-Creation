@@ -310,7 +310,7 @@ const LocationArchiveManagement = ({ worldId, projectId }) => {
 };
 
 // 地点场景管理主组件
-const LocationManagement = ({ worldId }) => {
+const LocationManagement = ({ worldId, projectId }) => {
   const [activeTab, setActiveTab] = useState('archive');
   const [stats, setStats] = useState({
     total: 0,
@@ -337,7 +337,7 @@ const LocationManagement = ({ worldId }) => {
     {
       key: 'archive',
       label: '地点档案',
-      children: <LocationArchiveManagement worldId={worldId} />,
+      children: <LocationArchiveManagement worldId={worldId} projectId={projectId} />,
     },
     {
       key: 'structure',
