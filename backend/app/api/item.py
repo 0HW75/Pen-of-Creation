@@ -6,10 +6,13 @@ from app.api import api_bp
 @api_bp.route('/items', methods=['GET'])
 def get_items():
     project_id = request.args.get('project_id')
+    world_id = request.args.get('world_id')
+    query = Item.query
     if project_id:
-        items = Item.query.filter_by(project_id=project_id).all()
-    else:
-        items = Item.query.all()
+        query = query.filter_by(project_id=project_id)
+    if world_id:
+        query = query.filter_by(world_id=world_id)
+    items = query.all()
     return jsonify([item.to_dict() for item in items])
 
 @api_bp.route('/items/<int:item_id>', methods=['GET'])

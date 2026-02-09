@@ -25,7 +25,7 @@ const LocationArchiveManagement = ({ worldId, projectId }) => {
   const fetchLocations = async () => {
     setLoading(true);
     try {
-      const response = await locationApi.getLocations(projectId);
+      const response = await locationApi.getLocations(projectId, worldId);
       const data = response.data || [];
       setLocations(data);
     } catch (error) {
@@ -37,7 +37,7 @@ const LocationArchiveManagement = ({ worldId, projectId }) => {
 
   useEffect(() => {
     if (worldId) fetchLocations();
-  }, [worldId]);
+  }, [worldId, projectId]);
 
   const handleSubmit = async (values) => {
     try {
@@ -321,7 +321,7 @@ const LocationManagement = ({ worldId, projectId }) => {
 
   useEffect(() => {
     if (worldId) {
-      locationApi.getLocations(null).then((response) => {
+      locationApi.getLocations(projectId, worldId).then((response) => {
         const data = response.data || [];
         setStats({
           total: data.length,
@@ -331,7 +331,7 @@ const LocationManagement = ({ worldId, projectId }) => {
         });
       });
     }
-  }, [worldId]);
+  }, [worldId, projectId]);
 
   const tabItems = [
     {

@@ -170,8 +170,11 @@ export const characterApi = {
 
 // 地点相关API
 export const locationApi = {
-  getLocations: (projectId, cancelToken) => {
-    const config = { params: { project_id: projectId } };
+  getLocations: (projectId, worldId, cancelToken) => {
+    const params = {};
+    if (projectId) params.project_id = projectId;
+    if (worldId) params.world_id = worldId;
+    const config = { params };
     if (cancelToken) config.cancelToken = cancelToken;
     return api.get('/locations', config);
   },
@@ -199,8 +202,11 @@ export const locationApi = {
 
 // 物品相关API
 export const itemApi = {
-  getItems: (projectId, cancelToken) => {
-    const config = { params: { project_id: projectId } };
+  getItems: (projectId, worldId, cancelToken) => {
+    const params = {};
+    if (projectId) params.project_id = projectId;
+    if (worldId) params.world_id = worldId;
+    const config = { params };
     if (cancelToken) config.cancelToken = cancelToken;
     return api.get('/items', config);
   },
@@ -228,8 +234,11 @@ export const itemApi = {
 
 // 势力相关API
 export const factionApi = {
-  getFactions: (projectId, cancelToken) => {
-    const config = { params: { project_id: projectId } };
+  getFactions: (projectId, worldId, cancelToken) => {
+    const params = {};
+    if (projectId) params.project_id = projectId;
+    if (worldId) params.world_id = worldId;
+    const config = { params };
     if (cancelToken) config.cancelToken = cancelToken;
     return api.get('/factions', config);
   },

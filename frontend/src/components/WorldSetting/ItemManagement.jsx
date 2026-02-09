@@ -25,7 +25,7 @@ const GeneralItemManagement = ({ worldId, projectId }) => {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const response = await itemApi.getItems(null, worldId);
+      const response = await itemApi.getItems(projectId, worldId);
       const data = response.data || [];
       setItems(data);
     } catch (error) {
@@ -37,7 +37,7 @@ const GeneralItemManagement = ({ worldId, projectId }) => {
 
   useEffect(() => {
     if (worldId) fetchItems();
-  }, [worldId]);
+  }, [worldId, projectId]);
 
   const handleSubmit = async (values) => {
     try {
@@ -334,7 +334,7 @@ const ItemManagement = ({ worldId, projectId }) => {
 
   useEffect(() => {
     if (worldId) {
-      itemApi.getItems(null, worldId).then((response) => {
+      itemApi.getItems(projectId, worldId).then((response) => {
         const data = response.data || [];
         setStats({
           total: data.length,
@@ -344,7 +344,7 @@ const ItemManagement = ({ worldId, projectId }) => {
         });
       });
     }
-  }, [worldId]);
+  }, [worldId, projectId]);
 
   const tabItems = [
     {

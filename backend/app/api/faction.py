@@ -6,10 +6,13 @@ from app.api import api_bp
 @api_bp.route('/factions', methods=['GET'])
 def get_factions():
     project_id = request.args.get('project_id')
+    world_id = request.args.get('world_id')
+    query = Faction.query
     if project_id:
-        factions = Faction.query.filter_by(project_id=project_id).all()
-    else:
-        factions = Faction.query.all()
+        query = query.filter_by(project_id=project_id)
+    if world_id:
+        query = query.filter_by(world_id=world_id)
+    factions = query.all()
     return jsonify([faction.to_dict() for faction in factions])
 
 @api_bp.route('/factions/<int:faction_id>', methods=['GET'])

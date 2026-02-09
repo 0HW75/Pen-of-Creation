@@ -26,7 +26,7 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
   const fetchFactions = async () => {
     setLoading(true);
     try {
-      const response = await factionApi.getFactions(null);
+      const response = await factionApi.getFactions(projectId, worldId);
       const data = response.data || [];
       setFactions(data);
     } catch (error) {
@@ -38,7 +38,7 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
 
   useEffect(() => {
     if (worldId) fetchFactions();
-  }, [worldId]);
+  }, [worldId, projectId]);
 
   const handleSubmit = async (values) => {
     try {
@@ -379,7 +379,7 @@ const FactionManagement = ({ worldId, projectId }) => {
 
   useEffect(() => {
     if (worldId) {
-      factionApi.getFactions(null).then((response) => {
+      factionApi.getFactions(projectId, worldId).then((response) => {
         const data = response.data || [];
         setStats({
           total: data.length,
@@ -389,7 +389,7 @@ const FactionManagement = ({ worldId, projectId }) => {
         });
       });
     }
-  }, [worldId]);
+  }, [worldId, projectId]);
 
   const tabItems = [
     {

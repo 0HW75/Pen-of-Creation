@@ -6,10 +6,13 @@ from app.api import api_bp
 @api_bp.route('/locations', methods=['GET'])
 def get_locations():
     project_id = request.args.get('project_id')
+    world_id = request.args.get('world_id')
+    query = Location.query
     if project_id:
-        locations = Location.query.filter_by(project_id=project_id).all()
-    else:
-        locations = Location.query.all()
+        query = query.filter_by(project_id=project_id)
+    if world_id:
+        query = query.filter_by(world_id=world_id)
+    locations = query.all()
     return jsonify([location.to_dict() for location in locations])
 
 @api_bp.route('/locations/<int:location_id>', methods=['GET'])
