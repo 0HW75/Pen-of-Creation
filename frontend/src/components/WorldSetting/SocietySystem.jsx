@@ -87,8 +87,8 @@ const CivilizationManagement = ({ worldId }) => {
   const columns = [
     {
       title: '文明名称',
-      dataIndex: 'civilization_name',
-      key: 'civilization_name',
+      dataIndex: 'name',
+      key: 'name',
       render: (text, record) => (
         <Space>
           <GlobalOutlined style={{ color: '#1890ff' }} />
@@ -113,8 +113,8 @@ const CivilizationManagement = ({ worldId }) => {
     },
     {
       title: '发展阶段',
-      dataIndex: 'development_stage',
-      key: 'development_stage',
+      dataIndex: 'development_level',
+      key: 'development_level',
       render: (stage) => <Tag color="cyan">{stage}</Tag>,
     },
     {
@@ -321,8 +321,8 @@ const SocialClassManagement = ({ worldId }) => {
   const columns = [
     {
       title: '阶层名称',
-      dataIndex: 'class_name',
-      key: 'class_name',
+      dataIndex: 'name',
+      key: 'name',
       render: (text, record) => (
         <Space>
           <TeamOutlined style={{ color: '#52c41a' }} />
@@ -331,23 +331,16 @@ const SocialClassManagement = ({ worldId }) => {
       ),
     },
     {
-      title: '社会地位',
-      dataIndex: 'social_status',
-      key: 'social_status',
-      render: (status) => {
-        const colorMap = {
-          '高': 'red',
-          '中': 'blue',
-          '低': 'green',
-        };
-        return <Tag color={colorMap[status] || 'default'}>{status}</Tag>;
-      },
+      title: '阶级等级',
+      dataIndex: 'class_level',
+      key: 'class_level',
+      render: (level) => <Tag color="blue">{level}</Tag>,
     },
     {
       title: '人口比例',
-      dataIndex: 'population_percentage',
-      key: 'population_percentage',
-      render: (percentage) => <Tag color="orange">{percentage}%</Tag>,
+      dataIndex: 'percentage_of_population',
+      key: 'percentage_of_population',
+      render: (percentage) => percentage ? <Tag color="orange">{percentage}</Tag> : '-',
     },
     {
       title: '操作',
@@ -545,8 +538,8 @@ const CulturalCustomsManagement = ({ worldId }) => {
   const columns = [
     {
       title: '习俗名称',
-      dataIndex: 'custom_name',
-      key: 'custom_name',
+      dataIndex: 'name',
+      key: 'name',
       render: (text, record) => (
         <Space>
           <SmileOutlined style={{ color: '#faad14' }} />
@@ -570,10 +563,10 @@ const CulturalCustomsManagement = ({ worldId }) => {
       },
     },
     {
-      title: '适用范围',
-      dataIndex: 'applicable_scope',
-      key: 'applicable_scope',
-      render: (scope) => <Tag color="cyan">{scope}</Tag>,
+      title: '重要性',
+      dataIndex: 'importance_level',
+      key: 'importance_level',
+      render: (level) => <Tag color="cyan">{level}/10</Tag>,
     },
     {
       title: '操作',
@@ -781,8 +774,8 @@ const EconomicSystemManagement = ({ worldId }) => {
   const columns = [
     {
       title: '经济体系名称',
-      dataIndex: 'system_name',
-      key: 'system_name',
+      dataIndex: 'name',
+      key: 'name',
       render: (text, record) => (
         <Space>
           <DollarOutlined style={{ color: '#52c41a' }} />
@@ -791,24 +784,24 @@ const EconomicSystemManagement = ({ worldId }) => {
       ),
     },
     {
-      title: '经济类型',
-      dataIndex: 'economic_type',
-      key: 'economic_type',
+      title: '经济模式',
+      dataIndex: 'economic_model',
+      key: 'economic_model',
       render: (type) => {
         const colorMap = {
-          '农业': 'green',
-          '商业': 'blue',
-          '工业': 'orange',
-          '混合': 'purple',
+          '物物交换': 'green',
+          '市场经济': 'blue',
+          '计划经济': 'orange',
+          '混合经济': 'purple',
         };
         return <Tag color={colorMap[type] || 'default'}>{type}</Tag>;
       },
     },
     {
-      title: '货币单位',
-      dataIndex: 'currency_unit',
-      key: 'currency_unit',
-      render: (unit) => <Tag color="cyan">{unit}</Tag>,
+      title: '货币名称',
+      dataIndex: 'currency_name',
+      key: 'currency_name',
+      render: (unit) => unit ? <Tag color="cyan">{unit}</Tag> : '-',
     },
     {
       title: '操作',
@@ -1008,8 +1001,8 @@ const PoliticalSystemManagement = ({ worldId }) => {
   const columns = [
     {
       title: '政治体系名称',
-      dataIndex: 'system_name',
-      key: 'system_name',
+      dataIndex: 'name',
+      key: 'name',
       render: (text, record) => (
         <Space>
           <CrownOutlined style={{ color: '#faad14' }} />
@@ -1018,25 +1011,25 @@ const PoliticalSystemManagement = ({ worldId }) => {
       ),
     },
     {
-      title: '政治类型',
-      dataIndex: 'political_type',
-      key: 'political_type',
+      title: '政府类型',
+      dataIndex: 'government_type',
+      key: 'government_type',
       render: (type) => {
         const colorMap = {
-          ' monarchy': 'red',
-          ' republic': 'blue',
-          ' democracy': 'green',
-          ' dictatorship': 'purple',
-          ' other': 'default',
+          '君主制': 'red',
+          '共和制': 'blue',
+          '民主制': 'green',
+          '独裁制': 'purple',
+          '其他': 'default',
         };
         return <Tag color={colorMap[type] || 'default'}>{type}</Tag>;
       },
     },
     {
-      title: '统治者称呼',
-      dataIndex: 'ruler_title',
-      key: 'ruler_title',
-      render: (title) => <Tag color="cyan">{title}</Tag>,
+      title: '政治稳定性',
+      dataIndex: 'political_stability',
+      key: 'political_stability',
+      render: (stability) => stability ? <Tag color="cyan">{stability}</Tag> : '-',
     },
     {
       title: '操作',
