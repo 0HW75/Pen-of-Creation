@@ -465,11 +465,21 @@ const PowerLevelManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 转换字段名以匹配后端 API
+      const data = {
+        name: values.level_name,
+        level: values.level_number,
+        level_name: values.level_name,
+        description: values.power_description || '',
+        abilities: values.signature_abilities || '',
+        requirements: values.requirements || '',
+        world_id: worldId,
+      };
       if (editingLevel) {
-        await energySocietyApi.updatePowerLevel(editingLevel.id, values);
+        await energySocietyApi.updatePowerLevel(editingLevel.id, data);
         message.success('力量等级更新成功');
       } else {
-        await energySocietyApi.createPowerLevel({ ...values, world_id: worldId });
+        await energySocietyApi.createPowerLevel(data);
         message.success('力量等级创建成功');
       }
       setModalVisible(false);
@@ -531,7 +541,14 @@ const PowerLevelManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingLevel(record);
-              form.setFieldsValue(record);
+              // 将后端字段转换为前端表单字段
+              form.setFieldsValue({
+                level_name: record.level_name || record.name,
+                level_number: record.level,
+                power_description: record.description,
+                signature_abilities: record.abilities,
+                requirements: record.requirements,
+              });
               setModalVisible(true);
             }}
           >
@@ -887,11 +904,21 @@ const CommonSkillManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 转换字段名以匹配后端 API
+      const data = {
+        name: values.skill_name,
+        skill_type: values.skill_type,
+        description: values.description || '',
+        difficulty: values.difficulty_level || '普通',
+        typical_users: values.applicable_classes || '',
+        learning_time: values.learning_method || '',
+        world_id: worldId,
+      };
       if (editingSkill) {
-        await energySocietyApi.updateCommonSkill(editingSkill.id, values);
+        await energySocietyApi.updateCommonSkill(editingSkill.id, data);
         message.success('通用技能更新成功');
       } else {
-        await energySocietyApi.createCommonSkill({ ...values, world_id: worldId });
+        await energySocietyApi.createCommonSkill(data);
         message.success('通用技能创建成功');
       }
       setModalVisible(false);
@@ -961,7 +988,15 @@ const CommonSkillManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingSkill(record);
-              form.setFieldsValue(record);
+              // 将后端字段转换为前端表单字段
+              form.setFieldsValue({
+                skill_name: record.name,
+                skill_type: record.skill_type,
+                description: record.description,
+                applicable_classes: record.typical_users,
+                difficulty_level: record.difficulty,
+                learning_method: record.learning_time,
+              });
               setModalVisible(true);
             }}
           >

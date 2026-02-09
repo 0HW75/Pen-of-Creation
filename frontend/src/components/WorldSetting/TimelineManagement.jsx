@@ -168,7 +168,7 @@ const EventManagement = ({ worldId }) => {
            event.event_type === '发现' ? 'green' : 
            event.event_type === '灾难' ? 'orange' : 'blue',
     label: event.event_date,
-    children: (
+    content: (
       <div>
         <div style={{ fontWeight: 'bold' }}>{event.name}</div>
         <div style={{ color: '#666', fontSize: '12px' }}>
@@ -228,7 +228,7 @@ const EventManagement = ({ worldId }) => {
             style={{ height: '100%' }}
           >
             {events.length > 0 ? (
-              <Timeline mode="left" items={timelineItems} />
+              <Timeline mode="start" items={timelineItems} />
             ) : (
               <Empty description="暂无事件数据" />
             )}

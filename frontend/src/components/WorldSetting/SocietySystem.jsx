@@ -40,11 +40,30 @@ const CivilizationManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 转换字段名以匹配后端 API
+      const data = {
+        name: values.civilization_name,
+        world_id: worldId,
+        civilization_type: values.civilization_type || '魔法文明',
+        description: values.description || '',
+        development_level: values.development_stage || '中世纪',
+        population_scale: values.population_scale || '',
+        territory_size: values.territory_size || '',
+        political_system: values.political_system || '',
+        economic_system: values.economic_system || '',
+        technological_level: values.technological_level || '',
+        magical_level: values.magical_level || '',
+        cultural_characteristics: values.cultural_characteristics || '',
+        religious_beliefs: values.religious_beliefs || '',
+        taboos: values.taboos || '',
+        values: values.core_values || '',
+        historical_origin: values.historical_origin || '',
+      };
       if (editingCiv) {
-        await energySocietyApi.updateCivilization(editingCiv.id, values);
+        await energySocietyApi.updateCivilization(editingCiv.id, data);
         message.success('文明更新成功');
       } else {
-        await energySocietyApi.createCivilization({ ...values, world_id: worldId });
+        await energySocietyApi.createCivilization(data);
         message.success('文明创建成功');
       }
       setModalVisible(false);
@@ -258,11 +277,27 @@ const SocialClassManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 转换字段名以匹配后端 API
+      const data = {
+        name: values.class_name,
+        world_id: worldId,
+        civilization_id: values.civilization_id,
+        class_level: values.class_level || 1,
+        description: values.description || '',
+        privileges: values.privileges || '',
+        obligations: values.obligations || '',
+        typical_occupations: values.typical_occupations || '',
+        living_standards: values.living_standards || '',
+        education_access: values.education_access || '',
+        social_mobility: values.social_mobility || '',
+        percentage_of_population: values.population_ratio || '',
+        typical_power_level: values.typical_power_level || 0,
+      };
       if (editingClass) {
-        await energySocietyApi.updateSocialClass(editingClass.id, values);
+        await energySocietyApi.updateSocialClass(editingClass.id, data);
         message.success('社会阶层更新成功');
       } else {
-        await energySocietyApi.createSocialClass({ ...values, world_id: worldId });
+        await energySocietyApi.createSocialClass(data);
         message.success('社会阶层创建成功');
       }
       setModalVisible(false);
@@ -465,11 +500,28 @@ const CulturalCustomsManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 转换字段名以匹配后端 API
+      const data = {
+        name: values.custom_name,
+        world_id: worldId,
+        civilization_id: values.civilization_id,
+        custom_type: values.custom_type || '节日',
+        description: values.description || '',
+        origin: values.origin || '',
+        significance: values.significance || '',
+        participants: values.participants || '',
+        time_period: values.time_period || '',
+        location: values.location || '',
+        procedures: values.procedures || '',
+        related_beliefs: values.related_beliefs || '',
+        variations: values.variations || '',
+        importance_level: values.importance_level || 5,
+      };
       if (editingCustom) {
-        await energySocietyApi.updateCulturalCustom(editingCustom.id, values);
+        await energySocietyApi.updateCulturalCustom(editingCustom.id, data);
         message.success('文化习俗更新成功');
       } else {
-        await energySocietyApi.createCulturalCustom({ ...values, world_id: worldId });
+        await energySocietyApi.createCulturalCustom(data);
         message.success('文化习俗创建成功');
       }
       setModalVisible(false);
@@ -681,11 +733,31 @@ const EconomicSystemManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 转换字段名以匹配后端 API
+      const data = {
+        name: values.system_name,
+        world_id: worldId,
+        civilization_id: values.civilization_id,
+        economic_model: values.economic_model || '市场经济',
+        description: values.description || '',
+        currency_name: values.currency_name || '',
+        currency_material: values.currency_material || '',
+        denomination_system: values.denomination_system || '',
+        exchange_rates: values.exchange_rates || '',
+        major_industries: values.major_industries || '',
+        trade_routes: values.trade_routes || '',
+        trade_partners: values.trade_partners || '',
+        resource_dependencies: values.resource_dependencies || '',
+        wealth_distribution: values.wealth_distribution || '',
+        taxation_system: values.taxation_system || '',
+        banking_system: values.banking_system || '',
+        economic_challenges: values.economic_challenges || '',
+      };
       if (editingSystem) {
-        await energySocietyApi.updateEconomicSystem(editingSystem.id, values);
+        await energySocietyApi.updateEconomicSystem(editingSystem.id, data);
         message.success('经济体系更新成功');
       } else {
-        await energySocietyApi.createEconomicSystem({ ...values, world_id: worldId });
+        await energySocietyApi.createEconomicSystem(data);
         message.success('经济体系创建成功');
       }
       setModalVisible(false);
@@ -890,11 +962,29 @@ const PoliticalSystemManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 转换字段名以匹配后端 API
+      const data = {
+        name: values.political_system_name,
+        world_id: worldId,
+        civilization_id: values.civilization_id,
+        government_type: values.government_type || '君主制',
+        description: values.description || '',
+        power_structure: values.power_structure || '',
+        succession_system: values.succession_system || '',
+        decision_process: values.decision_process || '',
+        administrative_divisions: values.administrative_divisions || '',
+        legal_system: values.legal_system || '',
+        military_organization: values.military_organization || '',
+        diplomatic_style: values.diplomatic_style || '',
+        internal_conflicts: values.internal_conflicts || '',
+        external_threats: values.external_threats || '',
+        political_stability: values.political_stability || '稳定',
+      };
       if (editingSystem) {
-        await energySocietyApi.updatePoliticalSystem(editingSystem.id, values);
+        await energySocietyApi.updatePoliticalSystem(editingSystem.id, data);
         message.success('政治体系更新成功');
       } else {
-        await energySocietyApi.createPoliticalSystem({ ...values, world_id: worldId });
+        await energySocietyApi.createPoliticalSystem(data);
         message.success('政治体系创建成功');
       }
       setModalVisible(false);
