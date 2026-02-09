@@ -40,11 +40,28 @@ const EnergySystemManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
+      // 字段映射转换
+      const data = {
+        name: values.name,
+        world_id: worldId,
+        energy_type: values.system_type,
+        description: values.description || '',
+        source: values.energy_sources || '',
+        acquisition_method: '',
+        storage_method: '',
+        usage_limitations: values.usage_limitations || '',
+        common_applications: '',
+        rarity: '常见',
+        stability: '稳定',
+        interaction_with_other_energies: '',
+        cultivation_method: '',
+        typical_manifestations: '',
+      };
       if (editingSystem) {
-        await energySocietyApi.updateEnergySystem(editingSystem.id, values);
+        await energySocietyApi.updateEnergySystem(editingSystem.id, data);
         message.success('能量体系更新成功');
       } else {
-        await energySocietyApi.createEnergySystem({ ...values, world_id: worldId });
+        await energySocietyApi.createEnergySystem(data);
         message.success('能量体系创建成功');
       }
       setModalVisible(false);
@@ -79,8 +96,8 @@ const EnergySystemManagement = ({ worldId }) => {
     },
     {
       title: '体系类型',
-      dataIndex: 'system_type',
-      key: 'system_type',
+      dataIndex: 'energy_type',
+      key: 'energy_type',
       render: (type) => <Tag color="red">{type}</Tag>,
     },
     {
@@ -100,7 +117,15 @@ const EnergySystemManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingSystem(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                name: record.name,
+                system_type: record.energy_type,
+                description: record.description,
+                basic_laws: record.basic_laws,
+                energy_sources: record.source,
+                usage_limitations: record.usage_limitations,
+              });
               setModalVisible(true);
             }}
           >
@@ -317,7 +342,16 @@ const EnergyFormManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingForm(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                name: record.name,
+                form_type: record.form_type,
+                energy_system_id: record.energy_system_id,
+                description: record.description,
+                basic_properties: record.basic_properties,
+                interaction_rules: record.interaction_rules,
+                visual_manifestation: record.visual_manifestation,
+              });
               setModalVisible(true);
             }}
           >
@@ -514,20 +548,20 @@ const PowerLevelManagement = ({ worldId }) => {
     },
     {
       title: '等级',
-      dataIndex: 'level_number',
-      key: 'level_number',
+      dataIndex: 'level',
+      key: 'level',
       render: (level) => <Tag color="orange">{level}</Tag>,
     },
     {
       title: '力量描述',
-      dataIndex: 'power_description',
-      key: 'power_description',
+      dataIndex: 'description',
+      key: 'description',
       ellipsis: true,
     },
     {
       title: '标志性能力',
-      dataIndex: 'signature_abilities',
-      key: 'signature_abilities',
+      dataIndex: 'abilities',
+      key: 'abilities',
       ellipsis: true,
     },
     {
@@ -756,7 +790,16 @@ const PowerCostManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingCost(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                cost_type: record.cost_type,
+                severity_level: record.severity_level,
+                description: record.description,
+                trigger_conditions: record.trigger_conditions,
+                payment_mechanism: record.payment_mechanism,
+                reversible: record.reversible,
+                mitigation_methods: record.mitigation_methods,
+              });
               setModalVisible(true);
             }}
           >
@@ -942,8 +985,8 @@ const CommonSkillManagement = ({ worldId }) => {
   const columns = [
     {
       title: '技能名称',
-      dataIndex: 'skill_name',
-      key: 'skill_name',
+      dataIndex: 'name',
+      key: 'name',
       render: (text, record) => (
         <Space>
           <BookOutlined style={{ color: '#722ed1' }} />
@@ -959,14 +1002,14 @@ const CommonSkillManagement = ({ worldId }) => {
     },
     {
       title: '适用职业',
-      dataIndex: 'applicable_classes',
-      key: 'applicable_classes',
+      dataIndex: 'typical_users',
+      key: 'typical_users',
       ellipsis: true,
     },
     {
       title: '学习难度',
-      dataIndex: 'difficulty_level',
-      key: 'difficulty_level',
+      dataIndex: 'difficulty',
+      key: 'difficulty',
       render: (level) => {
         const colorMap = {
           '简单': 'green',
