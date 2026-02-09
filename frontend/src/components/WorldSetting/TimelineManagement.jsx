@@ -43,7 +43,18 @@ const EventManagement = ({ worldId }) => {
 
   const handleSubmit = async (values) => {
     try {
-      const data = { ...values, world_id: worldId };
+      // 字段映射转换
+      const data = {
+        name: values.name,
+        world_id: worldId,
+        event_type: values.event_type,
+        start_year: values.event_date,
+        end_year: values.event_date,
+        importance_level: values.importance,
+        key_participants: values.participants,
+        description: values.description,
+        immediate_outcomes: values.impact,
+      };
       if (editingEvent) {
         await historyTimelineApi.updateHistoricalEvent(editingEvent.id, data);
         message.success('事件更新成功');
@@ -106,14 +117,14 @@ const EventManagement = ({ worldId }) => {
     },
     {
       title: '发生时间',
-      dataIndex: 'event_date',
-      key: 'event_date',
-      render: (date) => date || '-',
+      dataIndex: 'start_year',
+      key: 'start_year',
+      render: (date, record) => date || record.end_year || '-',
     },
     {
       title: '重要性',
-      dataIndex: 'importance',
-      key: 'importance',
+      dataIndex: 'importance_level',
+      key: 'importance_level',
       render: (importance) => {
         const stars = '⭐'.repeat(importance || 1);
         return <span>{stars}</span>;
@@ -121,8 +132,8 @@ const EventManagement = ({ worldId }) => {
     },
     {
       title: '参与方',
-      dataIndex: 'participants',
-      key: 'participants',
+      dataIndex: 'key_participants',
+      key: 'key_participants',
       render: (participants) => participants || '-',
     },
     {
@@ -143,7 +154,16 @@ const EventManagement = ({ worldId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingEvent(record);
-              form.setFieldsValue(record);
+              // 反向字段映射
+              form.setFieldsValue({
+                name: record.name,
+                event_type: record.event_type,
+                event_date: record.start_year || record.end_year,
+                importance: record.importance_level,
+                participants: record.key_participants,
+                description: record.description,
+                impact: record.immediate_outcomes,
+              });
               setModalVisible(true);
             }}
           >
