@@ -366,8 +366,8 @@ const DataVisualization = ({ projectId, chapters = [], characters = [] }) => {
                 onChange={setAnalysisType}
                 style={{ width: 150 }}
               >
-                <Option value="emotion">情绪曲线</Option>
-                <Option value="tension">张力曲线</Option>
+                <Select.Option value="emotion">情绪曲线</Select.Option>
+                <Select.Option value="tension">张力曲线</Select.Option>
               </Select>
               <Button type="primary" onClick={analyzeData} loading={loading}>
                 分析情绪趋势
@@ -403,9 +403,9 @@ const DataVisualization = ({ projectId, chapters = [], characters = [] }) => {
                 placeholder="选择章节"
               >
                 {chapters.map(chapter => (
-                  <Option key={chapter.id} value={chapter.id}>
+                  <Select.Option key={chapter.id} value={chapter.id}>
                     {chapter.title}
-                  </Option>
+                  </Select.Option>
                 ))}
               </Select>
               <Button type="primary" onClick={analyzeData} loading={loading}>

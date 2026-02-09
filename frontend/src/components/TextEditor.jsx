@@ -730,11 +730,11 @@ const TextEditor = ({ chapterId, initialContent, onSave, projectId }) => {
                 style={{ width: 100 }}
                 size="small"
               >
-                <Option value={12}>12px</Option>
-                <Option value={14}>14px</Option>
-                <Option value={16}>16px</Option>
-                <Option value={18}>18px</Option>
-                <Option value={20}>20px</Option>
+                <Select.Option value={12}>12px</Select.Option>
+                <Select.Option value={14}>14px</Select.Option>
+                <Select.Option value={16}>16px</Select.Option>
+                <Select.Option value={18}>18px</Select.Option>
+                <Select.Option value={20}>20px</Select.Option>
               </Select>
             </div>
 
@@ -762,11 +762,11 @@ const TextEditor = ({ chapterId, initialContent, onSave, projectId }) => {
                   style={{ width: 100 }}
                   size="small"
                 >
-                  <Option value={1}>1</Option>
-                  <Option value={2}>2</Option>
-                  <Option value={3}>3</Option>
-                  <Option value={5}>5</Option>
-                  <Option value={10}>10</Option>
+                  <Select.Option value={1}>1</Select.Option>
+                  <Select.Option value={2}>2</Select.Option>
+                  <Select.Option value={3}>3</Select.Option>
+                  <Select.Option value={5}>5</Select.Option>
+                  <Select.Option value={10}>10</Select.Option>
                 </Select>
               </div>
             )}
@@ -838,9 +838,9 @@ const TextEditor = ({ chapterId, initialContent, onSave, projectId }) => {
               style={{ width: '100%' }}
               size="large"
             >
-              <Option value="opening" icon={<RocketOutlined />}>智能开篇生成</Option>
-              <Option value="continue" icon={<EditOutlined />}>AI续写</Option>
-              <Option value="rewrite" icon={<EditOutlined />}>AI润色</Option>
+              <Select.Option value="opening" icon={<RocketOutlined />}>智能开篇生成</Select.Option>
+              <Select.Option value="continue" icon={<EditOutlined />}>AI续写</Select.Option>
+              <Select.Option value="rewrite" icon={<EditOutlined />}>AI润色</Select.Option>
             </Select>
           </div>
 
@@ -879,10 +879,10 @@ const TextEditor = ({ chapterId, initialContent, onSave, projectId }) => {
                 style={{ width: '100%', marginBottom: '16px' }}
                   size="middle"
               >
-                <Option value="流畅自然">流畅自然</Option>
-                <Option value="华丽优美">华丽优美</Option>
-                <Option value="简洁明快">简洁明快</Option>
-                <Option value="深沉厚重">深沉厚重</Option>
+                <Select.Option value="流畅自然">流畅自然</Select.Option>
+                <Select.Option value="华丽优美">华丽优美</Select.Option>
+                <Select.Option value="简洁明快">简洁明快</Select.Option>
+                <Select.Option value="深沉厚重">深沉厚重</Select.Option>
               </Select>
               <Alert
                 title="提示"
@@ -905,13 +905,13 @@ const TextEditor = ({ chapterId, initialContent, onSave, projectId }) => {
                 style={{ flex: 1 }}
                 size="middle"
               >
-                <Option value="玄幻">玄幻</Option>
-                <Option value="科幻">科幻</Option>
-                <Option value="言情">言情</Option>
-                <Option value="悬疑">悬疑</Option>
-                <Option value="都市">都市</Option>
-                <Option value="历史">历史</Option>
-                <Option value="武侠">武侠</Option>
+                <Select.Option value="玄幻">玄幻</Select.Option>
+                <Select.Option value="科幻">科幻</Select.Option>
+                <Select.Option value="言情">言情</Select.Option>
+                <Select.Option value="悬疑">悬疑</Select.Option>
+                <Select.Option value="都市">都市</Select.Option>
+                <Select.Option value="历史">历史</Select.Option>
+                <Select.Option value="武侠">武侠</Select.Option>
               </Select>
               <InputNumber
                 value={aiLength}

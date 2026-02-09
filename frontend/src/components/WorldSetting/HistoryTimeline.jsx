@@ -205,12 +205,12 @@ const HistoryEventManagement = ({ worldId }) => {
             initialValue="其他"
           >
             <Select>
-              <Option value="战争">战争</Option>
-              <Option value="政治">政治</Option>
-              <Option value="文化">文化</Option>
-              <Option value="科技">科技</Option>
-              <Option value="灾难">灾难</Option>
-              <Option value="其他">其他</Option>
+              <Select.Option value="战争">战争</Select.Option>
+              <Select.Option value="政治">政治</Select.Option>
+              <Select.Option value="文化">文化</Select.Option>
+              <Select.Option value="科技">科技</Select.Option>
+              <Select.Option value="灾难">灾难</Select.Option>
+              <Select.Option value="其他">其他</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -228,7 +228,7 @@ const HistoryEventManagement = ({ worldId }) => {
           >
             <Select>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => (
-                <Option key={level} value={level}>{level}/10</Option>
+                <Select.Option key={level} value={level}>{level}/10</Select.Option>
               ))}
             </Select>
           </Form.Item>
@@ -434,11 +434,11 @@ const TimelineManagement = ({ worldId }) => {
             initialValue="世界"
           >
             <Select>
-              <Option value="世界">世界</Option>
-              <Option value="地区">地区</Option>
-              <Option value="文明">文明</Option>
-              <Option value="个人">个人</Option>
-              <Option value="其他">其他</Option>
+              <Select.Option value="世界">世界</Select.Option>
+              <Select.Option value="地区">地区</Select.Option>
+              <Select.Option value="文明">文明</Select.Option>
+              <Select.Option value="个人">个人</Select.Option>
+              <Select.Option value="其他">其他</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item

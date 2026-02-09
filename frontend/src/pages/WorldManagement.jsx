@@ -230,9 +230,9 @@ const WorldManagement = () => {
               className="filter-select"
               allowClear
             >
-              <Option value="all">全部类型</Option>
+              <Select.Option value="all">全部类型</Select.Option>
               {worldTypes.map(type => (
-                <Option key={type} value={type}>{type}</Option>
+                <Select.Option key={type} value={type}>{type}</Select.Option>
               ))}
             </Select>
           </div>
@@ -340,12 +340,12 @@ const WorldManagement = () => {
                 rules={[{ required: true, message: '请选择世界类型' }]}
               >
                 <Select placeholder="选择世界类型">
-                  <Option value="单一世界">单一世界</Option>
-                  <Option value="多元宇宙">多元宇宙</Option>
-                  <Option value="位面世界">位面世界</Option>
-                  <Option value="虚拟世界">虚拟世界</Option>
-                  <Option value="梦境世界">梦境世界</Option>
-                  <Option value="其他">其他</Option>
+                  <Select.Option value="单一世界">单一世界</Select.Option>
+                  <Select.Option value="多元宇宙">多元宇宙</Select.Option>
+                  <Select.Option value="位面世界">位面世界</Select.Option>
+                  <Select.Option value="虚拟世界">虚拟世界</Select.Option>
+                  <Select.Option value="梦境世界">梦境世界</Select.Option>
+                  <Select.Option value="其他">其他</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -404,8 +404,8 @@ const WorldManagement = () => {
                 initialValue="active"
               >
                 <Select>
-                  <Option value="active">活跃</Option>
-                  <Option value="inactive">停用</Option>
+                  <Select.Option value="active">活跃</Select.Option>
+                  <Select.Option value="inactive">停用</Select.Option>
                 </Select>
               </Form.Item>
             </Col>

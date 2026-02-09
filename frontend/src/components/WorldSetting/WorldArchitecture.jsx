@@ -182,11 +182,11 @@ const DimensionManagement = ({ worldId }) => {
             initialValue="主维度"
           >
             <Select>
-              <Option value="主维度">主维度</Option>
-              <Option value="平行维度">平行维度</Option>
-              <Option value="子维度">子维度</Option>
-              <Option value="口袋维度">口袋维度</Option>
-              <Option value="虚空">虚空</Option>
+              <Select.Option value="主维度">主维度</Select.Option>
+              <Select.Option value="平行维度">平行维度</Select.Option>
+              <Select.Option value="子维度">子维度</Select.Option>
+              <Select.Option value="口袋维度">口袋维度</Select.Option>
+              <Select.Option value="虚空">虚空</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -381,15 +381,15 @@ const RegionManagement = ({ worldId }) => {
             initialValue="城市"
           >
             <Select>
-              <Option value="大陆">大陆</Option>
-              <Option value="国家">国家</Option>
-              <Option value="城市">城市</Option>
-              <Option value="村庄">村庄</Option>
-              <Option value="森林">森林</Option>
-              <Option value="山脉">山脉</Option>
-              <Option value="水域">水域</Option>
-              <Option value="地下城">地下城</Option>
-              <Option value="特殊">特殊</Option>
+              <Select.Option value="大陆">大陆</Select.Option>
+              <Select.Option value="国家">国家</Select.Option>
+              <Select.Option value="城市">城市</Select.Option>
+              <Select.Option value="村庄">村庄</Select.Option>
+              <Select.Option value="森林">森林</Select.Option>
+              <Select.Option value="山脉">山脉</Select.Option>
+              <Select.Option value="水域">水域</Select.Option>
+              <Select.Option value="地下城">地下城</Select.Option>
+              <Select.Option value="特殊">特殊</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -398,7 +398,7 @@ const RegionManagement = ({ worldId }) => {
           >
             <Select allowClear placeholder="选择上级区域（可选）">
               {regions.map(r => (
-                <Option key={r.id} value={r.id}>{r.name}</Option>
+                <Select.Option key={r.id} value={r.id}>{r.name}</Select.Option>
               ))}
             </Select>
           </Form.Item>
@@ -605,12 +605,12 @@ const CelestialBodyManagement = ({ worldId }) => {
             initialValue="行星"
           >
             <Select>
-              <Option value="恒星">恒星</Option>
-              <Option value="行星">行星</Option>
-              <Option value="卫星">卫星</Option>
-              <Option value="小行星">小行星</Option>
-              <Option value="彗星">彗星</Option>
-              <Option value="星云">星云</Option>
+              <Select.Option value="恒星">恒星</Select.Option>
+              <Select.Option value="行星">行星</Select.Option>
+              <Select.Option value="卫星">卫星</Select.Option>
+              <Select.Option value="小行星">小行星</Select.Option>
+              <Select.Option value="彗星">彗星</Select.Option>
+              <Select.Option value="星云">星云</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -619,7 +619,7 @@ const CelestialBodyManagement = ({ worldId }) => {
           >
             <Select allowClear placeholder="选择所属维度">
               {dimensions.map(d => (
-                <Option key={d.id} value={d.id}>{d.name}</Option>
+                <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>
               ))}
             </Select>
           </Form.Item>
@@ -809,12 +809,12 @@ const NaturalLawManagement = ({ worldId }) => {
             initialValue="物理法则"
           >
             <Select>
-              <Option value="物理法则">物理法则</Option>
-              <Option value="魔法法则">魔法法则</Option>
-              <Option value="生命法则">生命法则</Option>
-              <Option value="时间法则">时间法则</Option>
-              <Option value="空间法则">空间法则</Option>
-              <Option value="因果法则">因果法则</Option>
+              <Select.Option value="物理法则">物理法则</Select.Option>
+              <Select.Option value="魔法法则">魔法法则</Select.Option>
+              <Select.Option value="生命法则">生命法则</Select.Option>
+              <Select.Option value="时间法则">时间法则</Select.Option>
+              <Select.Option value="空间法则">空间法则</Select.Option>
+              <Select.Option value="因果法则">因果法则</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item

@@ -408,22 +408,22 @@ const CivilizationManagement = ({ worldId }) => {
           </Form.Item>
           <Form.Item name="tech_level" label="科技水平" initialValue="中世纪">
             <Select>
-              <Option value="原始">原始</Option>
-              <Option value="古代">古代</Option>
-              <Option value="中世纪">中世纪</Option>
-              <Option value="近代">近代</Option>
-              <Option value="现代">现代</Option>
-              <Option value="未来">未来</Option>
-              <Option value="超科技">超科技</Option>
+              <Select.Option value="原始">原始</Select.Option>
+              <Select.Option value="古代">古代</Select.Option>
+              <Select.Option value="中世纪">中世纪</Select.Option>
+              <Select.Option value="近代">近代</Select.Option>
+              <Select.Option value="现代">现代</Select.Option>
+              <Select.Option value="未来">未来</Select.Option>
+              <Select.Option value="超科技">超科技</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item name="magic_tech_level" label="魔法/能量水平" initialValue="中等">
             <Select>
-              <Option value="无">无</Option>
-              <Option value="低">低</Option>
-              <Option value="中等">中等</Option>
-              <Option value="高">高</Option>
-              <Option value="极高">极高</Option>
+              <Select.Option value="无">无</Select.Option>
+              <Select.Option value="低">低</Select.Option>
+              <Select.Option value="中等">中等</Select.Option>
+              <Select.Option value="高">高</Select.Option>
+              <Select.Option value="极高">极高</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item name="description" label="文明描述">
@@ -562,7 +562,7 @@ const SocialClassManagement = ({ worldId }) => {
           <Form.Item name="civilization_id" label="所属文明">
             <Select allowClear placeholder="选择所属文明（可选）">
               {civilizations.map(c => (
-                <Option key={c.id} value={c.id}>{c.name}</Option>
+                <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
               ))}
             </Select>
           </Form.Item>
@@ -708,16 +708,16 @@ const EconomicSystemManagement = ({ worldId }) => {
           <Form.Item name="civilization_id" label="所属文明">
             <Select allowClear placeholder="选择所属文明（可选）">
               {civilizations.map(c => (
-                <Option key={c.id} value={c.id}>{c.name}</Option>
+                <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
               ))}
             </Select>
           </Form.Item>
           <Form.Item name="economic_model" label="经济模式" initialValue="市场经济">
             <Select>
-              <Option value="物物交换">物物交换</Option>
-              <Option value="市场经济">市场经济</Option>
-              <Option value="计划经济">计划经济</Option>
-              <Option value="混合经济">混合经济</Option>
+              <Select.Option value="物物交换">物物交换</Select.Option>
+              <Select.Option value="市场经济">市场经济</Select.Option>
+              <Select.Option value="计划经济">计划经济</Select.Option>
+              <Select.Option value="混合经济">混合经济</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item name="currency_name" label="货币名称">

@@ -184,11 +184,11 @@ const CivilizationManagement = ({ worldId }) => {
             initialValue="人类"
           >
             <Select>
-              <Option value="人类">人类</Option>
-              <Option value="精灵">精灵</Option>
-              <Option value="矮人">矮人</Option>
-              <Option value="兽人">兽人</Option>
-              <Option value="混合">混合</Option>
+              <Select.Option value="人类">人类</Select.Option>
+              <Select.Option value="精灵">精灵</Select.Option>
+              <Select.Option value="矮人">矮人</Select.Option>
+              <Select.Option value="兽人">兽人</Select.Option>
+              <Select.Option value="混合">混合</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -198,12 +198,12 @@ const CivilizationManagement = ({ worldId }) => {
             initialValue="原始"
           >
             <Select>
-              <Option value="原始">原始</Option>
-              <Option value="古代">古代</Option>
-              <Option value="中世纪">中世纪</Option>
-              <Option value="近代">近代</Option>
-              <Option value="现代">现代</Option>
-              <Option value="未来">未来</Option>
+              <Select.Option value="原始">原始</Select.Option>
+              <Select.Option value="古代">古代</Select.Option>
+              <Select.Option value="中世纪">中世纪</Select.Option>
+              <Select.Option value="近代">近代</Select.Option>
+              <Select.Option value="现代">现代</Select.Option>
+              <Select.Option value="未来">未来</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -400,9 +400,9 @@ const SocialClassManagement = ({ worldId }) => {
             initialValue="中"
           >
             <Select>
-              <Option value="高">高</Option>
-              <Option value="中">中</Option>
-              <Option value="低">低</Option>
+              <Select.Option value="高">高</Select.Option>
+              <Select.Option value="中">中</Select.Option>
+              <Select.Option value="低">低</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -609,11 +609,11 @@ const CulturalCustomsManagement = ({ worldId }) => {
             initialValue="传统"
           >
             <Select>
-              <Option value="节日">节日</Option>
-              <Option value="礼仪">礼仪</Option>
-              <Option value="禁忌">禁忌</Option>
-              <Option value="传统">传统</Option>
-              <Option value="宗教">宗教</Option>
+              <Select.Option value="节日">节日</Select.Option>
+              <Select.Option value="礼仪">礼仪</Select.Option>
+              <Select.Option value="禁忌">禁忌</Select.Option>
+              <Select.Option value="传统">传统</Select.Option>
+              <Select.Option value="宗教">宗教</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -623,10 +623,10 @@ const CulturalCustomsManagement = ({ worldId }) => {
             initialValue="全社会"
           >
             <Select>
-              <Option value="全社会">全社会</Option>
-              <Option value="特定阶层">特定阶层</Option>
-              <Option value="特定地区">特定地区</Option>
-              <Option value="特定职业">特定职业</Option>
+              <Select.Option value="全社会">全社会</Select.Option>
+              <Select.Option value="特定阶层">特定阶层</Select.Option>
+              <Select.Option value="特定地区">特定地区</Select.Option>
+              <Select.Option value="特定职业">特定职业</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -824,10 +824,10 @@ const EconomicSystemManagement = ({ worldId }) => {
             initialValue="混合"
           >
             <Select>
-              <Option value="农业">农业</Option>
-              <Option value="商业">商业</Option>
-              <Option value="工业">工业</Option>
-              <Option value="混合">混合</Option>
+              <Select.Option value="农业">农业</Select.Option>
+              <Select.Option value="商业">商业</Select.Option>
+              <Select.Option value="工业">工业</Select.Option>
+              <Select.Option value="混合">混合</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -1034,11 +1034,11 @@ const PoliticalSystemManagement = ({ worldId }) => {
             initialValue="monarchy"
           >
             <Select>
-              <Option value="monarchy">君主制</Option>
-              <Option value="republic">共和制</Option>
-              <Option value="democracy">民主制</Option>
-              <Option value="dictatorship">独裁制</Option>
-              <Option value="other">其他</Option>
+              <Select.Option value="monarchy">君主制</Select.Option>
+              <Select.Option value="republic">共和制</Select.Option>
+              <Select.Option value="democracy">民主制</Select.Option>
+              <Select.Option value="dictatorship">独裁制</Select.Option>
+              <Select.Option value="other">其他</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item

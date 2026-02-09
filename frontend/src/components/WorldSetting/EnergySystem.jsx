@@ -175,13 +175,13 @@ const EnergySystemManagement = ({ worldId }) => {
             initialValue="魔法"
           >
             <Select>
-              <Option value="魔法">魔法</Option>
-              <Option value="斗气">斗气</Option>
-              <Option value="魂力">魂力</Option>
-              <Option value="科技">科技</Option>
-              <Option value="异能">异能</Option>
-              <Option value="修真">修真</Option>
-              <Option value="其他">其他</Option>
+              <Select.Option value="魔法">魔法</Select.Option>
+              <Select.Option value="斗气">斗气</Select.Option>
+              <Select.Option value="魂力">魂力</Select.Option>
+              <Select.Option value="科技">科技</Select.Option>
+              <Select.Option value="异能">异能</Select.Option>
+              <Select.Option value="修真">修真</Select.Option>
+              <Select.Option value="其他">其他</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -391,10 +391,10 @@ const EnergyFormManagement = ({ worldId }) => {
             initialValue="元素"
           >
             <Select>
-              <Option value="元素">元素</Option>
-              <Option value="生命">生命</Option>
-              <Option value="概念">概念</Option>
-              <Option value="复合">复合</Option>
+              <Select.Option value="元素">元素</Select.Option>
+              <Select.Option value="生命">生命</Select.Option>
+              <Select.Option value="概念">概念</Select.Option>
+              <Select.Option value="复合">复合</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -403,7 +403,7 @@ const EnergyFormManagement = ({ worldId }) => {
           >
             <Select allowClear placeholder="选择所属能量体系（可选）">
               {energySystems.map(system => (
-                <Option key={system.id} value={system.id}>{system.name}</Option>
+                <Select.Option key={system.id} value={system.id}>{system.name}</Select.Option>
               ))}
             </Select>
           </Form.Item>
@@ -815,7 +815,7 @@ const PowerCostManagement = ({ worldId }) => {
           >
             <Select>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => (
-                <Option key={level} value={level}>{level}/10</Option>
+                <Select.Option key={level} value={level}>{level}/10</Select.Option>
               ))}
             </Select>
           </Form.Item>
@@ -843,8 +843,8 @@ const PowerCostManagement = ({ worldId }) => {
             initialValue={false}
           >
             <Select>
-              <Option value={true}>是</Option>
-              <Option value={false}>否</Option>
+              <Select.Option value={true}>是</Select.Option>
+              <Select.Option value={false}>否</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -1035,11 +1035,11 @@ const CommonSkillManagement = ({ worldId }) => {
             initialValue="战斗"
           >
             <Select>
-              <Option value="战斗">战斗</Option>
-              <Option value="魔法">魔法</Option>
-              <Option value="生活">生活</Option>
-              <Option value="知识">知识</Option>
-              <Option value="社交">社交</Option>
+              <Select.Option value="战斗">战斗</Select.Option>
+              <Select.Option value="魔法">魔法</Select.Option>
+              <Select.Option value="生活">生活</Select.Option>
+              <Select.Option value="知识">知识</Select.Option>
+              <Select.Option value="社交">社交</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -1060,10 +1060,10 @@ const CommonSkillManagement = ({ worldId }) => {
             initialValue="中等"
           >
             <Select>
-              <Option value="简单">简单</Option>
-              <Option value="中等">中等</Option>
-              <Option value="困难">困难</Option>
-              <Option value="大师">大师</Option>
+              <Select.Option value="简单">简单</Select.Option>
+              <Select.Option value="中等">中等</Select.Option>
+              <Select.Option value="困难">困难</Select.Option>
+              <Select.Option value="大师">大师</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item

@@ -105,11 +105,11 @@ const InspirationGenerator = ({ inspirations, onGenerate }) => {
               style={{ width: 120 }}
               onChange={setSelectedType}
             >
-              <Option value="plot">情节转折</Option>
-              <Option value="conflict">冲突点子</Option>
-              <Option value="dialogue">对话开场</Option>
-              <Option value="scene">场景灵感</Option>
-              <Option value="character">角色发展</Option>
+              <Select.Option value="plot">情节转折</Select.Option>
+              <Select.Option value="conflict">冲突点子</Select.Option>
+              <Select.Option value="dialogue">对话开场</Select.Option>
+              <Select.Option value="scene">场景灵感</Select.Option>
+              <Select.Option value="character">角色发展</Select.Option>
             </Select>
             <Button type="primary" icon={<BulbOutlined />} onClick={handleGenerate}>
               生成灵感

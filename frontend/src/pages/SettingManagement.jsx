@@ -901,11 +901,11 @@ const CharacterManagementPanel = ({ worldId }) => {
             rules={[{ required: true, message: '请选择角色类型' }]}
           >
             <Select placeholder="选择角色类型">
-              <Option value="主角">主角</Option>
-              <Option value="配角">配角</Option>
-              <Option value="反派">反派</Option>
-              <Option value="龙套">龙套</Option>
-              <Option value="背景">背景</Option>
+              <Select.Option value="主角">主角</Select.Option>
+              <Select.Option value="配角">配角</Select.Option>
+              <Select.Option value="反派">反派</Select.Option>
+              <Select.Option value="龙套">龙套</Select.Option>
+              <Select.Option value="背景">背景</Select.Option>
             </Select>
           </Form.Item>
 
@@ -915,10 +915,10 @@ const CharacterManagementPanel = ({ worldId }) => {
             initialValue="存活"
           >
             <Select>
-              <Option value="存活">存活</Option>
-              <Option value="死亡">死亡</Option>
-              <Option value="失踪">失踪</Option>
-              <Option value="转生">转生</Option>
+              <Select.Option value="存活">存活</Select.Option>
+              <Select.Option value="死亡">死亡</Select.Option>
+              <Select.Option value="失踪">失踪</Select.Option>
+              <Select.Option value="转生">转生</Select.Option>
             </Select>
           </Form.Item>
 
@@ -929,7 +929,7 @@ const CharacterManagementPanel = ({ worldId }) => {
           >
             <Select>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => (
-                <Option key={level} value={level}>{level}/10</Option>
+                <Select.Option key={level} value={level}>{level}/10</Select.Option>
               ))}
             </Select>
           </Form.Item>
@@ -946,9 +946,9 @@ const CharacterManagementPanel = ({ worldId }) => {
             label="性别"
           >
             <Select placeholder="选择性别">
-              <Option value="男">男</Option>
-              <Option value="女">女</Option>
-              <Option value="其他">其他</Option>
+              <Select.Option value="男">男</Select.Option>
+              <Select.Option value="女">女</Select.Option>
+              <Select.Option value="其他">其他</Select.Option>
             </Select>
           </Form.Item>
 

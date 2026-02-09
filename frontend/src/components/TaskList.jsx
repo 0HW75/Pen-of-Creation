@@ -202,13 +202,13 @@ const TaskList = ({ tasks, onUpdateTask }) => {
           onChange={(value) => setTaskForm({ ...taskForm, type: value })}
           style={{ width: '100%', marginBottom: 16 }}
         >
-          <Option value="chapter">待写章节</Option>
-          <Option value="setting">待完善设定</Option>
-          <Option value="伏笔">待回收伏笔</Option>
-          <Option value="check">待检查内容</Option>
-          <Option value="problem">待处理问题</Option>
-          <Option value="project">项目任务</Option>
-          <Option value="character">角色设定</Option>
+          <Select.Option value="chapter">待写章节</Select.Option>
+          <Select.Option value="setting">待完善设定</Select.Option>
+          <Select.Option value="伏笔">待回收伏笔</Select.Option>
+          <Select.Option value="check">待检查内容</Select.Option>
+          <Select.Option value="problem">待处理问题</Select.Option>
+          <Select.Option value="project">项目任务</Select.Option>
+          <Select.Option value="character">角色设定</Select.Option>
         </Select>
         <Select
           placeholder="优先级"
@@ -216,11 +216,11 @@ const TaskList = ({ tasks, onUpdateTask }) => {
           onChange={(value) => setTaskForm({ ...taskForm, priority: value })}
           style={{ width: '100%' }}
         >
-          <Option value={1}>低</Option>
-          <Option value={2}>中低</Option>
-          <Option value={3}>中</Option>
-          <Option value={4}>中高</Option>
-          <Option value={5}>高</Option>
+          <Select.Option value={1}>低</Select.Option>
+          <Select.Option value={2}>中低</Select.Option>
+          <Select.Option value={3}>中</Select.Option>
+          <Select.Option value={4}>中高</Select.Option>
+          <Select.Option value={5}>高</Select.Option>
         </Select>
       </Modal>
     </div>

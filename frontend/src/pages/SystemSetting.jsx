@@ -278,12 +278,12 @@ const SystemSetting = () => {
               >
                 <Select placeholder="请选择默认AI提供商">
                   {config.available_providers.map(provider => (
-                    <Option key={provider} value={provider}>
+                    <Select.Option key={provider} value={provider}>
                       {provider}
                       {config.configured_providers.includes(provider) && (
                         <CheckCircleOutlined style={{ color: '#52c41a', marginLeft: '8px' }} />
                       )}
-                    </Option>
+                    </Select.Option>
                   ))}
                 </Select>
               </Form.Item>
