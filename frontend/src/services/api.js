@@ -128,9 +128,15 @@ export const characterApi = {
     const params = {};
     if (projectId) params.project_id = projectId;
     if (worldId) params.world_id = worldId;
-    return api.get('/characters', { params, cancelToken });
+    const config = { params };
+    if (cancelToken) config.cancelToken = cancelToken;
+    return api.get('/characters', config);
   },
-  getCharacter: (id, cancelToken) => api.get(`/characters/${id}`, { cancelToken }),
+  getCharacter: (id, cancelToken) => {
+    const config = {};
+    if (cancelToken) config.cancelToken = cancelToken;
+    return api.get(`/characters/${id}`, config);
+  },
   createCharacter: async (data) => {
     const response = await api.post('/characters', data);
     clearCache(); // 清除缓存以确保下次获取最新数据
@@ -164,8 +170,16 @@ export const characterApi = {
 
 // 地点相关API
 export const locationApi = {
-  getLocations: (projectId, cancelToken) => api.get('/locations', { params: { project_id: projectId }, cancelToken }),
-  getLocation: (id, cancelToken) => api.get(`/locations/${id}`, { cancelToken }),
+  getLocations: (projectId, cancelToken) => {
+    const config = { params: { project_id: projectId } };
+    if (cancelToken) config.cancelToken = cancelToken;
+    return api.get('/locations', config);
+  },
+  getLocation: (id, cancelToken) => {
+    const config = {};
+    if (cancelToken) config.cancelToken = cancelToken;
+    return api.get(`/locations/${id}`, config);
+  },
   createLocation: async (data) => {
     const response = await api.post('/locations', data);
     clearCache(); // 清除缓存以确保下次获取最新数据
@@ -185,8 +199,16 @@ export const locationApi = {
 
 // 物品相关API
 export const itemApi = {
-  getItems: (projectId, cancelToken) => api.get('/items', { params: { project_id: projectId }, cancelToken: cancelToken }),
-  getItem: (id, cancelToken) => api.get(`/items/${id}`, { cancelToken: cancelToken }),
+  getItems: (projectId, cancelToken) => {
+    const config = { params: { project_id: projectId } };
+    if (cancelToken) config.cancelToken = cancelToken;
+    return api.get('/items', config);
+  },
+  getItem: (id, cancelToken) => {
+    const config = {};
+    if (cancelToken) config.cancelToken = cancelToken;
+    return api.get(`/items/${id}`, config);
+  },
   createItem: async (data) => {
     const response = await api.post('/items', data);
     clearCache(); // 清除缓存以确保下次获取最新数据
@@ -206,8 +228,16 @@ export const itemApi = {
 
 // 势力相关API
 export const factionApi = {
-  getFactions: (projectId, cancelToken) => api.get('/factions', { params: { project_id: projectId }, cancelToken }),
-  getFaction: (id, cancelToken) => api.get(`/factions/${id}`, { cancelToken }),
+  getFactions: (projectId, cancelToken) => {
+    const config = { params: { project_id: projectId } };
+    if (cancelToken) config.cancelToken = cancelToken;
+    return api.get('/factions', config);
+  },
+  getFaction: (id, cancelToken) => {
+    const config = {};
+    if (cancelToken) config.cancelToken = cancelToken;
+    return api.get(`/factions/${id}`, config);
+  },
   createFaction: async (data) => {
     const response = await api.post('/factions', data);
     clearCache(); // 清除缓存以确保下次获取最新数据
