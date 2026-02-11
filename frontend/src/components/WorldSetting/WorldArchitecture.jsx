@@ -19,6 +19,7 @@ const DimensionManagement = ({ worldId }) => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingDimension, setEditingDimension] = useState(null);
+  const [selectedDimension, setSelectedDimension] = useState(null);
   const [form] = Form.useForm();
 
   const fetchDimensions = async () => {
@@ -92,19 +93,29 @@ const DimensionManagement = ({ worldId }) => {
       title: '类型',
       dataIndex: 'dimension_type',
       key: 'dimension_type',
-      render: (type) => <Tag color={type === '主维度' ? 'blue' : 'purple'}>{type}</Tag>,
+      render: (type) => {
+        const colorMap = {
+          '主维度': 'blue',
+          '平行维度': 'purple',
+          '子维度': 'cyan',
+          '口袋维度': 'green',
+          '虚空': 'default',
+        };
+        return <Tag color={colorMap[type] || 'default'}>{type}</Tag>;
+      },
     },
     {
       title: '访问方式',
       dataIndex: 'entry_conditions',
       key: 'entry_conditions',
       ellipsis: true,
+      render: (text) => text || '-',
     },
     {
       title: '时间流速',
       dataIndex: 'time_flow',
       key: 'time_flow',
-      render: (ratio) => ratio || '-',
+      render: (ratio) => ratio || '1:1',
     },
     {
       title: '操作',
@@ -115,7 +126,8 @@ const DimensionManagement = ({ worldId }) => {
           <Button
             type="link"
             icon={<EditOutlined />}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setEditingDimension(record);
               // 反向字段映射
               form.setFieldsValue({
@@ -135,7 +147,10 @@ const DimensionManagement = ({ worldId }) => {
             type="link"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(record.id);
+            }}
           >
             删除
           </Button>
@@ -143,6 +158,26 @@ const DimensionManagement = ({ worldId }) => {
       ),
     },
   ];
+
+  // 展开行渲染
+  const expandedRowRender = (record) => (
+    <div style={{ margin: 0, padding: '12px 24px', backgroundColor: '#fafafa' }}>
+      <Row gutter={[16, 8]}>
+        <Col span={24}>
+          <strong>描述：</strong>
+          <span>{record.description || '暂无描述'}</span>
+        </Col>
+        <Col span={12}>
+          <strong>物理特性：</strong>
+          <span>{record.physical_properties || '暂无'}</span>
+        </Col>
+        <Col span={12}>
+          <strong>进入条件：</strong>
+          <span>{record.entry_conditions || '暂无'}</span>
+        </Col>
+      </Row>
+    </div>
+  );
 
   return (
     <div>
@@ -168,14 +203,50 @@ const DimensionManagement = ({ worldId }) => {
         }
         style={{ marginBottom: 16 }}
       >
-        <Table
-          columns={columns}
-          dataSource={dimensions}
-          rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 5 }}
-          size="small"
-        />
+        {dimensions.length === 0 ? (
+          <Empty
+            description={
+              <span>
+                暂无维度数据<br />
+                点击右上角"新建维度"按钮创建
+              </span>
+            }
+          />
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              dataSource={dimensions}
+              rowKey="id"
+              loading={loading}
+              pagination={{ pageSize: 5 }}
+              size="small"
+              expandable={{
+                expandedRowRender,
+                rowExpandable: (record) => record.description || record.physical_properties || record.entry_conditions,
+              }}
+              onRow={(record) => ({
+                onClick: () => setSelectedDimension(record),
+                style: { cursor: 'pointer' }
+              })}
+            />
+            {selectedDimension && (
+              <Card
+                size="small"
+                title={`维度详情：${selectedDimension.name}`}
+                style={{ marginTop: 16, backgroundColor: '#f6ffed' }}
+              >
+                <Row gutter={[16, 8]}>
+                  <Col span={8}><strong>类型：</strong>{selectedDimension.dimension_type}</Col>
+                  <Col span={8}><strong>时间流速：</strong>{selectedDimension.time_flow || '1:1'}</Col>
+                  <Col span={8}><strong>访问方式：</strong>{selectedDimension.entry_conditions || '暂无'}</Col>
+                  <Col span={24}><strong>物理特性：</strong>{selectedDimension.physical_properties || '暂无'}</Col>
+                  <Col span={24}><strong>描述：</strong>{selectedDimension.description || '暂无描述'}</Col>
+                </Row>
+              </Card>
+            )}
+          </>
+        )}
       </Card>
 
       <Modal
@@ -244,6 +315,7 @@ const RegionManagement = ({ worldId }) => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRegion, setEditingRegion] = useState(null);
+  const [selectedRegion, setSelectedRegion] = useState(null);
   const [form] = Form.useForm();
 
   const fetchRegions = async () => {
@@ -323,77 +395,128 @@ const RegionManagement = ({ worldId }) => {
 
   const treeData = buildTreeData(regions);
 
+  // 区域类型颜色映射
+  const regionTypeColorMap = {
+    '大陆': 'red',
+    '国家': 'orange',
+    '城市': 'blue',
+    '村庄': 'cyan',
+    '森林': 'green',
+    '山脉': 'geekblue',
+    '水域': 'purple',
+    '地下城': 'magenta',
+    '特殊': 'default',
+  };
+
   return (
     <div>
-      <Card
-        title={
-          <Space>
-            <ApartmentOutlined />
-            <span>地理区域管理</span>
-          </Space>
-        }
-        extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingRegion(null);
-              form.resetFields();
-              setModalVisible(true);
-            }}
-          >
-            新建区域
-          </Button>
-        }
-      >
-        {regions.length > 0 ? (
-          <Tree
-            treeData={treeData}
-            defaultExpandAll
-            showLine
-            showIcon={false}
-            titleRender={(nodeData) => (
+      <Row gutter={16}>
+        <Col span={selectedRegion ? 16 : 24}>
+          <Card
+            title={
               <Space>
-                <span>{nodeData.name}</span>
-                <Tag size="small" color="blue">{nodeData.region_type}</Tag>
-                <Space size="small">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<EditOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingRegion(nodeData);
-                      // 反向字段映射
-                      form.setFieldsValue({
-                        name: nodeData.name,
-                        region_type: nodeData.region_type,
-                        parent_id: nodeData.parent_region_id,
-                        description: nodeData.description,
-                        geography: nodeData.terrain,
-                        climate: nodeData.climate,
-                      });
-                      setModalVisible(true);
-                    }}
-                  />
-                  <Button
-                    type="link"
-                    size="small"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(nodeData.id);
-                    }}
-                  />
-                </Space>
+                <ApartmentOutlined />
+                <span>地理区域管理</span>
               </Space>
+            }
+            extra={
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setEditingRegion(null);
+                  form.resetFields();
+                  setModalVisible(true);
+                }}
+              >
+                新建区域
+              </Button>
+            }
+          >
+            {regions.length > 0 ? (
+              <Tree
+                treeData={treeData}
+                defaultExpandAll
+                showLine
+                showIcon={false}
+                onSelect={(selectedKeys, { node }) => {
+                  if (selectedKeys.length > 0) {
+                    setSelectedRegion(node);
+                  } else {
+                    setSelectedRegion(null);
+                  }
+                }}
+                titleRender={(nodeData) => (
+                  <Space>
+                    <span style={{ fontWeight: selectedRegion?.id === nodeData.id ? 'bold' : 'normal' }}>
+                      {nodeData.name}
+                    </span>
+                    <Tag size="small" color={regionTypeColorMap[nodeData.region_type] || 'default'}>
+                      {nodeData.region_type}
+                    </Tag>
+                    <Space size="small">
+                      <Button
+                        type="link"
+                        size="small"
+                        icon={<EditOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingRegion(nodeData);
+                          // 反向字段映射
+                          form.setFieldsValue({
+                            name: nodeData.name,
+                            region_type: nodeData.region_type,
+                            parent_id: nodeData.parent_region_id,
+                            description: nodeData.description,
+                            geography: nodeData.terrain,
+                            climate: nodeData.climate,
+                          });
+                          setModalVisible(true);
+                        }}
+                      />
+                      <Button
+                        type="link"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(nodeData.id);
+                        }}
+                      />
+                    </Space>
+                  </Space>
+                )}
+              />
+            ) : (
+              <Empty
+                description={
+                  <span>
+                    暂无区域数据<br />
+                    点击右上角"新建区域"按钮创建
+                  </span>
+                }
+              />
             )}
-          />
-        ) : (
-          <Empty description="暂无区域数据" />
+          </Card>
+        </Col>
+        {selectedRegion && (
+          <Col span={8}>
+            <Card
+              size="small"
+              title={`区域详情：${selectedRegion.name}`}
+              style={{ backgroundColor: '#e6f7ff' }}
+            >
+              <p><strong>名称：</strong>{selectedRegion.name}</p>
+              <p><strong>类型：</strong><Tag color={regionTypeColorMap[selectedRegion.region_type] || 'default'}>{selectedRegion.region_type}</Tag></p>
+              <p><strong>描述：</strong>{selectedRegion.description || '暂无描述'}</p>
+              <p><strong>地理特征：</strong>{selectedRegion.terrain || '暂无'}</p>
+              <p><strong>气候类型：</strong>{selectedRegion.climate || '暂无'}</p>
+              <Button type="link" onClick={() => setSelectedRegion(null)}>关闭详情</Button>
+            </Card>
+          </Col>
         )}
-      </Card>
+      </Row>
 
       <Modal
         title={editingRegion ? '编辑区域' : '新建区域'}
@@ -469,6 +592,7 @@ const CelestialBodyManagement = ({ worldId }) => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingBody, setEditingBody] = useState(null);
+  const [selectedBody, setSelectedBody] = useState(null);
   const [form] = Form.useForm();
 
   const fetchData = async () => {
@@ -576,7 +700,8 @@ const CelestialBodyManagement = ({ worldId }) => {
           <Button
             type="link"
             icon={<EditOutlined />}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setEditingBody(record);
               // 反向字段映射
               form.setFieldsValue({
@@ -596,7 +721,10 @@ const CelestialBodyManagement = ({ worldId }) => {
             type="link"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(record.id);
+            }}
           >
             删除
           </Button>
@@ -604,6 +732,26 @@ const CelestialBodyManagement = ({ worldId }) => {
       ),
     },
   ];
+
+  // 展开行渲染
+  const expandedRowRender = (record) => (
+    <div style={{ margin: 0, padding: '12px 24px', backgroundColor: '#fafafa' }}>
+      <Row gutter={[16, 8]}>
+        <Col span={24}>
+          <strong>描述：</strong>
+          <span>{record.description || '暂无描述'}</span>
+        </Col>
+        <Col span={12}>
+          <strong>天体属性：</strong>
+          <span>{record.size || record.mass || '暂无'}</span>
+        </Col>
+        <Col span={12}>
+          <strong>对世界的影响：</strong>
+          <span>{record.magical_properties || '暂无'}</span>
+        </Col>
+      </Row>
+    </div>
+  );
 
   return (
     <div>
@@ -628,14 +776,71 @@ const CelestialBodyManagement = ({ worldId }) => {
           </Button>
         }
       >
-        <Table
-          columns={columns}
-          dataSource={celestialBodies}
-          rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 5 }}
-          size="small"
-        />
+        {celestialBodies.length === 0 ? (
+          <Empty
+            description={
+              <span>
+                暂无天体数据<br />
+                点击右上角"新建天体"按钮创建
+              </span>
+            }
+          />
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              dataSource={celestialBodies}
+              rowKey="id"
+              loading={loading}
+              pagination={{ pageSize: 5 }}
+              size="small"
+              expandable={{
+                expandedRowRender,
+                rowExpandable: (record) => record.description || record.size || record.magical_properties,
+              }}
+              onRow={(record) => ({
+                onClick: () => setSelectedBody(record),
+                style: { cursor: 'pointer' }
+              })}
+            />
+            {selectedBody && (
+              <Card
+                size="small"
+                title={`天体详情：${selectedBody.name}`}
+                style={{ marginTop: 16, backgroundColor: '#fff7e6' }}
+              >
+                <Row gutter={[16, 8]}>
+                  <Col span={8}>
+                    <strong>类型：</strong>
+                    <Tag color={
+                      selectedBody.body_type === '恒星' ? 'orange' :
+                      selectedBody.body_type === '行星' ? 'blue' :
+                      selectedBody.body_type === '卫星' ? 'cyan' :
+                      selectedBody.body_type === '彗星' ? 'purple' :
+                      'default'
+                    }>{selectedBody.body_type}</Tag>
+                  </Col>
+                  <Col span={8}>
+                    <strong>所属维度：</strong>
+                    {selectedBody.dimension_name || '-'}
+                  </Col>
+                  <Col span={8}>
+                    <strong>天体属性：</strong>
+                    {selectedBody.size || '暂无'}
+                  </Col>
+                  <Col span={24}>
+                    <strong>描述：</strong>
+                    {selectedBody.description || '暂无描述'}
+                  </Col>
+                  <Col span={24}>
+                    <strong>对世界的影响：</strong>
+                    {selectedBody.magical_properties || '暂无'}
+                  </Col>
+                </Row>
+              </Card>
+            )}
+          </>
+        )}
       </Card>
 
       <Modal
@@ -708,6 +913,7 @@ const NaturalLawManagement = ({ worldId }) => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingLaw, setEditingLaw] = useState(null);
+  const [selectedLaw, setSelectedLaw] = useState(null);
   const [form] = Form.useForm();
 
   const fetchLaws = async () => {
@@ -780,13 +986,24 @@ const NaturalLawManagement = ({ worldId }) => {
       title: '法则类型',
       dataIndex: 'law_type',
       key: 'law_type',
-      render: (type) => <Tag color="green">{type}</Tag>,
+      render: (type) => {
+        const colorMap = {
+          '物理法则': 'blue',
+          '魔法法则': 'purple',
+          '生命法则': 'green',
+          '时间法则': 'cyan',
+          '空间法则': 'geekblue',
+          '因果法则': 'magenta',
+        };
+        return <Tag color={colorMap[type] || 'default'}>{type}</Tag>;
+      },
     },
     {
       title: '作用范围',
       dataIndex: 'limitations',
       key: 'limitations',
       ellipsis: true,
+      render: (text) => text || '-',
     },
     {
       title: '操作',
@@ -797,7 +1014,8 @@ const NaturalLawManagement = ({ worldId }) => {
           <Button
             type="link"
             icon={<EditOutlined />}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setEditingLaw(record);
               // 反向字段映射
               form.setFieldsValue({
@@ -816,7 +1034,10 @@ const NaturalLawManagement = ({ worldId }) => {
             type="link"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(record.id);
+            }}
           >
             删除
           </Button>
@@ -824,6 +1045,26 @@ const NaturalLawManagement = ({ worldId }) => {
       ),
     },
   ];
+
+  // 展开行渲染
+  const expandedRowRender = (record) => (
+    <div style={{ margin: 0, padding: '12px 24px', backgroundColor: '#fafafa' }}>
+      <Row gutter={[16, 8]}>
+        <Col span={24}>
+          <strong>法则描述：</strong>
+          <span>{record.description || '暂无描述'}</span>
+        </Col>
+        <Col span={12}>
+          <strong>作用范围：</strong>
+          <span>{record.limitations || '暂无'}</span>
+        </Col>
+        <Col span={12}>
+          <strong>例外情况：</strong>
+          <span>{record.exceptions || '暂无'}</span>
+        </Col>
+      </Row>
+    </div>
+  );
 
   return (
     <div>
@@ -848,14 +1089,69 @@ const NaturalLawManagement = ({ worldId }) => {
           </Button>
         }
       >
-        <Table
-          columns={columns}
-          dataSource={laws}
-          rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 5 }}
-          size="small"
-        />
+        {laws.length === 0 ? (
+          <Empty
+            description={
+              <span>
+                暂无法则数据<br />
+                点击右上角"新建法则"按钮创建
+              </span>
+            }
+          />
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              dataSource={laws}
+              rowKey="id"
+              loading={loading}
+              pagination={{ pageSize: 5 }}
+              size="small"
+              expandable={{
+                expandedRowRender,
+                rowExpandable: (record) => record.description || record.limitations || record.exceptions,
+              }}
+              onRow={(record) => ({
+                onClick: () => setSelectedLaw(record),
+                style: { cursor: 'pointer' }
+              })}
+            />
+            {selectedLaw && (
+              <Card
+                size="small"
+                title={`法则详情：${selectedLaw.name}`}
+                style={{ marginTop: 16, backgroundColor: '#f6ffed' }}
+              >
+                <Row gutter={[16, 8]}>
+                  <Col span={8}>
+                    <strong>类型：</strong>
+                    <Tag color={
+                      selectedLaw.law_type === '物理法则' ? 'blue' :
+                      selectedLaw.law_type === '魔法法则' ? 'purple' :
+                      selectedLaw.law_type === '生命法则' ? 'green' :
+                      selectedLaw.law_type === '时间法则' ? 'cyan' :
+                      selectedLaw.law_type === '空间法则' ? 'geekblue' :
+                      selectedLaw.law_type === '因果法则' ? 'magenta' :
+                      'default'
+                    }>{selectedLaw.law_type}</Tag>
+                  </Col>
+                  <Col span={8}>
+                    <strong>作用范围：</strong>
+                    {selectedLaw.limitations || '暂无'}
+                  </Col>
+                  <Col span={8}>
+                    <strong>例外情况：</strong>
+                    {selectedLaw.exceptions || '暂无'}
+                  </Col>
+                  <Col span={24}>
+                    <strong>法则描述：</strong>
+                    {selectedLaw.description || '暂无描述'}
+                  </Col>
+                </Row>
+              </Card>
+            )}
+          </>
+        )}
       </Card>
 
       <Modal
