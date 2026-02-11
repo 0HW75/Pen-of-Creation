@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Card, Button, Table, Modal, Form, Input, Select, Tree,
-  message, Space, Tag, Empty, Tabs, Row, Col, Statistic, Descriptions, Progress
+  Card, Button, Table, Modal, Form, Input, Select,
+  message, Space, Tag, Empty, Tabs, Row, Col, Statistic, Descriptions, InputNumber
 } from 'antd';
 import {
   PlusOutlined, EditOutlined, DeleteOutlined,
   TeamOutlined, CrownOutlined, SafetyOutlined,
   GlobalOutlined, InfoCircleOutlined, ApartmentOutlined,
-  AimOutlined, ThunderboltOutlined
+  AimOutlined, ThunderboltOutlined, BankOutlined, FlagOutlined
 } from '@ant-design/icons';
 import { factionApi } from '../../services/api';
 
@@ -42,19 +42,26 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
 
   const handleSubmit = async (values) => {
     try {
-      // 字段映射转换
+      // 字段映射转换 - 完整数据库字段
       const data = {
         name: values.name,
         world_id: worldId,
         project_id: projectId,
         faction_type: values.faction_type,
         description: values.description,
-        core_ideology: values.ideology,
-        member_size: values.member_count,
-        headquarters_location: values.headquarters,
+        core_ideology: values.core_ideology,
+        member_size: values.member_size,
+        headquarters_location: values.headquarters_location,
         leader: values.leader,
-        influence_level: values.influence_level,
-        // alignment 和 history 字段后端不存在，暂时不传递
+        influence_level: values.influence_level || 50,
+        territory_control: values.territory_control,
+        economic_strength: values.economic_strength,
+        military_strength: values.military_strength,
+        diplomatic_relations: values.diplomatic_relations,
+        internal_structure: values.internal_structure,
+        founding_date: values.founding_date,
+        historical_events: values.historical_events,
+        current_status: values.current_status,
       };
       if (editingFaction) {
         await factionApi.updateFaction(editingFaction.id, data);
@@ -93,7 +100,7 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
       key: 'name',
       render: (text, record) => (
         <Space>
-          <TeamOutlined style={{ color: record.faction_type === '国家' ? '#1890ff' : '#52c41a' }} />
+          <TeamOutlined style={{ color: record.faction_type === '国家' || record.faction_type === '帝国' ? '#1890ff' : '#52c41a' }} />
           <strong>{text}</strong>
         </Space>
       ),
@@ -123,13 +130,29 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
       title: '影响力',
       dataIndex: 'influence_level',
       key: 'influence_level',
-      render: (level) => level ? <Progress percent={level} size="small" /> : '-',
+      render: (level) => level ? (
+        <Tag color={level >= 80 ? 'red' : level >= 50 ? 'orange' : level >= 30 ? 'blue' : 'default'}>
+          {level}/100
+        </Tag>
+      ) : '-',
     },
     {
-      title: '成员规模',
-      dataIndex: 'member_size',
-      key: 'member_size',
-      render: (count) => count || '-',
+      title: '领袖',
+      dataIndex: 'leader',
+      key: 'leader',
+      render: (leader) => leader || '-',
+    },
+    {
+      title: '总部',
+      dataIndex: 'headquarters_location',
+      key: 'headquarters_location',
+      render: (location) => location || '-',
+    },
+    {
+      title: '当前状态',
+      dataIndex: 'current_status',
+      key: 'current_status',
+      render: (status) => status || '-',
     },
     {
       title: '操作',
@@ -154,11 +177,19 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
                 name: record.name,
                 faction_type: record.faction_type,
                 leader: record.leader,
-                headquarters: record.headquarters_location,
-                member_count: record.member_size,
+                headquarters_location: record.headquarters_location,
+                member_size: record.member_size,
                 influence_level: record.influence_level,
                 description: record.description,
-                ideology: record.core_ideology,
+                core_ideology: record.core_ideology,
+                territory_control: record.territory_control,
+                economic_strength: record.economic_strength,
+                military_strength: record.military_strength,
+                diplomatic_relations: record.diplomatic_relations,
+                internal_structure: record.internal_structure,
+                founding_date: record.founding_date,
+                historical_events: record.historical_events,
+                current_status: record.current_status,
               });
               setModalVisible(true);
             }}
@@ -174,6 +205,127 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
             删除
           </Button>
         </Space>
+      ),
+    },
+  ];
+
+  // 表单标签页配置
+  const formTabItems = [
+    {
+      key: 'basic',
+      label: '基本信息',
+      children: (
+        <>
+          <Form.Item
+            name="name"
+            label="势力名称"
+            rules={[{ required: true, message: '请输入势力名称' }]}
+          >
+            <Input placeholder="例如：暴风王国、银色黎明" />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="faction_type"
+                label="势力类型"
+                rules={[{ required: true }]}
+                initialValue="国家"
+              >
+                <Select>
+                  <Select.Option value="国家">国家</Select.Option>
+                  <Select.Option value="王国">王国</Select.Option>
+                  <Select.Option value="帝国">帝国</Select.Option>
+                  <Select.Option value="城邦">城邦</Select.Option>
+                  <Select.Option value="部落">部落</Select.Option>
+                  <Select.Option value="公会">公会</Select.Option>
+                  <Select.Option value="教派">教派</Select.Option>
+                  <Select.Option value="家族">家族</Select.Option>
+                  <Select.Option value="商会">商会</Select.Option>
+                  <Select.Option value="军队">军队</Select.Option>
+                  <Select.Option value="联盟">联盟</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="current_status" label="当前状态">
+                <Input placeholder="例如：兴盛、衰落、战争状态" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="leader" label="领袖">
+                <Input placeholder="势力领袖名称" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="headquarters_location" label="总部地点">
+                <Input placeholder="例如：暴风城" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="description" label="势力描述">
+            <TextArea rows={3} placeholder="描述这个势力的基本情况..." />
+          </Form.Item>
+        </>
+      ),
+    },
+    {
+      key: 'ideology',
+      label: '理念规模',
+      children: (
+        <>
+          <Form.Item name="core_ideology" label="核心意识形态">
+            <TextArea rows={3} placeholder="该势力的信仰、理念、目标、价值观" />
+          </Form.Item>
+          <Form.Item name="member_size" label="成员规模">
+            <Input placeholder="例如：10万人、500名精英" />
+          </Form.Item>
+          <Form.Item
+            name="influence_level"
+            label="影响力等级"
+            initialValue={50}
+          >
+            <InputNumber min={0} max={100} style={{ width: '100%' }} placeholder="0-100，数值越高影响力越大" />
+          </Form.Item>
+          <Form.Item name="founding_date" label="成立时间">
+            <Input placeholder="例如：第一纪元203年" />
+          </Form.Item>
+        </>
+      ),
+    },
+    {
+      key: 'strength',
+      label: '实力状况',
+      children: (
+        <>
+          <Form.Item name="territory_control" label="控制领土">
+            <TextArea rows={2} placeholder="势力控制的地理范围、重要据点" />
+          </Form.Item>
+          <Form.Item name="economic_strength" label="经济实力">
+            <TextArea rows={2} placeholder="经济来源、财富状况、资源控制" />
+          </Form.Item>
+          <Form.Item name="military_strength" label="军事实力">
+            <TextArea rows={2} placeholder="军队规模、装备水平、战斗能力" />
+          </Form.Item>
+          <Form.Item name="internal_structure" label="内部结构">
+            <TextArea rows={3} placeholder="组织架构、等级制度、部门分工" />
+          </Form.Item>
+        </>
+      ),
+    },
+    {
+      key: 'relations',
+      label: '关系历史',
+      children: (
+        <>
+          <Form.Item name="diplomatic_relations" label="外交关系">
+            <TextArea rows={4} placeholder="与其他势力的关系：盟友、敌对、中立等" />
+          </Form.Item>
+          <Form.Item name="historical_events" label="重大历史事件">
+            <TextArea rows={4} placeholder="该势力经历的重要历史事件和发展历程" />
+          </Form.Item>
+        </>
       ),
     },
   ];
@@ -217,88 +369,11 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
-        width={700}
+        width={800}
+        destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item
-            name="name"
-            label="势力名称"
-            rules={[{ required: true, message: '请输入势力名称' }]}
-          >
-            <Input placeholder="例如：暴风王国、银色黎明" />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="faction_type"
-                label="势力类型"
-                rules={[{ required: true }]}
-                initialValue="国家"
-              >
-                <Select>
-                  <Select.Option value="国家">国家</Select.Option>
-                  <Select.Option value="王国">王国</Select.Option>
-                  <Select.Option value="帝国">帝国</Select.Option>
-                  <Select.Option value="城邦">城邦</Select.Option>
-                  <Select.Option value="部落">部落</Select.Option>
-                  <Select.Option value="公会">公会</Select.Option>
-                  <Select.Option value="教派">教派</Select.Option>
-                  <Select.Option value="家族">家族</Select.Option>
-                  <Select.Option value="商会">商会</Select.Option>
-                  <Select.Option value="军队">军队</Select.Option>
-                  <Select.Option value="联盟">联盟</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="alignment" label="阵营倾向">
-                <Select placeholder="选择阵营">
-                  <Select.Option value="守序善良">守序善良</Select.Option>
-                  <Select.Option value="中立善良">中立善良</Select.Option>
-                  <Select.Option value="混乱善良">混乱善良</Select.Option>
-                  <Select.Option value="守序中立">守序中立</Select.Option>
-                  <Select.Option value="绝对中立">绝对中立</Select.Option>
-                  <Select.Option value="混乱中立">混乱中立</Select.Option>
-                  <Select.Option value="守序邪恶">守序邪恶</Select.Option>
-                  <Select.Option value="中立邪恶">中立邪恶</Select.Option>
-                  <Select.Option value="混乱邪恶">混乱邪恶</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="leader" label="领袖">
-                <Input placeholder="势力领袖名称" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="headquarters" label="总部地点">
-                <Input placeholder="例如：暴风城" />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="member_count" label="成员规模">
-                <Input placeholder="例如：10万人" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="influence_level" label="影响力等级">
-                <Input type="number" min={0} max={100} placeholder="0-100" />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item name="description" label="势力描述">
-            <TextArea rows={3} placeholder="描述这个势力的基本情况..." />
-          </Form.Item>
-          <Form.Item name="ideology" label="意识形态">
-            <TextArea rows={2} placeholder="该势力的信仰、理念、目标" />
-          </Form.Item>
-          <Form.Item name="history" label="历史背景">
-            <TextArea rows={2} placeholder="势力的成立背景和发展历史" />
-          </Form.Item>
+          <Tabs items={formTabItems} />
         </Form>
       </Modal>
 
@@ -312,43 +387,97 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
             关闭
           </Button>,
         ]}
-        width={600}
+        width={700}
       >
         {selectedFaction && (
-          <Descriptions column={2} bordered size="small">
-            <Descriptions.Item label="名称" span={2}>
-              {selectedFaction.name}
-            </Descriptions.Item>
-            <Descriptions.Item label="类型">
-              <Tag color="blue">{selectedFaction.faction_type}</Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="阵营">
-              {selectedFaction.alignment ? <Tag>{selectedFaction.alignment}</Tag> : '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="领袖">
-              {selectedFaction.leader || '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="总部">
-              {selectedFaction.headquarters || '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="成员规模">
-              {selectedFaction.member_count || '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="影响力" span={2}>
-              {selectedFaction.influence_level ? (
-                <Progress percent={parseInt(selectedFaction.influence_level)} />
-              ) : '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="描述" span={2}>
-              {selectedFaction.description || '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="意识形态" span={2}>
-              {selectedFaction.ideology || '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="历史背景" span={2}>
-              {selectedFaction.history || '-'}
-            </Descriptions.Item>
-          </Descriptions>
+          <Tabs
+            items={[
+              {
+                key: 'basic',
+                label: '基本信息',
+                children: (
+                  <Descriptions column={2} bordered size="small">
+                    <Descriptions.Item label="名称" span={2}>
+                      <strong style={{ fontSize: 16 }}>{selectedFaction.name}</strong>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="类型">
+                      <Tag color="blue">{selectedFaction.faction_type}</Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="当前状态">
+                      {selectedFaction.current_status || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="领袖">
+                      {selectedFaction.leader || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="总部">
+                      {selectedFaction.headquarters_location || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="成立时间">
+                      {selectedFaction.founding_date || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="描述" span={2}>
+                      {selectedFaction.description || '-'}
+                    </Descriptions.Item>
+                  </Descriptions>
+                ),
+              },
+              {
+                key: 'ideology',
+                label: '理念规模',
+                children: (
+                  <Descriptions column={1} bordered size="small">
+                    <Descriptions.Item label="核心意识形态">
+                      {selectedFaction.core_ideology || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="成员规模">
+                      {selectedFaction.member_size || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="影响力等级">
+                      {selectedFaction.influence_level ? (
+                        <Tag color={selectedFaction.influence_level >= 80 ? 'red' : selectedFaction.influence_level >= 50 ? 'orange' : 'default'}>
+                          {selectedFaction.influence_level}/100
+                        </Tag>
+                      ) : '-'}
+                    </Descriptions.Item>
+                  </Descriptions>
+                ),
+              },
+              {
+                key: 'strength',
+                label: '实力状况',
+                children: (
+                  <Descriptions column={1} bordered size="small">
+                    <Descriptions.Item label="控制领土">
+                      {selectedFaction.territory_control || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="经济实力">
+                      {selectedFaction.economic_strength || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="军事实力">
+                      {selectedFaction.military_strength || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="内部结构">
+                      {selectedFaction.internal_structure || '-'}
+                    </Descriptions.Item>
+                  </Descriptions>
+                ),
+              },
+              {
+                key: 'relations',
+                label: '关系历史',
+                children: (
+                  <Descriptions column={1} bordered size="small">
+                    <Descriptions.Item label="外交关系">
+                      {selectedFaction.diplomatic_relations || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="重大历史事件">
+                      {selectedFaction.historical_events || '-'}
+                    </Descriptions.Item>
+                  </Descriptions>
+                ),
+              },
+            ]}
+          />
         )}
       </Modal>
     </div>
@@ -422,7 +551,7 @@ const FactionManagement = ({ worldId, projectId }) => {
               title="势力总数"
               value={stats.total}
               prefix={<TeamOutlined />}
-              styles={{ content: { color: '#1890ff'  } }}
+              styles={{ content: { color: '#1890ff' } }}
             />
           </Card>
         </Col>
@@ -432,7 +561,7 @@ const FactionManagement = ({ worldId, projectId }) => {
               title="国家/政权"
               value={stats.nations}
               prefix={<CrownOutlined />}
-              styles={{ content: { color: '#faad14'  } }}
+              styles={{ content: { color: '#faad14' } }}
             />
           </Card>
         </Col>
@@ -442,7 +571,7 @@ const FactionManagement = ({ worldId, projectId }) => {
               title="公会/组织"
               value={stats.guilds}
               prefix={<ApartmentOutlined />}
-              styles={{ content: { color: '#52c41a'  } }}
+              styles={{ content: { color: '#52c41a' } }}
             />
           </Card>
         </Col>
@@ -452,7 +581,7 @@ const FactionManagement = ({ worldId, projectId }) => {
               title="宗教/教派"
               value={stats.religions}
               prefix={<SafetyOutlined />}
-              styles={{ content: { color: '#722ed1'  } }}
+              styles={{ content: { color: '#722ed1' } }}
             />
           </Card>
         </Col>

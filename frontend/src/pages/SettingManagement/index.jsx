@@ -3,9 +3,14 @@ import {
   Layout, Card, Button, Table, Modal, Form, Input, Select,
   message, Popconfirm, Space, Typography, Tabs, Row, Col, Tag,
   Empty, Breadcrumb, Badge, Statistic, Divider, Timeline,
-  Progress, Avatar, List, Tooltip, Drawer, Descriptions
+  Progress, Avatar, List, Tooltip, Drawer, Descriptions, InputNumber
 } from 'antd';
+
 import axios from 'axios';
+
+const { TextArea } = Input;
+const { Content } = Layout;
+const { Title, Text, Paragraph } = Typography;
 
 // 导入新创建的组件
 import WorldArchitecture from '../../components/WorldSetting/WorldArchitecture';
@@ -13,10 +18,9 @@ import EnergySystem from '../../components/WorldSetting/EnergySystem';
 import SocietySystem from '../../components/WorldSetting/SocietySystem';
 import HistoryTimeline from '../../components/WorldSetting/HistoryTimeline';
 import CharacterCard from '../../components/CharacterCard';
-
-const { TextArea } = Input;
-const { Content } = Layout;
-const { Title, Text, Paragraph } = Typography;
+import LocationManagement from '../../components/WorldSetting/LocationManagement';
+import FactionManagement from '../../components/WorldSetting/FactionManagement';
+import ItemManagement from '../../components/WorldSetting/ItemManagement';
 
 import {
   PlusOutlined, EditOutlined, DeleteOutlined,
@@ -30,7 +34,7 @@ import {
   CrownOutlined, BankOutlined, HistoryOutlined,
   TagsOutlined, LinkOutlined, DashboardOutlined,
   SearchOutlined, FilterOutlined, LayoutOutlined,
-  MenuOutlined, CloseOutlined
+  MenuOutlined, CloseOutlined, FileSearchOutlined
 } from '@ant-design/icons';
 
 import {
@@ -42,9 +46,144 @@ import './styles.css';
 
 // ==================== 通用组件 ====================
 
+// 关系网络面板（增强版）
+const RelationsPanel = ({ worldId }) => {
+  const [stats, setStats] = useState({
+    characterRelations: 0,
+    factionRelations: 0,
+    locationRelations: 0,
+    itemRelations: 0,
+    totalRelations: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadRelationStats();
+  }, [worldId]);
+
+  const loadRelationStats = async () => {
+    setLoading(true);
+    try {
+      // 并行加载各类数据来计算关系统计
+      const [charactersRes, factionsRes, locationsRes, itemsRes] = await Promise.all([
+        characterApi.getCharacters(null, worldId).catch(() => ({ data: [] })),
+        factionApi.getFactions(null, worldId).catch(() => ({ data: [] })),
+        locationApi.getLocations(null, worldId).catch(() => ({ data: [] })),
+        itemApi.getItems(null, worldId).catch(() => ({ data: [] }))
+      ]);
+
+      const characters = charactersRes.data || [];
+      const factions = factionsRes.data || [];
+      const locations = locationsRes.data || [];
+      const items = itemsRes.data || [];
+
+      // 计算关联数量（基于各实体间的引用关系）
+      const characterWithFaction = characters.filter(c => c.faction).length;
+      const characterWithLocation = characters.filter(c => c.current_location).length;
+      const factionWithLocation = factions.filter(f => f.headquarters_location).length;
+      const itemWithOwner = items.filter(i => i.current_owner).length;
+
+      setStats({
+        characterRelations: characterWithFaction + characterWithLocation,
+        factionRelations: factionWithLocation,
+        locationRelations: 0,
+        itemRelations: itemWithOwner,
+        totalRelations: characterWithFaction + characterWithLocation + factionWithLocation + itemWithOwner
+      });
+    } catch (error) {
+      console.error('加载关系统计失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const relationTypes = [
+    { name: '角色-势力', count: stats.characterRelations, color: '#1890ff', icon: <UserOutlined /> },
+    { name: '角色-地点', count: stats.characterRelations, color: '#52c41a', icon: <EnvironmentOutlined /> },
+    { name: '势力-地点', count: stats.factionRelations, color: '#722ed1', icon: <BankOutlined /> },
+    { name: '物品-持有者', count: stats.itemRelations, color: '#faad14', icon: <ShoppingOutlined /> },
+  ];
+
+  return (
+    <div className="relations-panel">
+      <Row gutter={[24, 24]}>
+        <Col span={24}>
+          <Card title="关系统计" loading={loading}>
+            <Row gutter={[16, 16]}>
+              <Col xs={12} sm={6}>
+                <div className="relation-stat-item" style={{ textAlign: 'center', padding: '20px', background: '#f6ffed', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '32px', color: '#52c41a', marginBottom: '8px' }}>
+                    <LinkOutlined />
+                  </div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#52c41a' }}>{stats.totalRelations}</div>
+                  <div style={{ color: '#666' }}>总关联数</div>
+                </div>
+              </Col>
+              {relationTypes.map((type, index) => (
+                <Col xs={12} sm={6} key={index}>
+                  <div className="relation-stat-item" style={{ textAlign: 'center', padding: '20px', background: `${type.color}10`, borderRadius: '8px' }}>
+                    <div style={{ fontSize: '24px', color: type.color, marginBottom: '8px' }}>
+                      {type.icon}
+                    </div>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: type.color }}>{type.count}</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>{type.name}</div>
+                  </div>
+                </Col>
+              ))}
+            </Row>
+          </Card>
+        </Col>
+
+        <Col lg={16}>
+          <Card title="关系网络图" style={{ minHeight: '400px' }}>
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="关系网络可视化功能开发中..."
+            />
+            <div style={{ textAlign: 'center', marginTop: 16 }}>
+              <Text type="secondary">将展示角色、势力、地点之间的关联关系图</Text>
+            </div>
+          </Card>
+        </Col>
+
+        <Col lg={8}>
+          <Card title="快速关联" style={{ minHeight: '400px' }}>
+            <div className="quick-relations">
+              <div className="quick-relation-item" style={{ padding: '12px', marginBottom: '12px', background: '#f5f5f5', borderRadius: '6px', cursor: 'pointer' }}>
+                <Space>
+                  <UserOutlined style={{ color: '#1890ff' }} />
+                  <span>角色加入势力</span>
+                </Space>
+              </div>
+              <div className="quick-relation-item" style={{ padding: '12px', marginBottom: '12px', background: '#f5f5f5', borderRadius: '6px', cursor: 'pointer' }}>
+                <Space>
+                  <ShoppingOutlined style={{ color: '#faad14' }} />
+                  <span>物品分配持有者</span>
+                </Space>
+              </div>
+              <div className="quick-relation-item" style={{ padding: '12px', marginBottom: '12px', background: '#f5f5f5', borderRadius: '6px', cursor: 'pointer' }}>
+                <Space>
+                  <EnvironmentOutlined style={{ color: '#52c41a' }} />
+                  <span>角色移动到地点</span>
+                </Space>
+              </div>
+              <div className="quick-relation-item" style={{ padding: '12px', marginBottom: '12px', background: '#f5f5f5', borderRadius: '6px', cursor: 'pointer' }}>
+                <Space>
+                  <TeamOutlined style={{ color: '#722ed1' }} />
+                  <span>势力占领地点</span>
+                </Space>
+              </div>
+            </div>
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
+};
+
 // 统计卡片组件
 const StatCard = ({ icon, title, value, color, trend }) => (
-  <Card className="stat-card" bordered={false}>
+  <Card className="stat-card" variant="borderless">
     <div className="stat-card-content">
       <div className="stat-icon" style={{ backgroundColor: `${color}20`, color }}>
         {icon}
@@ -279,6 +418,205 @@ const WorldManagementPanel = ({ onSelectWorld }) => {
   );
 };
 
+// ==================== 全局搜索组件 ====================
+
+const GlobalSearchModal = ({ visible, onClose, worldId }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('all');
+
+  useEffect(() => {
+    if (visible && searchTerm) {
+      performSearch(searchTerm);
+    }
+  }, [visible, searchTerm, activeFilter]);
+
+  const performSearch = async (term) => {
+    if (!term.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 并行搜索所有实体
+      const [charactersRes, factionsRes, locationsRes, itemsRes, eventsRes] = await Promise.all([
+        characterApi.getCharacters(null, worldId).catch(() => ({ data: [] })),
+        factionApi.getFactions(null, worldId).catch(() => ({ data: [] })),
+        locationApi.getLocations(null, worldId).catch(() => ({ data: [] })),
+        itemApi.getItems(null, worldId).catch(() => ({ data: [] })),
+        historyTimelineApi.getHistoricalEvents(worldId).catch(() => ({ data: { data: [] } }))
+      ]);
+
+      const characters = (charactersRes.data || []).map(c => ({ ...c, type: 'character', typeName: '角色' }));
+      const factions = (factionsRes.data || []).map(f => ({ ...f, type: 'faction', typeName: '势力' }));
+      const locations = (locationsRes.data || []).map(l => ({ ...l, type: 'location', typeName: '地点' }));
+      const items = (itemsRes.data || []).map(i => ({ ...i, type: 'item', typeName: '物品' }));
+      const events = (eventsRes.data?.data || []).map(e => ({ ...e, type: 'event', typeName: '事件' }));
+
+      const allResults = [...characters, ...factions, ...locations, ...items, ...events];
+
+      // 过滤搜索结果
+      const filtered = allResults.filter(item => {
+        const matchType = activeFilter === 'all' || item.type === activeFilter;
+        const matchSearch =
+          (item.name && item.name.toLowerCase().includes(term.toLowerCase())) ||
+          (item.description && item.description.toLowerCase().includes(term.toLowerCase())) ||
+          (item.title && item.title.toLowerCase().includes(term.toLowerCase()));
+        return matchType && matchSearch;
+      });
+
+      setSearchResults(filtered);
+    } catch (error) {
+      console.error('搜索失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTypeColor = (type) => {
+    const colors = {
+      character: '#1890ff',
+      faction: '#722ed1',
+      location: '#52c41a',
+      item: '#faad14',
+      event: '#fa8c16'
+    };
+    return colors[type] || '#999';
+  };
+
+  const getTypeIcon = (type) => {
+    const icons = {
+      character: <UserOutlined />,
+      faction: <BankOutlined />,
+      location: <EnvironmentOutlined />,
+      item: <ShoppingOutlined />,
+      event: <HistoryOutlined />
+    };
+    return icons[type] || <FileSearchOutlined />;
+  };
+
+  return (
+    <Modal
+      title={
+        <Space>
+          <SearchOutlined />
+          <span>全局搜索</span>
+        </Space>
+      }
+      open={visible}
+      onCancel={onClose}
+      footer={null}
+      width={800}
+    >
+      <Input.Search
+        placeholder="搜索角色、势力、地点、物品、事件..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        onSearch={performSearch}
+        loading={loading}
+        style={{ marginBottom: 16 }}
+        allowClear
+      />
+
+      <Space style={{ marginBottom: 16 }} wrap>
+        <Tag
+          color={activeFilter === 'all' ? 'blue' : 'default'}
+          style={{ cursor: 'pointer' }}
+          onClick={() => setActiveFilter('all')}
+        >
+          全部
+        </Tag>
+        <Tag
+          color={activeFilter === 'character' ? 'blue' : 'default'}
+          style={{ cursor: 'pointer' }}
+          onClick={() => setActiveFilter('character')}
+        >
+          <UserOutlined /> 角色
+        </Tag>
+        <Tag
+          color={activeFilter === 'faction' ? 'purple' : 'default'}
+          style={{ cursor: 'pointer' }}
+          onClick={() => setActiveFilter('faction')}
+        >
+          <BankOutlined /> 势力
+        </Tag>
+        <Tag
+          color={activeFilter === 'location' ? 'green' : 'default'}
+          style={{ cursor: 'pointer' }}
+          onClick={() => setActiveFilter('location')}
+        >
+          <EnvironmentOutlined /> 地点
+        </Tag>
+        <Tag
+          color={activeFilter === 'item' ? 'gold' : 'default'}
+          style={{ cursor: 'pointer' }}
+          onClick={() => setActiveFilter('item')}
+        >
+          <ShoppingOutlined /> 物品
+        </Tag>
+        <Tag
+          color={activeFilter === 'event' ? 'orange' : 'default'}
+          style={{ cursor: 'pointer' }}
+          onClick={() => setActiveFilter('event')}
+        >
+          <HistoryOutlined /> 事件
+        </Tag>
+      </Space>
+
+      <div style={{ maxHeight: '400px', overflow: 'auto' }}>
+        {searchResults.length === 0 ? (
+          <Empty description={searchTerm ? '未找到匹配结果' : '输入关键词开始搜索'} />
+        ) : (
+          <List
+            dataSource={searchResults}
+            renderItem={item => (
+              <List.Item
+                style={{ cursor: 'pointer', padding: '12px', borderRadius: '6px' }}
+                onClick={() => {
+                  // 可以在这里添加跳转到对应详情页的逻辑
+                  message.info(`查看 ${item.name} 详情`);
+                }}
+              >
+                <List.Item.Meta
+                  avatar={
+                    <div style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      background: `${getTypeColor(item.type)}20`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: getTypeColor(item.type)
+                    }}>
+                      {getTypeIcon(item.type)}
+                    </div>
+                  }
+                  title={
+                    <Space>
+                      <span>{item.name}</span>
+                      <Tag color={getTypeColor(item.type)}>{item.typeName}</Tag>
+                    </Space>
+                  }
+                  description={item.description?.substring(0, 100) || '暂无描述'}
+                />
+              </List.Item>
+            )}
+          />
+        )}
+      </div>
+
+      {searchResults.length > 0 && (
+        <div style={{ textAlign: 'center', marginTop: 16, color: '#999' }}>
+          找到 {searchResults.length} 个结果
+        </div>
+      )}
+    </Modal>
+  );
+};
+
 // ==================== 世界详情面板 ====================
 
 const WorldDetailPanel = ({ world, onBack, onEditWorld }) => {
@@ -291,6 +629,7 @@ const WorldDetailPanel = ({ world, onBack, onEditWorld }) => {
     events: 0
   });
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [editForm] = Form.useForm();
 
   useEffect(() => {
@@ -374,6 +713,33 @@ const WorldDetailPanel = ({ world, onBack, onEditWorld }) => {
       children: <CharacterManagementPanel worldId={world.id} />,
     },
     {
+      key: 'locations',
+      label: (
+        <span>
+          <EnvironmentOutlined /> 地点场景
+        </span>
+      ),
+      children: <LocationManagement worldId={world.id} />,
+    },
+    {
+      key: 'factions',
+      label: (
+        <span>
+          <BankOutlined /> 组织势力
+        </span>
+      ),
+      children: <FactionManagement worldId={world.id} />,
+    },
+    {
+      key: 'items',
+      label: (
+        <span>
+          <ShoppingOutlined /> 物品资源
+        </span>
+      ),
+      children: <ItemManagement worldId={world.id} />,
+    },
+    {
       key: 'world-setting',
       label: (
         <span>
@@ -422,12 +788,17 @@ const WorldDetailPanel = ({ world, onBack, onEditWorld }) => {
 
   return (
     <div className="world-detail">
-      <Breadcrumb className="detail-breadcrumb">
-        <Breadcrumb.Item>
-          <a onClick={onBack}><ArrowLeftOutlined /> 返回世界列表</a>
-        </Breadcrumb.Item>
-        <Breadcrumb.Item>{world.name}</Breadcrumb.Item>
-      </Breadcrumb>
+      <Breadcrumb
+        className="detail-breadcrumb"
+        items={[
+          {
+            title: <a onClick={onBack}><ArrowLeftOutlined /> 返回世界列表</a>,
+          },
+          {
+            title: world.name,
+          },
+        ]}
+      />
 
       <div className="world-header">
         <div className="world-info">
@@ -443,16 +814,24 @@ const WorldDetailPanel = ({ world, onBack, onEditWorld }) => {
           </div>
         </div>
         <Space>
+          <Button icon={<SearchOutlined />} onClick={() => setIsSearchVisible(true)}>全局搜索</Button>
           <Button icon={<EditOutlined />} onClick={handleEditWorld}>编辑世界</Button>
           <Button type="primary" icon={<PlusOutlined />}>添加设定</Button>
         </Space>
       </div>
 
-      <Tabs 
-        activeKey={activeTab} 
-        onChange={setActiveTab} 
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
         items={tabItems}
         className="world-tabs"
+      />
+
+      {/* 全局搜索模态框 */}
+      <GlobalSearchModal
+        visible={isSearchVisible}
+        onClose={() => setIsSearchVisible(false)}
+        worldId={world.id}
       />
 
       {/* 编辑世界模态框 */}
@@ -490,6 +869,39 @@ const WorldDetailPanel = ({ world, onBack, onEditWorld }) => {
 // ==================== 概览标签页 ====================
 
 const OverviewTab = ({ world, stats }) => {
+  const [recentActivities, setRecentActivities] = useState([]);
+
+  useEffect(() => {
+    // 模拟加载最近活动数据
+    setRecentActivities([
+      { id: 1, type: 'character', action: 'create', name: '阿尔萨斯', time: '10分钟前', user: '作者' },
+      { id: 2, type: 'location', action: 'update', name: '洛丹伦王城', time: '30分钟前', user: '作者' },
+      { id: 3, type: 'faction', action: 'create', name: '白银之手骑士团', time: '1小时前', user: '作者' },
+      { id: 4, type: 'item', action: 'create', name: '霜之哀伤', time: '2小时前', user: '作者' },
+      { id: 5, type: 'event', action: 'update', name: '斯坦索姆屠城', time: '3小时前', user: '作者' },
+    ]);
+  }, []);
+
+  const getActivityIcon = (type) => {
+    const icons = {
+      character: <UserOutlined style={{ color: '#1890ff' }} />,
+      faction: <BankOutlined style={{ color: '#722ed1' }} />,
+      location: <EnvironmentOutlined style={{ color: '#52c41a' }} />,
+      item: <ShoppingOutlined style={{ color: '#faad14' }} />,
+      event: <HistoryOutlined style={{ color: '#fa8c16' }} />
+    };
+    return icons[type] || <FileSearchOutlined />;
+  };
+
+  const getActivityText = (action) => {
+    const texts = {
+      create: '创建了',
+      update: '更新了',
+      delete: '删除了'
+    };
+    return texts[action] || action;
+  };
+
   return (
     <div className="overview-tab">
       <Row gutter={[24, 24]}>
@@ -544,39 +956,139 @@ const OverviewTab = ({ world, stats }) => {
               {world.core_rules || '暂无核心规则设定'}
             </Paragraph>
           </Card>
+
+          {/* 数据分布统计 */}
+          <Card title="数据分布" style={{ marginTop: 24 }}>
+            <Row gutter={[16, 16]}>
+              <Col span={12}>
+                <div style={{ textAlign: 'center', padding: '16px', background: '#f0f5ff', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#1890ff' }}>
+                    {stats.characters + stats.factions + stats.locations + stats.items + stats.events}
+                  </div>
+                  <div style={{ color: '#666' }}>总设定数</div>
+                </div>
+              </Col>
+              <Col span={12}>
+                <div style={{ textAlign: 'center', padding: '16px', background: '#f6ffed', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#52c41a' }}>
+                    {Math.round((stats.characters + stats.factions + stats.locations + stats.items + stats.events) / 5)}
+                  </div>
+                  <div style={{ color: '#666' }}>平均每个分类</div>
+                </div>
+              </Col>
+            </Row>
+            <div style={{ marginTop: 16 }}>
+              <div style={{ marginBottom: '8px' }}>
+                <Space>
+                  <UserOutlined style={{ color: '#1890ff' }} />
+                  <span>角色</span>
+                  <span style={{ marginLeft: 'auto' }}>{stats.characters}</span>
+                </Space>
+                <Progress percent={stats.characters > 0 ? Math.min(stats.characters * 5, 100) : 0} size="small" strokeColor="#1890ff" />
+              </div>
+              <div style={{ marginBottom: '8px' }}>
+                <Space>
+                  <BankOutlined style={{ color: '#722ed1' }} />
+                  <span>势力</span>
+                  <span style={{ marginLeft: 'auto' }}>{stats.factions}</span>
+                </Space>
+                <Progress percent={stats.factions > 0 ? Math.min(stats.factions * 10, 100) : 0} size="small" strokeColor="#722ed1" />
+              </div>
+              <div style={{ marginBottom: '8px' }}>
+                <Space>
+                  <EnvironmentOutlined style={{ color: '#52c41a' }} />
+                  <span>地点</span>
+                  <span style={{ marginLeft: 'auto' }}>{stats.locations}</span>
+                </Space>
+                <Progress percent={stats.locations > 0 ? Math.min(stats.locations * 10, 100) : 0} size="small" strokeColor="#52c41a" />
+              </div>
+              <div style={{ marginBottom: '8px' }}>
+                <Space>
+                  <ShoppingOutlined style={{ color: '#faad14' }} />
+                  <span>物品</span>
+                  <span style={{ marginLeft: 'auto' }}>{stats.items}</span>
+                </Space>
+                <Progress percent={stats.items > 0 ? Math.min(stats.items * 10, 100) : 0} size="small" strokeColor="#faad14" />
+              </div>
+              <div>
+                <Space>
+                  <HistoryOutlined style={{ color: '#fa8c16' }} />
+                  <span>事件</span>
+                  <span style={{ marginLeft: 'auto' }}>{stats.events}</span>
+                </Space>
+                <Progress percent={stats.events > 0 ? Math.min(stats.events * 5, 100) : 0} size="small" strokeColor="#fa8c16" />
+              </div>
+            </div>
+          </Card>
         </Col>
 
         <Col lg={8}>
           <Card title="快速创建" className="quick-create-card">
             <div className="quick-create-list">
-              <div className="quick-create-item">
-                <div className="quick-icon" style={{ backgroundColor: '#1890ff20', color: '#1890ff' }}>
+              <div className="quick-create-item" style={{ cursor: 'pointer', padding: '12px', borderRadius: '6px', transition: 'background 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                <div className="quick-icon" style={{ backgroundColor: '#1890ff20', color: '#1890ff', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <UserOutlined />
                 </div>
-                <div className="quick-info">
-                  <div className="quick-title">新建角色</div>
-                  <div className="quick-desc">添加故事人物</div>
+                <div className="quick-info" style={{ marginLeft: 12 }}>
+                  <div className="quick-title" style={{ fontWeight: 'bold' }}>新建角色</div>
+                  <div className="quick-desc" style={{ color: '#999', fontSize: '12px' }}>添加故事人物</div>
                 </div>
               </div>
-              <div className="quick-create-item">
-                <div className="quick-icon" style={{ backgroundColor: '#13c2c220', color: '#13c2c2' }}>
+              <div className="quick-create-item" style={{ cursor: 'pointer', padding: '12px', borderRadius: '6px', transition: 'background 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                <div className="quick-icon" style={{ backgroundColor: '#13c2c220', color: '#13c2c2', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <EnvironmentOutlined />
                 </div>
-                <div className="quick-info">
-                  <div className="quick-title">新建地点</div>
-                  <div className="quick-desc">添加场景设定</div>
+                <div className="quick-info" style={{ marginLeft: 12 }}>
+                  <div className="quick-title" style={{ fontWeight: 'bold' }}>新建地点</div>
+                  <div className="quick-desc" style={{ color: '#999', fontSize: '12px' }}>添加场景设定</div>
                 </div>
               </div>
-              <div className="quick-create-item">
-                <div className="quick-icon" style={{ backgroundColor: '#fa8c1620', color: '#fa8c16' }}>
+              <div className="quick-create-item" style={{ cursor: 'pointer', padding: '12px', borderRadius: '6px', transition: 'background 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                <div className="quick-icon" style={{ backgroundColor: '#722ed120', color: '#722ed1', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <BankOutlined />
+                </div>
+                <div className="quick-info" style={{ marginLeft: 12 }}>
+                  <div className="quick-title" style={{ fontWeight: 'bold' }}>新建势力</div>
+                  <div className="quick-desc" style={{ color: '#999', fontSize: '12px' }}>添加组织势力</div>
+                </div>
+              </div>
+              <div className="quick-create-item" style={{ cursor: 'pointer', padding: '12px', borderRadius: '6px', transition: 'background 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                <div className="quick-icon" style={{ backgroundColor: '#faad1420', color: '#faad14', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShoppingOutlined />
+                </div>
+                <div className="quick-info" style={{ marginLeft: 12 }}>
+                  <div className="quick-title" style={{ fontWeight: 'bold' }}>新建物品</div>
+                  <div className="quick-desc" style={{ color: '#999', fontSize: '12px' }}>添加物品资源</div>
+                </div>
+              </div>
+              <div className="quick-create-item" style={{ cursor: 'pointer', padding: '12px', borderRadius: '6px', transition: 'background 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                <div className="quick-icon" style={{ backgroundColor: '#fa8c1620', color: '#fa8c16', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <HistoryOutlined />
                 </div>
-                <div className="quick-info">
-                  <div className="quick-title">新建事件</div>
-                  <div className="quick-desc">添加历史节点</div>
+                <div className="quick-info" style={{ marginLeft: 12 }}>
+                  <div className="quick-title" style={{ fontWeight: 'bold' }}>新建事件</div>
+                  <div className="quick-desc" style={{ color: '#999', fontSize: '12px' }}>添加历史节点</div>
                 </div>
               </div>
             </div>
+          </Card>
+
+          {/* 最近活动 */}
+          <Card title="最近活动" style={{ marginTop: 24 }}>
+            <Timeline mode="left">
+              {recentActivities.map(activity => (
+                <Timeline.Item
+                  key={activity.id}
+                  dot={getActivityIcon(activity.type)}
+                  label={activity.time}
+                >
+                  <div style={{ fontSize: '14px' }}>
+                    <span style={{ color: '#666' }}>{getActivityText(activity.action)}</span>
+                    <span style={{ fontWeight: 'bold', marginLeft: 4 }}>{activity.name}</span>
+                  </div>
+                </Timeline.Item>
+              ))}
+            </Timeline>
           </Card>
         </Col>
       </Row>
@@ -819,115 +1331,307 @@ const CharacterManagementPanel = ({ worldId }) => {
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
-        width={800}
-        destroyOnClose
+        width={900}
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="name" label="角色名称" rules={[{ required: true, message: '请输入角色名称' }]}>
-                <Input placeholder="例如：阿尔萨斯" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="title" label="称号">
-                <Input placeholder="例如：巫妖王" />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item name="role" label="角色类型" rules={[{ required: true }]}>
-                <Select placeholder="选择角色类型">
-                  <Select.Option value="主角">主角</Select.Option>
-                  <Select.Option value="配角">配角</Select.Option>
-                  <Select.Option value="反派">反派</Select.Option>
-                  <Select.Option value="NPC">NPC</Select.Option>
-                  <Select.Option value="领袖">领袖</Select.Option>
-                  <Select.Option value="战士">战士</Select.Option>
-                  <Select.Option value="法师">法师</Select.Option>
-                  <Select.Option value="治疗">治疗</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="race" label="种族">
-                <Input placeholder="例如：人类、精灵" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="character_class" label="职业">
-                <Select placeholder="选择职业">
-                  <Select.Option value="战士">战士</Select.Option>
-                  <Select.Option value="法师">法师</Select.Option>
-                  <Select.Option value="牧师">牧师</Select.Option>
-                  <Select.Option value="盗贼">盗贼</Select.Option>
-                  <Select.Option value="猎人">猎人</Select.Option>
-                  <Select.Option value="骑士">骑士</Select.Option>
-                  <Select.Option value="术士">术士</Select.Option>
-                  <Select.Option value="德鲁伊">德鲁伊</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item name="gender" label="性别">
-                <Select placeholder="选择性别">
-                  <Select.Option value="男">男</Select.Option>
-                  <Select.Option value="女">女</Select.Option>
-                  <Select.Option value="其他">其他</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="alignment" label="阵营">
-                <Select placeholder="选择阵营">
-                  <Select.Option value="守序善良">守序善良</Select.Option>
-                  <Select.Option value="中立善良">中立善良</Select.Option>
-                  <Select.Option value="混乱善良">混乱善良</Select.Option>
-                  <Select.Option value="守序中立">守序中立</Select.Option>
-                  <Select.Option value="绝对中立">绝对中立</Select.Option>
-                  <Select.Option value="混乱中立">混乱中立</Select.Option>
-                  <Select.Option value="守序邪恶">守序邪恶</Select.Option>
-                  <Select.Option value="中立邪恶">中立邪恶</Select.Option>
-                  <Select.Option value="混乱邪恶">混乱邪恶</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="status" label="状态">
-                <Select placeholder="选择状态">
-                  <Select.Option value="alive">存活</Select.Option>
-                  <Select.Option value="dead">已死亡</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="level" label="等级">
-                <InputNumber min={1} max={100} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="is_important" valuePropName="checked">
-                <Select placeholder="重要程度">
-                  <Select.Option value={true}>重要角色</Select.Option>
-                  <Select.Option value={false}>普通角色</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item name="appearance" label="外貌描述">
-            <TextArea rows={3} placeholder="描述角色的外貌特征" />
-          </Form.Item>
-          <Form.Item name="personality" label="性格描述">
-            <TextArea rows={3} placeholder="描述角色的性格特点" />
-          </Form.Item>
-          <Form.Item name="background" label="背景故事">
-            <TextArea rows={4} placeholder="描述角色的背景故事" />
-          </Form.Item>
+          <Tabs
+            items={[
+              {
+                key: 'basic',
+                label: '基本信息',
+                children: (
+                  <>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item name="name" label="角色名称" rules={[{ required: true, message: '请输入角色名称' }]}>
+                          <Input placeholder="例如：阿尔萨斯" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item name="alternative_names" label="别名">
+                          <Input placeholder="例如：阿尔、王子（多个别名用逗号分隔）" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item name="character_type" label="角色类型">
+                          <Select placeholder="选择角色类型">
+                            <Select.Option value="主角">主角</Select.Option>
+                            <Select.Option value="配角">配角</Select.Option>
+                            <Select.Option value="反派">反派</Select.Option>
+                            <Select.Option value="NPC">NPC</Select.Option>
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item name="role_type" label="角色定位">
+                          <Select placeholder="选择角色定位">
+                            <Select.Option value="领袖">领袖</Select.Option>
+                            <Select.Option value="战士">战士</Select.Option>
+                            <Select.Option value="法师">法师</Select.Option>
+                            <Select.Option value="治疗">治疗</Select.Option>
+                            <Select.Option value="辅助">辅助</Select.Option>
+                            <Select.Option value="刺客">刺客</Select.Option>
+                            <Select.Option value="射手">射手</Select.Option>
+                            <Select.Option value="坦克">坦克</Select.Option>
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item name="importance_level" label="重要程度 (1-10)">
+                          <InputNumber min={1} max={10} style={{ width: '100%' }} />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item name="race" label="种族">
+                          <Input placeholder="例如：人类、精灵、矮人" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item name="occupation" label="职业/身份">
+                          <Input placeholder="例如：骑士、法师、商人" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item name="faction" label="所属势力">
+                          <Input placeholder="例如：白银之手、部落" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      <Col span={6}>
+                        <Form.Item name="gender" label="性别">
+                          <Select placeholder="选择性别">
+                            <Select.Option value="男">男</Select.Option>
+                            <Select.Option value="女">女</Select.Option>
+                            <Select.Option value="其他">其他</Select.Option>
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col span={6}>
+                        <Form.Item name="age" label="年龄">
+                          <InputNumber min={0} max={9999} style={{ width: '100%' }} />
+                        </Form.Item>
+                      </Col>
+                      <Col span={6}>
+                        <Form.Item name="birth_date" label="出生日期">
+                          <Input placeholder="例如：元年春" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={6}>
+                        <Form.Item name="status" label="状态">
+                          <Select placeholder="选择状态">
+                            <Select.Option value="alive">存活</Select.Option>
+                            <Select.Option value="dead">已死亡</Select.Option>
+                            <Select.Option value="missing">失踪</Select.Option>
+                            <Select.Option value="sealed">被封印</Select.Option>
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item name="birthplace" label="出生地">
+                          <Input placeholder="例如：洛丹伦王城" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item name="nationality" label="国籍/籍贯">
+                          <Input placeholder="例如：洛丹伦王国" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item name="current_location" label="当前位置">
+                          <Input placeholder="例如：诺森德" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item name="current_level" label="当前等级/境界">
+                          <Input placeholder="例如：60级/大法师" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Form.Item name="description" label="角色简介">
+                      <TextArea rows={2} placeholder="简要描述角色的核心特点" />
+                    </Form.Item>
+                  </>
+                )
+              },
+              {
+                key: 'appearance',
+                label: '外貌特征',
+                children: (
+                  <>
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item name="appearance_age" label="外貌年龄">
+                          <InputNumber min={0} max={9999} style={{ width: '100%' }} />
+                        </Form.Item>
+                      </Col>
+                      <Col span={16}>
+                        <Form.Item name="distinguishing_features" label="显著特征">
+                          <Input placeholder="例如：金色长发、蓝色眼睛、左脸颊有疤痕" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Form.Item name="appearance" label="外貌详细描述">
+                      <TextArea rows={6} placeholder="详细描述角色的外貌特征，包括身高、体型、面容、发型、眼睛、穿着风格等" />
+                    </Form.Item>
+                  </>
+                )
+              },
+              {
+                key: 'personality',
+                label: '性格心理',
+                children: (
+                  <>
+                    <Form.Item name="personality" label="性格描述">
+                      <TextArea rows={3} placeholder="描述角色的性格特点，如开朗、内向、勇敢、谨慎等" />
+                    </Form.Item>
+                    <Form.Item name="core_traits" label="核心特质">
+                      <TextArea rows={2} placeholder="例如：正义感强、重情重义、固执己见" />
+                    </Form.Item>
+                    <Form.Item name="values" label="价值观">
+                      <TextArea rows={2} placeholder="角色信奉的价值观和人生信条" />
+                    </Form.Item>
+                    <Form.Item name="psychological_fear" label="心理恐惧">
+                      <TextArea rows={2} placeholder="角色内心深处的恐惧和不安" />
+                    </Form.Item>
+                    <Form.Item name="psychological_trauma" label="心理创伤">
+                      <TextArea rows={2} placeholder="角色经历过的心理创伤" />
+                    </Form.Item>
+                  </>
+                )
+              },
+              {
+                key: 'background',
+                label: '背景经历',
+                children: (
+                  <>
+                    <Form.Item name="background" label="背景故事">
+                      <TextArea rows={4} placeholder="描述角色的出身、成长环境和早期经历" />
+                    </Form.Item>
+                    <Form.Item name="family_background" label="家庭背景">
+                      <TextArea rows={2} placeholder="描述角色的家庭情况，如父母、兄弟姐妹等" />
+                    </Form.Item>
+                    <Form.Item name="growth_experience" label="成长经历">
+                      <TextArea rows={3} placeholder="描述角色的成长过程和重要经历" />
+                    </Form.Item>
+                    <Form.Item name="important_turning_points" label="重要转折点">
+                      <TextArea rows={3} placeholder="描述改变角色命运的关键事件" />
+                    </Form.Item>
+                  </>
+                )
+              },
+              {
+                key: 'abilities',
+                label: '能力设定',
+                children: (
+                  <>
+                    <Form.Item name="physical_abilities" label="身体能力">
+                      <TextArea rows={2} placeholder="描述角色的身体素质，如力量、速度、耐力等" />
+                    </Form.Item>
+                    <Form.Item name="intelligence_perception" label="智力感知">
+                      <TextArea rows={2} placeholder="描述角色的智力水平、感知能力和学习能力" />
+                    </Form.Item>
+                    <Form.Item name="special_talents" label="特殊天赋">
+                      <TextArea rows={2} placeholder="描述角色与生俱来的特殊才能" />
+                    </Form.Item>
+                    <Form.Item name="special_abilities" label="特殊能力">
+                      <TextArea rows={3} placeholder="描述角色掌握的特殊技能或法术" />
+                    </Form.Item>
+                    <Form.Item name="ability_levels" label="能力等级">
+                      <TextArea rows={2} placeholder="描述各项能力的等级和熟练度" />
+                    </Form.Item>
+                    <Form.Item name="ability_limits" label="能力限制">
+                      <TextArea rows={2} placeholder="描述角色能力的局限性和弱点" />
+                    </Form.Item>
+                    <Form.Item name="growth_path" label="成长路径">
+                      <TextArea rows={2} placeholder="描述角色的成长方向和潜力" />
+                    </Form.Item>
+                  </>
+                )
+              },
+              {
+                key: 'items',
+                label: '物品装备',
+                children: (
+                  <>
+                    <Form.Item name="common_equipment" label="常用装备">
+                      <TextArea rows={2} placeholder="描述角色日常使用的装备" />
+                    </Form.Item>
+                    <Form.Item name="special_items" label="特殊物品">
+                      <TextArea rows={2} placeholder="描述角色拥有的特殊或魔法物品" />
+                    </Form.Item>
+                    <Form.Item name="personal_items" label="个人物品">
+                      <TextArea rows={2} placeholder="描述对角色有个人意义的物品" />
+                    </Form.Item>
+                    <Form.Item name="key_items" label="关键物品">
+                      <TextArea rows={2} placeholder="描述对剧情有关键作用的物品" />
+                    </Form.Item>
+                  </>
+                )
+              },
+              {
+                key: 'relationships',
+                label: '人际关系',
+                children: (
+                  <>
+                    <Form.Item name="family_members" label="家庭成员">
+                      <TextArea rows={2} placeholder="描述角色的家庭成员及其关系" />
+                    </Form.Item>
+                    <Form.Item name="close_friends" label="挚友">
+                      <TextArea rows={2} placeholder="描述角色的亲密朋友" />
+                    </Form.Item>
+                    <Form.Item name="mentor_student" label="师徒关系">
+                      <TextArea rows={2} placeholder="描述角色的师父或徒弟" />
+                    </Form.Item>
+                    <Form.Item name="colleagues" label="同事/同伴">
+                      <TextArea rows={2} placeholder="描述角色的同事或冒险同伴" />
+                    </Form.Item>
+                    <Form.Item name="grudges" label="仇敌">
+                      <TextArea rows={2} placeholder="描述角色的敌人和仇人" />
+                    </Form.Item>
+                    <Form.Item name="love_relationships" label="爱情关系">
+                      <TextArea rows={2} placeholder="描述角色的恋人和情感关系" />
+                    </Form.Item>
+                    <Form.Item name="complex_emotions" label="复杂情感">
+                      <TextArea rows={2} placeholder="描述角色复杂的情感纠葛" />
+                    </Form.Item>
+                    <Form.Item name="unrequited_love" label="暗恋">
+                      <TextArea rows={2} placeholder="描述角色的暗恋对象" />
+                    </Form.Item>
+                  </>
+                )
+              },
+              {
+                key: 'development',
+                label: '角色发展',
+                children: (
+                  <>
+                    <Form.Item name="character_arc" label="角色弧线">
+                      <TextArea rows={3} placeholder="描述角色在故事中的成长轨迹和变化" />
+                    </Form.Item>
+                    <Form.Item name="motivation" label="动机">
+                      <TextArea rows={2} placeholder="描述角色行动的根本动机和目标" />
+                    </Form.Item>
+                    <Form.Item name="secrets" label="秘密">
+                      <TextArea rows={2} placeholder="描述角色隐藏的秘密" />
+                    </Form.Item>
+                    <Form.Item name="emotional_changes" label="情感变化">
+                      <TextArea rows={2} placeholder="描述角色情感状态的变化过程" />
+                    </Form.Item>
+                  </>
+                )
+              }
+            ]}
+          />
         </Form>
       </Modal>
 
@@ -984,7 +1688,7 @@ const CharacterManagementPanel = ({ worldId }) => {
               </div>
             </div>
             <div className="character-detail-content">
-              <Descriptions column={2} bordered>
+              <Descriptions column={2} layout="vertical" bordered>
                 <Descriptions.Item label="等级">Lv.{viewingCharacter.level || 1}</Descriptions.Item>
                 <Descriptions.Item label="性别">{viewingCharacter.gender || '-'}</Descriptions.Item>
                 <Descriptions.Item label="所属势力">{viewingCharacter.faction_name || '-'}</Descriptions.Item>
@@ -1009,5 +1713,40 @@ const CharacterManagementPanel = ({ worldId }) => {
     </div>
   );
 };
+
+// ==================== 主设定管理组件 ====================
+
+const SettingManagement = ({ projectId }) => {
+  const [selectedWorld, setSelectedWorld] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'detail'
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleSelectWorld = (world) => {
+    setSelectedWorld(world);
+    setViewMode('detail');
+  };
+
+  const handleBackToList = () => {
+    setSelectedWorld(null);
+    setViewMode('list');
+  };
+
+  const handleEditWorld = () => {
+    // 刷新世界数据
+    setRefreshKey(prev => prev + 1);
+  };
+
+  return (
+    <div style={{ width: '100%' }} key={refreshKey}>
+      {viewMode === 'list' ? (
+        <WorldManagementPanel onSelectWorld={handleSelectWorld} projectId={projectId} />
+      ) : (
+        <WorldDetailPanel world={selectedWorld} onBack={handleBackToList} onEditWorld={handleEditWorld} projectId={projectId} />
+      )}
+    </div>
+  );
+};
+
+export default SettingManagement;
 
 

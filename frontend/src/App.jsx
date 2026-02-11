@@ -26,7 +26,7 @@ import {
 
 // 懒加载页面组件
 const ProjectManagement = lazy(() => import('./pages/ProjectManagement'));
-const SettingManagement = lazy(() => import('./pages/SettingManagement'));
+const SettingManagement = lazy(() => import('./pages/SettingManagement/index'));
 const EditorPage = lazy(() => import('./pages/EditorPage'));
 const SystemSetting = lazy(() => import('./pages/SystemSetting'));
 const NavigationPage = lazy(() => import('./pages/NavigationPage'));
