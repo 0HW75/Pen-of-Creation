@@ -370,7 +370,7 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Tabs items={formTabItems} />

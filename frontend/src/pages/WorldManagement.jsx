@@ -316,7 +316,7 @@ const WorldManagement = () => {
         onCancel={handleCancel}
         onOk={() => form.submit()}
         width={700}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={form}
