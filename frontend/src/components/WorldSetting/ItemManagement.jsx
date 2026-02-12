@@ -9,6 +9,7 @@ import {
   SafetyOutlined, ThunderboltOutlined, InfoCircleOutlined
 } from '@ant-design/icons';
 import { itemApi } from '../../services/api';
+import { AIGenerateModal, AIGenerateButton } from '../AIGeneration';
 
 const { TextArea } = Input;
 
@@ -20,6 +21,7 @@ const GeneralItemManagement = ({ worldId, projectId, quickCreateTarget, onUpdate
   const [editingItem, setEditingItem] = useState(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [aiModalVisible, setAiModalVisible] = useState(false);
   const [form] = Form.useForm();
 
   const fetchItems = async () => {
@@ -344,17 +346,20 @@ const GeneralItemManagement = ({ worldId, projectId, quickCreateTarget, onUpdate
           </Space>
         }
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingItem(null);
-              form.resetFields();
-              setModalVisible(true);
-            }}
-          >
-            新建物品
-          </Button>
+          <Space>
+            <AIGenerateButton onClick={() => setAiModalVisible(true)} entityType="item" />
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setEditingItem(null);
+                form.resetFields();
+                setModalVisible(true);
+              }}
+            >
+              新建物品
+            </Button>
+          </Space>
         }
       >
         <Table
@@ -482,6 +487,20 @@ const GeneralItemManagement = ({ worldId, projectId, quickCreateTarget, onUpdate
           />
         )}
       </Modal>
+
+      <AIGenerateModal
+        visible={aiModalVisible}
+        onCancel={() => setAiModalVisible(false)}
+        onGenerate={(result) => {
+          if (result) {
+            fetchItems();
+            if (onUpdate) onUpdate();
+          }
+        }}
+        worldId={worldId}
+        projectId={projectId}
+        defaultEntityType="item"
+      />
     </div>
   );
 };

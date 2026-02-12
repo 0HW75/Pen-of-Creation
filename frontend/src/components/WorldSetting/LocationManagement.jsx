@@ -10,6 +10,7 @@ import {
   SafetyOutlined, WarningOutlined, TeamOutlined
 } from '@ant-design/icons';
 import { locationApi } from '../../services/api';
+import { AIGenerateModal, AIGenerateButton } from '../AIGeneration';
 
 const { TextArea } = Input;
 
@@ -21,6 +22,7 @@ const LocationArchiveManagement = ({ worldId, projectId, quickCreateTarget, onUp
   const [editingLocation, setEditingLocation] = useState(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [aiModalVisible, setAiModalVisible] = useState(false);
   const [form] = Form.useForm();
 
   const fetchLocations = async () => {
@@ -239,17 +241,20 @@ const LocationArchiveManagement = ({ worldId, projectId, quickCreateTarget, onUp
           </Space>
         }
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingLocation(null);
-              form.resetFields();
-              setModalVisible(true);
-            }}
-          >
-            新建地点
-          </Button>
+          <Space>
+            <AIGenerateButton onClick={() => setAiModalVisible(true)} entityType="location" />
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setEditingLocation(null);
+                form.resetFields();
+                setModalVisible(true);
+              }}
+            >
+              新建地点
+            </Button>
+          </Space>
         }
       >
         <Table
@@ -513,6 +518,20 @@ const LocationArchiveManagement = ({ worldId, projectId, quickCreateTarget, onUp
           />
         )}
       </Modal>
+
+      <AIGenerateModal
+        visible={aiModalVisible}
+        onCancel={() => setAiModalVisible(false)}
+        onGenerate={(result) => {
+          if (result) {
+            fetchLocations();
+            if (onUpdate) onUpdate();
+          }
+        }}
+        worldId={worldId}
+        projectId={projectId}
+        defaultEntityType="location"
+      />
     </div>
   );
 };

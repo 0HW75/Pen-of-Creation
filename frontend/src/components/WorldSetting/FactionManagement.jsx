@@ -10,6 +10,7 @@ import {
   AimOutlined, ThunderboltOutlined, BankOutlined, FlagOutlined
 } from '@ant-design/icons';
 import { factionApi } from '../../services/api';
+import { AIGenerateModal, AIGenerateButton } from '../AIGeneration';
 
 const { TextArea } = Input;
 
@@ -21,6 +22,7 @@ const FactionOverviewManagement = ({ worldId, projectId, quickCreateTarget, onUp
   const [editingFaction, setEditingFaction] = useState(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedFaction, setSelectedFaction] = useState(null);
+  const [aiModalVisible, setAiModalVisible] = useState(false);
   const [form] = Form.useForm();
 
   const fetchFactions = async () => {
@@ -421,16 +423,19 @@ const FactionOverviewManagement = ({ worldId, projectId, quickCreateTarget, onUp
           </Space>
         }
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingFaction(null);
-              setModalVisible(true);
-            }}
-          >
-            新建势力
-          </Button>
+          <Space>
+            <AIGenerateButton onClick={() => setAiModalVisible(true)} entityType="faction" />
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setEditingFaction(null);
+                setModalVisible(true);
+              }}
+            >
+              新建势力
+            </Button>
+          </Space>
         }
       >
         <Table
@@ -575,6 +580,20 @@ const FactionOverviewManagement = ({ worldId, projectId, quickCreateTarget, onUp
           />
         )}
       </Modal>
+
+      <AIGenerateModal
+        visible={aiModalVisible}
+        onCancel={() => setAiModalVisible(false)}
+        onGenerate={(result) => {
+          if (result) {
+            fetchFactions();
+            if (onUpdate) onUpdate();
+          }
+        }}
+        worldId={worldId}
+        projectId={projectId}
+        defaultEntityType="faction"
+      />
     </div>
   );
 };

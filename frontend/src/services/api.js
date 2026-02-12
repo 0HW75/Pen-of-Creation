@@ -729,6 +729,22 @@ export const aiApi = {
   testConnection: (provider) => api.post(`/ai/config/provider/${provider}/test`),
 };
 
+// AI设定生成API
+export const aiGenerationApi = {
+  // 生成设定
+  generateSetting: (data) => api.post('/generate-setting', data),
+  // 批量生成
+  generateBatch: (data) => api.post('/generate-setting/batch', data),
+  // 保存生成的设定
+  saveSetting: (data) => api.post('/generate-setting/save', data),
+  // 获取生成策略列表
+  getStrategies: () => api.get('/generation-strategies'),
+  // 获取支持的实体类型
+  getEntityTypes: () => api.get('/supported-entity-types'),
+  // 预览提示词
+  previewPrompt: (data) => api.post('/preview-prompt', data),
+};
+
 // 故事蓝图相关API
 export const blueprintApi = {
   // 大纲相关API

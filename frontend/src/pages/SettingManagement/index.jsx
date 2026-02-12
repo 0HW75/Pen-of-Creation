@@ -15,6 +15,9 @@ import EntityCard from '../../components/SettingManagement/Common/EntityCard';
 import RelationsPanel from '../../components/SettingManagement/Common/RelationsPanel';
 import GlobalSearchModal from '../../components/SettingManagement/Common/GlobalSearchModal';
 
+// 导入AI生成组件
+import { AIGenerateModal, AIGenerateButton } from '../../components/AIGeneration';
+
 // 导入 WorldSetting 组件
 import WorldArchitecture from '../../components/WorldSetting/WorldArchitecture';
 import EnergySystem from '../../components/WorldSetting/EnergySystem';
@@ -356,6 +359,7 @@ const CharacterManagementPanel = ({ worldId, quickCreateTarget, onUpdate }) => {
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [form] = Form.useForm();
+  const [aiModalVisible, setAiModalVisible] = useState(false);
 
   const fetchCharacters = async () => {
     setLoading(true);
@@ -423,6 +427,13 @@ const CharacterManagementPanel = ({ worldId, quickCreateTarget, onUpdate }) => {
     setDetailVisible(true);
   };
 
+  const handleAIGenerate = (result) => {
+    if (result && result.character) {
+      fetchCharacters();
+      if (onUpdate) onUpdate();
+    }
+  };
+
   const filteredCharacters = characters.filter(character => {
     const matchSearch = !searchText || character.name?.toLowerCase().includes(searchText.toLowerCase());
     const matchRole = filterRole === 'all' || character.character_type === filterRole;
@@ -464,6 +475,7 @@ const CharacterManagementPanel = ({ worldId, quickCreateTarget, onUpdate }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <Space wrap>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>创建角色</Button>
+            <AIGenerateButton onClick={() => setAiModalVisible(true)} entityType="character" />
             <Select placeholder="角色类型" value={filterRole} onChange={setFilterRole} style={{ width: 120 }} allowClear>
               <Select.Option value="all">全部类型</Select.Option>
               <Select.Option value="主角">主角</Select.Option>
@@ -489,7 +501,7 @@ const CharacterManagementPanel = ({ worldId, quickCreateTarget, onUpdate }) => {
 
       <div className="characters-container">
         {filteredCharacters.length === 0 ? (
-          <Empty description={searchText || filterRole !== 'all' || filterStatus !== 'all' ? '没有找到匹配的角色' : '还没有创建任何角色，点击"创建角色"开始吧！'} className="empty-state" />
+          <Empty description={searchText || filterRole !== 'all' || filterStatus !== 'all' ? '没有找到匹配的角色' : '还没有创建任何角色，点击"创建角色"或"AI生成"开始吧！'} className="empty-state" />
         ) : viewMode === 'grid' ? (
           <Row gutter={[16, 16]}>
             {filteredCharacters.map(character => (
@@ -629,6 +641,14 @@ const CharacterManagementPanel = ({ worldId, quickCreateTarget, onUpdate }) => {
           </div>
         )}
       </Modal>
+
+      <AIGenerateModal
+        visible={aiModalVisible}
+        onCancel={() => setAiModalVisible(false)}
+        onGenerate={handleAIGenerate}
+        worldId={worldId}
+        defaultEntityType="character"
+      />
     </div>
   );
 };
