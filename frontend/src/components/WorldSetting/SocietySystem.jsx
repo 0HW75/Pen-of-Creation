@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card, Button, Table, Modal, Form, Input, Select, Tag,
   message, Space, Empty, Tabs, Row, Col, Statistic
@@ -13,8 +13,7 @@ import { energySocietyApi } from '../../services/api';
 const { TextArea } = Input;
 
 // 文明管理组件
-const CivilizationManagement = ({ worldId }) => {
-  const [civilizations, setCivilizations] = useState([]);
+const CivilizationManagement = ({ worldId, civilizations, onRefresh, onCivilizationsChange }) => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingCiv, setEditingCiv] = useState(null);
@@ -25,7 +24,7 @@ const CivilizationManagement = ({ worldId }) => {
     try {
       const response = await energySocietyApi.getCivilizations(worldId);
       if (response.data.code === 200) {
-        setCivilizations(response.data.data);
+        onCivilizationsChange(response.data.data);
       }
     } catch (error) {
       message.error('获取文明列表失败');
@@ -35,7 +34,7 @@ const CivilizationManagement = ({ worldId }) => {
   };
 
   useEffect(() => {
-    if (worldId) fetchCivilizations();
+    if (worldId && civilizations.length === 0) fetchCivilizations();
   }, [worldId]);
 
   const handleSubmit = async (values) => {
@@ -69,6 +68,7 @@ const CivilizationManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchCivilizations();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingCiv ? '更新失败' : '创建失败');
     }
@@ -77,6 +77,7 @@ const CivilizationManagement = ({ worldId }) => {
   const handleDelete = async (id) => {
     try {
       await energySocietyApi.deleteCivilization(id);
+      if (onRefresh) onRefresh();
       message.success('删除成功');
       fetchCivilizations();
     } catch (error) {
@@ -207,16 +208,9 @@ const CivilizationManagement = ({ worldId }) => {
           <Form.Item
             name="civilization_type"
             label="文明类型"
-            rules={[{ required: true }]}
-            initialValue="人类"
+            rules={[{ required: true, message: '请输入文明类型' }]}
           >
-            <Select>
-              <Select.Option value="人类">人类</Select.Option>
-              <Select.Option value="精灵">精灵</Select.Option>
-              <Select.Option value="矮人">矮人</Select.Option>
-              <Select.Option value="兽人">兽人</Select.Option>
-              <Select.Option value="混合">混合</Select.Option>
-            </Select>
+            <Input placeholder="例如：魔法文明、科技文明、修真文明、机械文明等" />
           </Form.Item>
           <Form.Item
             name="development_stage"
@@ -258,17 +252,18 @@ const CivilizationManagement = ({ worldId }) => {
 };
 
 // 社会阶层管理组件
-const SocialClassManagement = ({ worldId }) => {
+const SocialClassManagement = ({ worldId, civilizations, onRefresh }) => {
   const [socialClasses, setSocialClasses] = useState([]);
+  const [selectedCivilization, setSelectedCivilization] = useState(null);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [form] = Form.useForm();
 
-  const fetchSocialClasses = async () => {
+  const fetchSocialClasses = async (civId = null) => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getSocialClasses(worldId);
+      const response = await energySocietyApi.getSocialClasses(worldId, civId);
       if (response.data.code === 200) {
         setSocialClasses(response.data.data);
       }
@@ -280,8 +275,15 @@ const SocialClassManagement = ({ worldId }) => {
   };
 
   useEffect(() => {
-    if (worldId) fetchSocialClasses();
+    if (worldId) {
+      fetchSocialClasses();
+    }
   }, [worldId]);
+
+  const handleCivilizationChange = (civId) => {
+    setSelectedCivilization(civId);
+    fetchSocialClasses(civId);
+  };
 
   const handleSubmit = async (values) => {
     try {
@@ -311,6 +313,7 @@ const SocialClassManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchSocialClasses();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingClass ? '更新失败' : '创建失败');
     }
@@ -321,6 +324,7 @@ const SocialClassManagement = ({ worldId }) => {
       await energySocietyApi.deleteSocialClass(id);
       message.success('删除成功');
       fetchSocialClasses();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -337,6 +341,15 @@ const SocialClassManagement = ({ worldId }) => {
           <strong>{text}</strong>
         </Space>
       ),
+    },
+    {
+      title: '所属文明',
+      dataIndex: 'civilization_id',
+      key: 'civilization_id',
+      render: (civId) => {
+        const civ = civilizations.find(c => c.id === civId);
+        return civ ? <Tag color="purple">{civ.name}</Tag> : <Tag>无</Tag>;
+      },
     },
     {
       title: '阶级等级',
@@ -369,6 +382,7 @@ const SocialClassManagement = ({ worldId }) => {
                 description: record.description,
                 privileges: record.privileges,
                 obligations: record.obligations,
+                typical_occupations: record.typical_occupations,
                 population_ratio: record.percentage_of_population,
                 typical_power_level: record.typical_power_level,
               });
@@ -400,17 +414,30 @@ const SocialClassManagement = ({ worldId }) => {
           </Space>
         }
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingClass(null);
-              form.resetFields();
-              setModalVisible(true);
-            }}
-          >
-            新建社会阶层
-          </Button>
+          <Space>
+            <Select
+              placeholder="筛选文明"
+              allowClear
+              style={{ width: 150 }}
+              onChange={handleCivilizationChange}
+              value={selectedCivilization}
+            >
+              {civilizations.map(civ => (
+                <Select.Option key={civ.id} value={civ.id}>{civ.name}</Select.Option>
+              ))}
+            </Select>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setEditingClass(null);
+                form.resetFields();
+                setModalVisible(true);
+              }}
+            >
+              新建社会阶层
+            </Button>
+          </Space>
         }
         style={{ marginBottom: 16 }}
       >
@@ -433,6 +460,17 @@ const SocialClassManagement = ({ worldId }) => {
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
+            name="civilization_id"
+            label="所属文明"
+            rules={[{ required: true, message: '请选择所属文明' }]}
+          >
+            <Select placeholder="选择文明">
+              {civilizations.map(civ => (
+                <Select.Option key={civ.id} value={civ.id}>{civ.name}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
             name="class_name"
             label="阶层名称"
             rules={[{ required: true, message: '请输入阶层名称' }]}
@@ -440,42 +478,42 @@ const SocialClassManagement = ({ worldId }) => {
             <Input placeholder="例如：贵族、平民、奴隶" />
           </Form.Item>
           <Form.Item
-            name="social_status"
-            label="社会地位"
+            name="class_level"
+            label="阶级等级"
             rules={[{ required: true }]}
-            initialValue="中"
+            initialValue={1}
           >
-            <Select>
-              <Select.Option value="高">高</Select.Option>
-              <Select.Option value="中">中</Select.Option>
-              <Select.Option value="低">低</Select.Option>
-            </Select>
+            <Input type="number" min={1} placeholder="例如：1表示最高等级" />
           </Form.Item>
           <Form.Item
-            name="population_percentage"
-            label="人口比例（%）"
-            rules={[{ required: true, message: '请输入人口比例' }]}
-            initialValue={50}
+            name="population_ratio"
+            label="人口比例"
           >
-            <Input type="number" placeholder="例如：50" />
+            <Input placeholder="例如：10%" />
+          </Form.Item>
+          <Form.Item
+            name="typical_occupations"
+            label="典型职业"
+          >
+            <Input placeholder="例如：商人、农民、士兵" />
+          </Form.Item>
+          <Form.Item
+            name="privileges"
+            label="特权"
+          >
+            <TextArea rows={2} placeholder="该阶层的特权" />
+          </Form.Item>
+          <Form.Item
+            name="obligations"
+            label="义务"
+          >
+            <TextArea rows={2} placeholder="该阶层的义务" />
           </Form.Item>
           <Form.Item
             name="description"
             label="阶层描述"
           >
             <TextArea rows={3} placeholder="描述这个社会阶层..." />
-          </Form.Item>
-          <Form.Item
-            name="rights_privileges"
-            label="权利特权"
-          >
-            <TextArea rows={2} placeholder="该阶层的权利和特权" />
-          </Form.Item>
-          <Form.Item
-            name="duties_responsibilities"
-            label="义务责任"
-          >
-            <TextArea rows={2} placeholder="该阶层的义务和责任" />
           </Form.Item>
         </Form>
       </Modal>
@@ -484,17 +522,18 @@ const SocialClassManagement = ({ worldId }) => {
 };
 
 // 文化习俗管理组件
-const CulturalCustomsManagement = ({ worldId }) => {
+const CulturalCustomsManagement = ({ worldId, civilizations, onRefresh }) => {
   const [culturalCustoms, setCulturalCustoms] = useState([]);
+  const [selectedCivilization, setSelectedCivilization] = useState(null);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingCustom, setEditingCustom] = useState(null);
   const [form] = Form.useForm();
 
-  const fetchCulturalCustoms = async () => {
+  const fetchCulturalCustoms = async (civId = null) => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getCulturalCustoms(worldId);
+      const response = await energySocietyApi.getCulturalCustoms(worldId, civId);
       if (response.data.code === 200) {
         setCulturalCustoms(response.data.data);
       }
@@ -506,8 +545,15 @@ const CulturalCustomsManagement = ({ worldId }) => {
   };
 
   useEffect(() => {
-    if (worldId) fetchCulturalCustoms();
+    if (worldId) {
+      fetchCulturalCustoms();
+    }
   }, [worldId]);
+
+  const handleCivilizationChange = (civId) => {
+    setSelectedCivilization(civId);
+    fetchCulturalCustoms(civId);
+  };
 
   const handleSubmit = async (values) => {
     try {
@@ -538,6 +584,7 @@ const CulturalCustomsManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchCulturalCustoms();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingCustom ? '更新失败' : '创建失败');
     }
@@ -548,6 +595,7 @@ const CulturalCustomsManagement = ({ worldId }) => {
       await energySocietyApi.deleteCulturalCustom(id);
       message.success('删除成功');
       fetchCulturalCustoms();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -564,6 +612,15 @@ const CulturalCustomsManagement = ({ worldId }) => {
           <strong>{text}</strong>
         </Space>
       ),
+    },
+    {
+      title: '所属文明',
+      dataIndex: 'civilization_id',
+      key: 'civilization_id',
+      render: (civId) => {
+        const civ = civilizations.find(c => c.id === civId);
+        return civ ? <Tag color="purple">{civ.name}</Tag> : <Tag>无</Tag>;
+      },
     },
     {
       title: '习俗类型',
@@ -635,17 +692,30 @@ const CulturalCustomsManagement = ({ worldId }) => {
           </Space>
         }
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingCustom(null);
-              form.resetFields();
-              setModalVisible(true);
-            }}
-          >
-            新建文化习俗
-          </Button>
+          <Space>
+            <Select
+              placeholder="筛选文明"
+              allowClear
+              style={{ width: 150 }}
+              onChange={handleCivilizationChange}
+              value={selectedCivilization}
+            >
+              {civilizations.map(civ => (
+                <Select.Option key={civ.id} value={civ.id}>{civ.name}</Select.Option>
+              ))}
+            </Select>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setEditingCustom(null);
+                form.resetFields();
+                setModalVisible(true);
+              }}
+            >
+              新建文化习俗
+            </Button>
+          </Space>
         }
         style={{ marginBottom: 16 }}
       >
@@ -668,6 +738,17 @@ const CulturalCustomsManagement = ({ worldId }) => {
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
+            name="civilization_id"
+            label="所属文明"
+            rules={[{ required: true, message: '请选择所属文明' }]}
+          >
+            <Select placeholder="选择文明">
+              {civilizations.map(civ => (
+                <Select.Option key={civ.id} value={civ.id}>{civ.name}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
             name="custom_name"
             label="习俗名称"
             rules={[{ required: true, message: '请输入习俗名称' }]}
@@ -678,7 +759,7 @@ const CulturalCustomsManagement = ({ worldId }) => {
             name="custom_type"
             label="习俗类型"
             rules={[{ required: true }]}
-            initialValue="传统"
+            initialValue="节日"
           >
             <Select>
               <Select.Option value="节日">节日</Select.Option>
@@ -689,17 +770,12 @@ const CulturalCustomsManagement = ({ worldId }) => {
             </Select>
           </Form.Item>
           <Form.Item
-            name="applicable_scope"
-            label="适用范围"
+            name="importance_level"
+            label="重要性等级"
             rules={[{ required: true }]}
-            initialValue="全社会"
+            initialValue={5}
           >
-            <Select>
-              <Select.Option value="全社会">全社会</Select.Option>
-              <Select.Option value="特定阶层">特定阶层</Select.Option>
-              <Select.Option value="特定地区">特定地区</Select.Option>
-              <Select.Option value="特定职业">特定职业</Select.Option>
-            </Select>
+            <Input type="number" min={1} max={10} placeholder="1-10" />
           </Form.Item>
           <Form.Item
             name="description"
@@ -708,10 +784,10 @@ const CulturalCustomsManagement = ({ worldId }) => {
             <TextArea rows={3} placeholder="描述这个文化习俗..." />
           </Form.Item>
           <Form.Item
-            name="origin_history"
-            label="起源历史"
+            name="origin"
+            label="起源"
           >
-            <TextArea rows={2} placeholder="习俗的起源和历史" />
+            <TextArea rows={2} placeholder="习俗的起源" />
           </Form.Item>
           <Form.Item
             name="significance"
@@ -726,17 +802,18 @@ const CulturalCustomsManagement = ({ worldId }) => {
 };
 
 // 经济体系管理组件
-const EconomicSystemManagement = ({ worldId }) => {
+const EconomicSystemManagement = ({ worldId, civilizations, onRefresh }) => {
   const [economicSystems, setEconomicSystems] = useState([]);
+  const [selectedCivilization, setSelectedCivilization] = useState(null);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingSystem, setEditingSystem] = useState(null);
   const [form] = Form.useForm();
 
-  const fetchEconomicSystems = async () => {
+  const fetchEconomicSystems = async (civId = null) => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getEconomicSystems(worldId);
+      const response = await energySocietyApi.getEconomicSystems(worldId, civId);
       if (response.data.code === 200) {
         setEconomicSystems(response.data.data);
       }
@@ -748,8 +825,15 @@ const EconomicSystemManagement = ({ worldId }) => {
   };
 
   useEffect(() => {
-    if (worldId) fetchEconomicSystems();
+    if (worldId) {
+      fetchEconomicSystems();
+    }
   }, [worldId]);
+
+  const handleCivilizationChange = (civId) => {
+    setSelectedCivilization(civId);
+    fetchEconomicSystems(civId);
+  };
 
   const handleSubmit = async (values) => {
     try {
@@ -783,6 +867,7 @@ const EconomicSystemManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchEconomicSystems();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingSystem ? '更新失败' : '创建失败');
     }
@@ -793,6 +878,7 @@ const EconomicSystemManagement = ({ worldId }) => {
       await energySocietyApi.deleteEconomicSystem(id);
       message.success('删除成功');
       fetchEconomicSystems();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -809,6 +895,15 @@ const EconomicSystemManagement = ({ worldId }) => {
           <strong>{text}</strong>
         </Space>
       ),
+    },
+    {
+      title: '所属文明',
+      dataIndex: 'civilization_id',
+      key: 'civilization_id',
+      render: (civId) => {
+        const civ = civilizations.find(c => c.id === civId);
+        return civ ? <Tag color="purple">{civ.name}</Tag> : <Tag>无</Tag>;
+      },
     },
     {
       title: '经济模式',
@@ -877,17 +972,30 @@ const EconomicSystemManagement = ({ worldId }) => {
           </Space>
         }
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingSystem(null);
-              form.resetFields();
-              setModalVisible(true);
-            }}
-          >
-            新建经济体系
-          </Button>
+          <Space>
+            <Select
+              placeholder="筛选文明"
+              allowClear
+              style={{ width: 150 }}
+              onChange={handleCivilizationChange}
+              value={selectedCivilization}
+            >
+              {civilizations.map(civ => (
+                <Select.Option key={civ.id} value={civ.id}>{civ.name}</Select.Option>
+              ))}
+            </Select>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setEditingSystem(null);
+                form.resetFields();
+                setModalVisible(true);
+              }}
+            >
+              新建经济体系
+            </Button>
+          </Space>
         }
         style={{ marginBottom: 16 }}
       >
@@ -910,6 +1018,17 @@ const EconomicSystemManagement = ({ worldId }) => {
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
+            name="civilization_id"
+            label="所属文明"
+            rules={[{ required: true, message: '请选择所属文明' }]}
+          >
+            <Select placeholder="选择文明">
+              {civilizations.map(civ => (
+                <Select.Option key={civ.id} value={civ.id}>{civ.name}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
             name="system_name"
             label="经济体系名称"
             rules={[{ required: true, message: '请输入经济体系名称' }]}
@@ -917,23 +1036,21 @@ const EconomicSystemManagement = ({ worldId }) => {
             <Input placeholder="例如：自由市场经济、计划经济" />
           </Form.Item>
           <Form.Item
-            name="economic_type"
-            label="经济类型"
+            name="economic_model"
+            label="经济模式"
             rules={[{ required: true }]}
-            initialValue="混合"
+            initialValue="市场经济"
           >
             <Select>
-              <Select.Option value="农业">农业</Select.Option>
-              <Select.Option value="商业">商业</Select.Option>
-              <Select.Option value="工业">工业</Select.Option>
-              <Select.Option value="混合">混合</Select.Option>
+              <Select.Option value="物物交换">物物交换</Select.Option>
+              <Select.Option value="市场经济">市场经济</Select.Option>
+              <Select.Option value="计划经济">计划经济</Select.Option>
+              <Select.Option value="混合经济">混合经济</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
-            name="currency_unit"
-            label="货币单位"
-            rules={[{ required: true }]}
-            initialValue="金币"
+            name="currency_name"
+            label="货币名称"
           >
             <Input placeholder="例如：金币、银币" />
           </Form.Item>
@@ -944,16 +1061,16 @@ const EconomicSystemManagement = ({ worldId }) => {
             <TextArea rows={3} placeholder="描述这个经济体系..." />
           </Form.Item>
           <Form.Item
-            name="key_industries"
-            label="关键产业"
+            name="major_industries"
+            label="主要产业"
           >
-            <TextArea rows={2} placeholder="经济体系的关键产业" />
+            <TextArea rows={2} placeholder="经济体系的主要产业" />
           </Form.Item>
           <Form.Item
-            name="trade_relations"
-            label="贸易关系"
+            name="trade_partners"
+            label="贸易伙伴"
           >
-            <TextArea rows={2} placeholder="与其他文明的贸易关系" />
+            <TextArea rows={2} placeholder="贸易伙伴" />
           </Form.Item>
         </Form>
       </Modal>
@@ -962,17 +1079,18 @@ const EconomicSystemManagement = ({ worldId }) => {
 };
 
 // 政治体系管理组件
-const PoliticalSystemManagement = ({ worldId }) => {
+const PoliticalSystemManagement = ({ worldId, civilizations, onRefresh }) => {
   const [politicalSystems, setPoliticalSystems] = useState([]);
+  const [selectedCivilization, setSelectedCivilization] = useState(null);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingSystem, setEditingSystem] = useState(null);
   const [form] = Form.useForm();
 
-  const fetchPoliticalSystems = async () => {
+  const fetchPoliticalSystems = async (civId = null) => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getPoliticalSystems(worldId);
+      const response = await energySocietyApi.getPoliticalSystems(worldId, civId);
       if (response.data.code === 200) {
         setPoliticalSystems(response.data.data);
       }
@@ -984,8 +1102,15 @@ const PoliticalSystemManagement = ({ worldId }) => {
   };
 
   useEffect(() => {
-    if (worldId) fetchPoliticalSystems();
+    if (worldId) {
+      fetchPoliticalSystems();
+    }
   }, [worldId]);
+
+  const handleCivilizationChange = (civId) => {
+    setSelectedCivilization(civId);
+    fetchPoliticalSystems(civId);
+  };
 
   const handleSubmit = async (values) => {
     try {
@@ -1017,6 +1142,7 @@ const PoliticalSystemManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchPoliticalSystems();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingSystem ? '更新失败' : '创建失败');
     }
@@ -1027,6 +1153,7 @@ const PoliticalSystemManagement = ({ worldId }) => {
       await energySocietyApi.deletePoliticalSystem(id);
       message.success('删除成功');
       fetchPoliticalSystems();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -1043,6 +1170,15 @@ const PoliticalSystemManagement = ({ worldId }) => {
           <strong>{text}</strong>
         </Space>
       ),
+    },
+    {
+      title: '所属文明',
+      dataIndex: 'civilization_id',
+      key: 'civilization_id',
+      render: (civId) => {
+        const civ = civilizations.find(c => c.id === civId);
+        return civ ? <Tag color="purple">{civ.name}</Tag> : <Tag>无</Tag>;
+      },
     },
     {
       title: '政府类型',
@@ -1113,17 +1249,30 @@ const PoliticalSystemManagement = ({ worldId }) => {
           </Space>
         }
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingSystem(null);
-              form.resetFields();
-              setModalVisible(true);
-            }}
-          >
-            新建政治体系
-          </Button>
+          <Space>
+            <Select
+              placeholder="筛选文明"
+              allowClear
+              style={{ width: 150 }}
+              onChange={handleCivilizationChange}
+              value={selectedCivilization}
+            >
+              {civilizations.map(civ => (
+                <Select.Option key={civ.id} value={civ.id}>{civ.name}</Select.Option>
+              ))}
+            </Select>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setEditingSystem(null);
+                form.resetFields();
+                setModalVisible(true);
+              }}
+            >
+              新建政治体系
+            </Button>
+          </Space>
         }
         style={{ marginBottom: 16 }}
       >
@@ -1146,33 +1295,47 @@ const PoliticalSystemManagement = ({ worldId }) => {
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
-            name="system_name"
+            name="civilization_id"
+            label="所属文明"
+            rules={[{ required: true, message: '请选择所属文明' }]}
+          >
+            <Select placeholder="选择文明">
+              {civilizations.map(civ => (
+                <Select.Option key={civ.id} value={civ.id}>{civ.name}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="political_system_name"
             label="政治体系名称"
             rules={[{ required: true, message: '请输入政治体系名称' }]}
           >
             <Input placeholder="例如：君主制、共和制" />
           </Form.Item>
           <Form.Item
-            name="political_type"
-            label="政治类型"
+            name="government_type"
+            label="政府类型"
             rules={[{ required: true }]}
-            initialValue="monarchy"
+            initialValue="君主制"
           >
             <Select>
-              <Select.Option value="monarchy">君主制</Select.Option>
-              <Select.Option value="republic">共和制</Select.Option>
-              <Select.Option value="democracy">民主制</Select.Option>
-              <Select.Option value="dictatorship">独裁制</Select.Option>
-              <Select.Option value="other">其他</Select.Option>
+              <Select.Option value="君主制">君主制</Select.Option>
+              <Select.Option value="共和制">共和制</Select.Option>
+              <Select.Option value="民主制">民主制</Select.Option>
+              <Select.Option value="独裁制">独裁制</Select.Option>
+              <Select.Option value="其他">其他</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
-            name="ruler_title"
-            label="统治者称呼"
-            rules={[{ required: true }]}
-            initialValue="国王"
+            name="political_stability"
+            label="政治稳定性"
+            initialValue="稳定"
           >
-            <Input placeholder="例如：国王、总统" />
+            <Select>
+              <Select.Option value="稳定">稳定</Select.Option>
+              <Select.Option value="不稳定">不稳定</Select.Option>
+              <Select.Option value="动荡">动荡</Select.Option>
+            </Select>
           </Form.Item>
           <Form.Item
             name="description"
@@ -1186,12 +1349,6 @@ const PoliticalSystemManagement = ({ worldId }) => {
           >
             <TextArea rows={2} placeholder="政治体系的权力结构" />
           </Form.Item>
-          <Form.Item
-            name="governing_principles"
-            label="治理原则"
-          >
-            <TextArea rows={2} placeholder="政治体系的治理原则" />
-          </Form.Item>
         </Form>
       </Modal>
     </div>
@@ -1201,6 +1358,7 @@ const PoliticalSystemManagement = ({ worldId }) => {
 // 社会体系主组件
 const SocietySystem = ({ worldId }) => {
   const [activeTab, setActiveTab] = useState('civilizations');
+  const [civilizations, setCivilizations] = useState([]);
   const [stats, setStats] = useState({
     civilizations: 0,
     socialClasses: 0,
@@ -1209,7 +1367,7 @@ const SocietySystem = ({ worldId }) => {
     politicalSystems: 0,
   });
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
     if (worldId) {
       // 获取统计数据
       Promise.all([
@@ -1230,31 +1388,39 @@ const SocietySystem = ({ worldId }) => {
     }
   }, [worldId]);
 
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  const handleCivilizationsChange = useCallback((newCivilizations) => {
+    setCivilizations(newCivilizations);
+  }, []);
+
   const tabItems = [
     {
       key: 'civilizations',
       label: '文明',
-      children: <CivilizationManagement worldId={worldId} />,
+      children: <CivilizationManagement worldId={worldId} civilizations={civilizations} onRefresh={loadStats} onCivilizationsChange={handleCivilizationsChange} />,
     },
     {
       key: 'socialClasses',
       label: '社会阶层',
-      children: <SocialClassManagement worldId={worldId} />,
+      children: <SocialClassManagement worldId={worldId} civilizations={civilizations} onRefresh={loadStats} />,
     },
     {
       key: 'culturalCustoms',
       label: '文化习俗',
-      children: <CulturalCustomsManagement worldId={worldId} />,
+      children: <CulturalCustomsManagement worldId={worldId} civilizations={civilizations} onRefresh={loadStats} />,
     },
     {
       key: 'economicSystems',
       label: '经济体系',
-      children: <EconomicSystemManagement worldId={worldId} />,
+      children: <EconomicSystemManagement worldId={worldId} civilizations={civilizations} onRefresh={loadStats} />,
     },
     {
       key: 'politicalSystems',
       label: '政治体系',
-      children: <PoliticalSystemManagement worldId={worldId} />,
+      children: <PoliticalSystemManagement worldId={worldId} civilizations={civilizations} onRefresh={loadStats} />,
     },
   ];
 

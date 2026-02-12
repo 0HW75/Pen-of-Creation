@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import {
   Layout, Card, Button, Modal, Form, Input, Select,
   message, Popconfirm, Space, Typography, Tabs, Row, Col, Tag,
@@ -190,17 +190,25 @@ const WorldManagementPanel = ({ onSelectWorld }) => {
   );
 };
 
+// 格式化相对时间
+const formatRelativeTime = (dateString) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return '刚刚';
+  if (diffMins < 60) return `${diffMins}分钟前`;
+  if (diffHours < 24) return `${diffHours}小时前`;
+  if (diffDays < 7) return `${diffDays}天前`;
+  return date.toLocaleDateString('zh-CN');
+};
+
 // ==================== 概览标签页 ====================
 
-const OverviewTab = ({ world, stats }) => {
-  const [recentActivities] = useState([
-    { id: 1, type: 'character', action: 'create', name: '阿尔萨斯', time: '10分钟前' },
-    { id: 2, type: 'location', action: 'update', name: '洛丹伦王城', time: '30分钟前' },
-    { id: 3, type: 'faction', action: 'create', name: '白银之手骑士团', time: '1小时前' },
-    { id: 4, type: 'item', action: 'create', name: '霜之哀伤', time: '2小时前' },
-    { id: 5, type: 'event', action: 'update', name: '斯坦索姆屠城', time: '3小时前' },
-  ]);
-
+const OverviewTab = ({ world, stats, activities = [], onQuickCreate }) => {
   const getActivityIcon = (type) => {
     const icons = {
       character: <UserOutlined style={{ color: '#1890ff' }} />,
@@ -214,22 +222,30 @@ const OverviewTab = ({ world, stats }) => {
 
   const getActivityText = (action) => ({ create: '创建了', update: '更新了', delete: '删除了' }[action] || action);
 
+  const quickCreateItems = [
+    { icon: <UserOutlined />, color: '#1890ff', title: '新建角色', desc: '添加故事人物', type: 'character' },
+    { icon: <EnvironmentOutlined />, color: '#13c2c2', title: '新建地点', desc: '添加场景设定', type: 'location' },
+    { icon: <BankOutlined />, color: '#722ed1', title: '新建势力', desc: '添加组织势力', type: 'faction' },
+    { icon: <ShoppingOutlined />, color: '#faad14', title: '新建物品', desc: '添加物品资源', type: 'item' },
+    { icon: <HistoryOutlined />, color: '#fa8c16', title: '新建事件', desc: '添加历史节点', type: 'event' },
+  ];
+
   return (
     <div className="overview-tab">
       <Row gutter={[24, 24]}>
         <Col span={24}>
           <Row gutter={[24, 24]}>
             <Col xs={12} sm={6}>
-              <StatCard icon={<UserOutlined />} title="总角色数" value={stats.characters} color="#1890ff" trend={12} />
+              <StatCard icon={<UserOutlined />} title="总角色数" value={stats.characters} color="#1890ff" trend={stats.weeklyNew?.characters} />
             </Col>
             <Col xs={12} sm={6}>
-              <StatCard icon={<TeamOutlined />} title="势力组织" value={stats.factions} color="#722ed1" trend={5} />
+              <StatCard icon={<TeamOutlined />} title="势力组织" value={stats.factions} color="#722ed1" trend={stats.weeklyNew?.factions} />
             </Col>
             <Col xs={12} sm={6}>
-              <StatCard icon={<EnvironmentOutlined />} title="地点场景" value={stats.locations} color="#13c2c2" />
+              <StatCard icon={<EnvironmentOutlined />} title="地点场景" value={stats.locations} color="#13c2c2" trend={stats.weeklyNew?.locations} />
             </Col>
             <Col xs={12} sm={6}>
-              <StatCard icon={<HistoryOutlined />} title="历史事件" value={stats.events} color="#fa8c16" trend={23} />
+              <StatCard icon={<HistoryOutlined />} title="历史事件" value={stats.events} color="#fa8c16" trend={stats.weeklyNew?.events} />
             </Col>
           </Row>
         </Col>
@@ -281,14 +297,15 @@ const OverviewTab = ({ world, stats }) => {
         <Col lg={8}>
           <Card title="快速创建" className="quick-create-card">
             <div className="quick-create-list">
-              {[
-                { icon: <UserOutlined />, color: '#1890ff', title: '新建角色', desc: '添加故事人物' },
-                { icon: <EnvironmentOutlined />, color: '#13c2c2', title: '新建地点', desc: '添加场景设定' },
-                { icon: <BankOutlined />, color: '#722ed1', title: '新建势力', desc: '添加组织势力' },
-                { icon: <ShoppingOutlined />, color: '#faad14', title: '新建物品', desc: '添加物品资源' },
-                { icon: <HistoryOutlined />, color: '#fa8c16', title: '新建事件', desc: '添加历史节点' },
-              ].map((item, idx) => (
-                <div key={idx} className="quick-create-item" style={{ cursor: 'pointer', padding: '12px', borderRadius: '6px', transition: 'background 0.3s', display: 'flex', alignItems: 'center' }} onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+              {quickCreateItems.map((item, idx) => (
+                <div 
+                  key={idx} 
+                  className="quick-create-item" 
+                  style={{ cursor: 'pointer', padding: '12px', borderRadius: '6px', transition: 'background 0.3s', display: 'flex', alignItems: 'center' }} 
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'} 
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  onClick={() => onQuickCreate && onQuickCreate(item.type)}
+                >
                   <div style={{ backgroundColor: `${item.color}20`, color: item.color, width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.icon}</div>
                   <div style={{ marginLeft: 12 }}>
                     <div style={{ fontWeight: 'bold' }}>{item.title}</div>
@@ -300,20 +317,24 @@ const OverviewTab = ({ world, stats }) => {
           </Card>
 
           <Card title="最近活动" style={{ marginTop: 24 }}>
-            <Timeline
-              mode="start"
-              items={recentActivities.map(activity => ({
-                key: activity.id,
-                dot: getActivityIcon(activity.type),
-                label: activity.time,
-                children: (
-                  <div style={{ fontSize: '14px' }}>
-                    <span style={{ color: '#666' }}>{getActivityText(activity.action)}</span>
-                    <span style={{ fontWeight: 'bold', marginLeft: 4 }}>{activity.name}</span>
-                  </div>
-                )
-              }))}
-            />
+            {activities.length === 0 ? (
+              <Empty description="暂无活动记录" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            ) : (
+              <Timeline
+                mode="start"
+                items={activities.map(activity => ({
+                  key: activity.id,
+                  icon: getActivityIcon(activity.type),
+                  title: formatRelativeTime(activity.created_at),
+                  content: (
+                    <div style={{ fontSize: '14px' }}>
+                      <span style={{ color: '#666' }}>{getActivityText(activity.action)}</span>
+                      <span style={{ fontWeight: 'bold', marginLeft: 4 }}>{activity.name}</span>
+                    </div>
+                  )
+                }))}
+              />
+            )}
           </Card>
         </Col>
       </Row>
@@ -323,7 +344,7 @@ const OverviewTab = ({ world, stats }) => {
 
 // ==================== 角色管理面板 ====================
 
-const CharacterManagementPanel = ({ worldId }) => {
+const CharacterManagementPanel = ({ worldId, quickCreateTarget, onUpdate }) => {
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -352,6 +373,13 @@ const CharacterManagementPanel = ({ worldId }) => {
     if (worldId) fetchCharacters();
   }, [worldId]);
 
+  // 响应快速创建
+  useEffect(() => {
+    if (quickCreateTarget) {
+      showModal();
+    }
+  }, [quickCreateTarget]);
+
   const showModal = (character = null) => {
     setEditingCharacter(character);
     if (character) {
@@ -373,6 +401,7 @@ const CharacterManagementPanel = ({ worldId }) => {
       }
       setModalVisible(false);
       fetchCharacters();
+      if (onUpdate) onUpdate();
     } catch (error) {
       message.error(editingCharacter ? '更新角色失败' : '创建角色失败');
     }
@@ -383,6 +412,7 @@ const CharacterManagementPanel = ({ worldId }) => {
       await characterApi.deleteCharacter(character.id);
       message.success('删除角色成功');
       fetchCharacters();
+      if (onUpdate) onUpdate();
     } catch (error) {
       message.error('删除角色失败');
     }
@@ -605,36 +635,83 @@ const CharacterManagementPanel = ({ worldId }) => {
 
 // ==================== 世界详情面板 ====================
 
-const WorldDetailPanel = ({ world, onBack, onEditWorld }) => {
+const WorldDetailPanel = ({ world, onBack, onEditWorld, projectId }) => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [stats, setStats] = useState({ characters: 0, locations: 0, factions: 0, items: 0, events: 0 });
+  const [stats, setStats] = useState({ 
+    characters: 0, 
+    locations: 0, 
+    factions: 0, 
+    items: 0, 
+    events: 0,
+    weeklyNew: { characters: 0, locations: 0, factions: 0, items: 0, events: 0 }
+  });
+  const [activities, setActivities] = useState([]);
+  const [quickCreateTarget, setQuickCreateTarget] = useState(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [editForm] = Form.useForm();
+  
+  // 使用 ref 来访问子组件的方法
+  const characterPanelRef = useRef(null);
+  const locationPanelRef = useRef(null);
+  const factionPanelRef = useRef(null);
+  const itemPanelRef = useRef(null);
+  const timelineRef = useRef(null);
 
   useEffect(() => {
     loadStats();
+    loadActivities();
   }, [world.id]);
+
+  useEffect(() => {
+    console.log('stats 已更新:', stats);
+  }, [stats]);
 
   const loadStats = async () => {
     try {
-      const [charactersRes, locationsRes, factionsRes, itemsRes, eventsRes] = await Promise.all([
-        characterApi.getCharacters(null, world.id).catch(() => ({ data: [] })),
-        locationApi.getLocations(null, world.id).catch(() => ({ data: [] })),
-        factionApi.getFactions(null, world.id).catch(() => ({ data: [] })),
-        itemApi.getItems(null, world.id).catch(() => ({ data: [] })),
-        historyTimelineApi.getHistoricalEvents(world.id).catch(() => ({ data: { data: [] } }))
-      ]);
-
+      console.log('loadStats: 开始加载统计数据');
+      // 使用新的统计API获取总数和本周新增
+      const statsRes = await worldApi.getWorldStats(world.id).catch(() => ({ data: { data: {} } }));
+      const statsData = statsRes.data?.data || {};
+      console.log('loadStats: 获取到数据', statsData);
+      
       setStats({
-        characters: charactersRes.data?.length || 0,
-        locations: locationsRes.data?.length || 0,
-        factions: factionsRes.data?.length || 0,
-        items: itemsRes.data?.length || 0,
-        events: eventsRes.data?.data?.length || 0
+        characters: statsData.character_count || 0,
+        locations: statsData.location_count || 0,
+        factions: statsData.faction_count || 0,
+        items: statsData.item_count || 0,
+        events: statsData.event_count || 0,
+        weeklyNew: statsData.weekly_new || { characters: 0, locations: 0, factions: 0, items: 0, events: 0 }
       });
+      console.log('loadStats: 已更新 stats');
     } catch (error) {
       console.error('加载统计数据失败:', error);
+    }
+  };
+
+  const loadActivities = async () => {
+    try {
+      const res = await worldApi.getWorldActivities(world.id).catch(() => ({ data: { data: [] } }));
+      setActivities(res.data?.data || []);
+    } catch (error) {
+      console.error('加载活动记录失败:', error);
+    }
+  };
+
+  const handleQuickCreate = (type) => {
+    const tabMap = {
+      character: 'characters',
+      location: 'locations',
+      faction: 'factions',
+      item: 'items',
+      event: 'timeline'
+    };
+    
+    const targetTab = tabMap[type];
+    if (targetTab) {
+      setActiveTab(targetTab);
+      // 设置快速创建目标，让子组件响应
+      setQuickCreateTarget({ type, timestamp: Date.now() });
     }
   };
 
@@ -662,15 +739,15 @@ const WorldDetailPanel = ({ world, onBack, onEditWorld }) => {
   const getWorldTypeName = (type) => ({ fantasy: '奇幻', scifi: '科幻', modern: '现代', historical: '历史', other: '其他' }[type] || type);
 
   const tabItems = [
-    { key: 'overview', label: <span><DashboardOutlined /> 概览</span>, children: <OverviewTab world={world} stats={stats} /> },
-    { key: 'characters', label: <span><UserOutlined /> 角色库</span>, children: <CharacterManagementPanel worldId={world.id} /> },
-    { key: 'locations', label: <span><EnvironmentOutlined /> 地点场景</span>, children: <LocationManagement worldId={world.id} /> },
-    { key: 'factions', label: <span><BankOutlined /> 组织势力</span>, children: <FactionManagement worldId={world.id} /> },
-    { key: 'items', label: <span><ShoppingOutlined /> 物品资源</span>, children: <ItemManagement worldId={world.id} /> },
+    { key: 'overview', label: <span><DashboardOutlined /> 概览</span>, children: <OverviewTab world={world} stats={stats} activities={activities} onQuickCreate={handleQuickCreate} /> },
+    { key: 'characters', label: <span><UserOutlined /> 角色库</span>, children: <CharacterManagementPanel worldId={world.id} quickCreateTarget={quickCreateTarget?.type === 'character' ? quickCreateTarget : null} onUpdate={loadStats} /> },
+    { key: 'locations', label: <span><EnvironmentOutlined /> 地点场景</span>, children: <LocationManagement worldId={world.id} projectId={projectId} quickCreateTarget={quickCreateTarget?.type === 'location' ? quickCreateTarget : null} onUpdate={loadStats} /> },
+    { key: 'factions', label: <span><BankOutlined /> 组织势力</span>, children: <FactionManagement worldId={world.id} projectId={projectId} quickCreateTarget={quickCreateTarget?.type === 'faction' ? quickCreateTarget : null} onUpdate={loadStats} /> },
+    { key: 'items', label: <span><ShoppingOutlined /> 物品资源</span>, children: <ItemManagement worldId={world.id} projectId={projectId} quickCreateTarget={quickCreateTarget?.type === 'item' ? quickCreateTarget : null} onUpdate={loadStats} /> },
     { key: 'world-setting', label: <span><GlobalOutlined /> 世界架构</span>, children: <WorldArchitecture worldId={world.id} /> },
     { key: 'energy', label: <span><ThunderboltOutlined /> 能量体系</span>, children: <EnergySystem worldId={world.id} /> },
     { key: 'society', label: <span><TeamOutlined /> 社会体系</span>, children: <SocietySystem worldId={world.id} /> },
-    { key: 'timeline', label: <span><HistoryOutlined /> 历史脉络</span>, children: <HistoryTimeline worldId={world.id} /> },
+    { key: 'timeline', label: <span><HistoryOutlined /> 历史脉络</span>, children: <HistoryTimeline worldId={world.id} quickCreateTarget={quickCreateTarget?.type === 'event' ? quickCreateTarget : null} onUpdate={loadStats} /> },
     { key: 'relations', label: <span><SafetyOutlined /> 关系网络</span>, children: <RelationsPanel worldId={world.id} /> },
   ];
 

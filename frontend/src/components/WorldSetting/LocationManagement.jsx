@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card, Button, Table, Modal, Form, Input, Select, InputNumber,
   message, Space, Tag, Empty, Tabs, Row, Col, Statistic, Descriptions
@@ -14,7 +14,7 @@ import { locationApi } from '../../services/api';
 const { TextArea } = Input;
 
 // 地点档案管理组件
-const LocationArchiveManagement = ({ worldId, projectId }) => {
+const LocationArchiveManagement = ({ worldId, projectId, quickCreateTarget, onUpdate, onRefresh }) => {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -39,6 +39,13 @@ const LocationArchiveManagement = ({ worldId, projectId }) => {
   useEffect(() => {
     if (worldId) fetchLocations();
   }, [worldId, projectId]);
+
+  // 响应快速创建
+  useEffect(() => {
+    if (quickCreateTarget) {
+      showModal();
+    }
+  }, [quickCreateTarget]);
 
   const handleSubmit = async (values) => {
     try {
@@ -82,6 +89,8 @@ const LocationArchiveManagement = ({ worldId, projectId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchLocations();
+      if (onUpdate) onUpdate();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingLocation ? '更新失败' : '创建失败');
     }
@@ -92,6 +101,8 @@ const LocationArchiveManagement = ({ worldId, projectId }) => {
       await locationApi.deleteLocation(id);
       message.success('删除成功');
       fetchLocations();
+      if (onUpdate) onUpdate();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -507,7 +518,7 @@ const LocationArchiveManagement = ({ worldId, projectId }) => {
 };
 
 // 地点场景管理主组件
-const LocationManagement = ({ worldId, projectId }) => {
+const LocationManagement = ({ worldId, projectId, quickCreateTarget, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('archive');
   const [stats, setStats] = useState({
     total: 0,
@@ -516,7 +527,7 @@ const LocationManagement = ({ worldId, projectId }) => {
     special: 0,
   });
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
     if (worldId) {
       locationApi.getLocations(projectId, worldId).then((response) => {
         const data = response.data || [];
@@ -530,11 +541,15 @@ const LocationManagement = ({ worldId, projectId }) => {
     }
   }, [worldId, projectId]);
 
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
   const tabItems = [
     {
       key: 'archive',
       label: '地点档案',
-      children: <LocationArchiveManagement worldId={worldId} projectId={projectId} />,
+      children: <LocationArchiveManagement worldId={worldId} projectId={projectId} quickCreateTarget={quickCreateTarget} onUpdate={onUpdate} onRefresh={loadStats} />,
     },
   ];
 

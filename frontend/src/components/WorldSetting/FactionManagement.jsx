@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card, Button, Table, Modal, Form, Input, Select,
   message, Space, Tag, Empty, Tabs, Row, Col, Statistic, Descriptions, InputNumber
@@ -14,7 +14,7 @@ import { factionApi } from '../../services/api';
 const { TextArea } = Input;
 
 // 组织概况管理组件
-const FactionOverviewManagement = ({ worldId, projectId }) => {
+const FactionOverviewManagement = ({ worldId, projectId, quickCreateTarget, onUpdate, onRefresh }) => {
   const [factions, setFactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -40,29 +40,100 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
     if (worldId) fetchFactions();
   }, [worldId, projectId]);
 
+  // 响应快速创建
+  useEffect(() => {
+    if (quickCreateTarget) {
+      showModal();
+    }
+  }, [quickCreateTarget]);
+
+  // 编辑时设置表单值
+  useEffect(() => {
+    if (modalVisible && editingFaction) {
+      form.setFieldsValue({
+        name: editingFaction.name,
+        faction_type: editingFaction.faction_type,
+        faction_status: editingFaction.faction_status,
+        leader: editingFaction.leader,
+        headquarters_location: editingFaction.headquarters_location,
+        member_size: editingFaction.member_size,
+        influence_level: editingFaction.influence_level,
+        description: editingFaction.description,
+        core_ideology: editingFaction.core_ideology,
+        sphere_of_influence: editingFaction.sphere_of_influence,
+        establishment_time: editingFaction.establishment_time,
+        economic_strength: editingFaction.economic_strength,
+        leadership_system: editingFaction.leadership_system,
+        hierarchy: editingFaction.hierarchy,
+        department_setup: editingFaction.department_setup,
+        decision_mechanism: editingFaction.decision_mechanism,
+        key_members: editingFaction.key_members,
+        talent_reserve: editingFaction.talent_reserve,
+        defectors: editingFaction.defectors,
+        recruitment_method: editingFaction.recruitment_method,
+        training_system: editingFaction.training_system,
+        disciplinary_rules: editingFaction.disciplinary_rules,
+        promotion_path: editingFaction.promotion_path,
+        special_abilities: editingFaction.special_abilities,
+        heritage_system: editingFaction.heritage_system,
+        resource_reserves: editingFaction.resource_reserves,
+        intelligence_network: editingFaction.intelligence_network,
+        short_term_goals: editingFaction.short_term_goals,
+        medium_term_plans: editingFaction.medium_term_plans,
+        long_term_vision: editingFaction.long_term_vision,
+        secret_plans: editingFaction.secret_plans,
+        ally_relationships: editingFaction.ally_relationships,
+        enemy_relationships: editingFaction.enemy_relationships,
+        subordinate_relationships: editingFaction.subordinate_relationships,
+        neutral_relationships: editingFaction.neutral_relationships,
+      });
+    }
+  }, [modalVisible, editingFaction, form]);
+
   const handleSubmit = async (values) => {
     try {
-      // 字段映射转换 - 完整数据库字段
+      // 字段映射转换 - 与后端数据库字段保持一致
+      // 过滤掉 undefined 值，确保所有字段都有正确的类型
       const data = {
         name: values.name,
         world_id: worldId,
         project_id: projectId,
-        faction_type: values.faction_type,
-        description: values.description,
-        core_ideology: values.core_ideology,
-        member_size: values.member_size,
-        headquarters_location: values.headquarters_location,
-        leader: values.leader,
-        influence_level: values.influence_level || 50,
-        territory_control: values.territory_control,
-        economic_strength: values.economic_strength,
-        military_strength: values.military_strength,
-        diplomatic_relations: values.diplomatic_relations,
-        internal_structure: values.internal_structure,
-        founding_date: values.founding_date,
-        historical_events: values.historical_events,
-        current_status: values.current_status,
+        faction_type: values.faction_type || '国家',
+        description: values.description || '',
+        faction_status: values.faction_status || '活跃',
+        core_ideology: values.core_ideology || '',
+        sphere_of_influence: values.sphere_of_influence || '',
+        influence_level: values.influence_level || '区域',
+        establishment_time: values.establishment_time || '',
+        member_size: values.member_size || '',
+        headquarters_location: values.headquarters_location || '',
+        economic_strength: values.economic_strength || '',
+        leadership_system: values.leadership_system || '',
+        hierarchy: values.hierarchy || '',
+        department_setup: values.department_setup || '',
+        decision_mechanism: values.decision_mechanism || '',
+        leader: values.leader || '',
+        key_members: values.key_members || '',
+        talent_reserve: values.talent_reserve || '',
+        defectors: values.defectors || '',
+        recruitment_method: values.recruitment_method || '',
+        training_system: values.training_system || '',
+        disciplinary_rules: values.disciplinary_rules || '',
+        promotion_path: values.promotion_path || '',
+        special_abilities: values.special_abilities || '',
+        heritage_system: values.heritage_system || '',
+        resource_reserves: values.resource_reserves || '',
+        intelligence_network: values.intelligence_network || '',
+        short_term_goals: values.short_term_goals || '',
+        medium_term_plans: values.medium_term_plans || '',
+        long_term_vision: values.long_term_vision || '',
+        secret_plans: values.secret_plans || '',
+        ally_relationships: values.ally_relationships || '',
+        enemy_relationships: values.enemy_relationships || '',
+        subordinate_relationships: values.subordinate_relationships || '',
+        neutral_relationships: values.neutral_relationships || '',
       };
+      console.log('提交数据:', data);
       if (editingFaction) {
         await factionApi.updateFaction(editingFaction.id, data);
         message.success('势力更新成功');
@@ -71,8 +142,10 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
         message.success('势力创建成功');
       }
       setModalVisible(false);
-      form.resetFields();
+      setEditingFaction(null);
       fetchFactions();
+      if (onUpdate) onUpdate();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingFaction ? '更新失败' : '创建失败');
     }
@@ -83,6 +156,8 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
       await factionApi.deleteFaction(id);
       message.success('删除成功');
       fetchFactions();
+      if (onUpdate) onUpdate();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -131,8 +206,8 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
       dataIndex: 'influence_level',
       key: 'influence_level',
       render: (level) => level ? (
-        <Tag color={level >= 80 ? 'red' : level >= 50 ? 'orange' : level >= 30 ? 'blue' : 'default'}>
-          {level}/100
+        <Tag color={level === '世界' ? 'red' : level === '大陆' ? 'orange' : level === '国家' ? 'blue' : 'default'}>
+          {level}
         </Tag>
       ) : '-',
     },
@@ -150,8 +225,8 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
     },
     {
       title: '当前状态',
-      dataIndex: 'current_status',
-      key: 'current_status',
+      dataIndex: 'faction_status',
+      key: 'faction_status',
       render: (status) => status || '-',
     },
     {
@@ -172,25 +247,6 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingFaction(record);
-              // 反向字段映射
-              form.setFieldsValue({
-                name: record.name,
-                faction_type: record.faction_type,
-                leader: record.leader,
-                headquarters_location: record.headquarters_location,
-                member_size: record.member_size,
-                influence_level: record.influence_level,
-                description: record.description,
-                core_ideology: record.core_ideology,
-                territory_control: record.territory_control,
-                economic_strength: record.economic_strength,
-                military_strength: record.military_strength,
-                diplomatic_relations: record.diplomatic_relations,
-                internal_structure: record.internal_structure,
-                founding_date: record.founding_date,
-                historical_events: record.historical_events,
-                current_status: record.current_status,
-              });
               setModalVisible(true);
             }}
           >
@@ -247,8 +303,15 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="current_status" label="当前状态">
-                <Input placeholder="例如：兴盛、衰落、战争状态" />
+              <Form.Item name="faction_status" label="当前状态" initialValue="活跃">
+                <Select>
+                  <Select.Option value="活跃">活跃</Select.Option>
+                  <Select.Option value="衰落">衰落</Select.Option>
+                  <Select.Option value="兴盛">兴盛</Select.Option>
+                  <Select.Option value="战争状态">战争状态</Select.Option>
+                  <Select.Option value="潜伏">潜伏</Select.Option>
+                  <Select.Option value="解散">解散</Select.Option>
+                </Select>
               </Form.Item>
             </Col>
           </Row>
@@ -284,11 +347,17 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
           <Form.Item
             name="influence_level"
             label="影响力等级"
-            initialValue={50}
+            initialValue="区域"
           >
-            <InputNumber min={0} max={100} style={{ width: '100%' }} placeholder="0-100，数值越高影响力越大" />
+            <Select>
+              <Select.Option value="局部">局部</Select.Option>
+              <Select.Option value="区域">区域</Select.Option>
+              <Select.Option value="国家">国家</Select.Option>
+              <Select.Option value="大陆">大陆</Select.Option>
+              <Select.Option value="世界">世界</Select.Option>
+            </Select>
           </Form.Item>
-          <Form.Item name="founding_date" label="成立时间">
+          <Form.Item name="establishment_time" label="成立时间">
             <Input placeholder="例如：第一纪元203年" />
           </Form.Item>
         </>
@@ -299,17 +368,23 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
       label: '实力状况',
       children: (
         <>
-          <Form.Item name="territory_control" label="控制领土">
+          <Form.Item name="sphere_of_influence" label="势力范围">
             <TextArea rows={2} placeholder="势力控制的地理范围、重要据点" />
           </Form.Item>
           <Form.Item name="economic_strength" label="经济实力">
             <TextArea rows={2} placeholder="经济来源、财富状况、资源控制" />
           </Form.Item>
-          <Form.Item name="military_strength" label="军事实力">
-            <TextArea rows={2} placeholder="军队规模、装备水平、战斗能力" />
+          <Form.Item name="leadership_system" label="领导体制">
+            <TextArea rows={2} placeholder="领导制度、权力结构" />
           </Form.Item>
-          <Form.Item name="internal_structure" label="内部结构">
-            <TextArea rows={3} placeholder="组织架构、等级制度、部门分工" />
+          <Form.Item name="hierarchy" label="等级制度">
+            <TextArea rows={2} placeholder="内部等级划分、晋升体系" />
+          </Form.Item>
+          <Form.Item name="department_setup" label="部门设置">
+            <TextArea rows={2} placeholder="组织架构、部门分工" />
+          </Form.Item>
+          <Form.Item name="decision_mechanism" label="决策机制">
+            <TextArea rows={2} placeholder="重大决策的制定流程" />
           </Form.Item>
         </>
       ),
@@ -319,11 +394,17 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
       label: '关系历史',
       children: (
         <>
-          <Form.Item name="diplomatic_relations" label="外交关系">
-            <TextArea rows={4} placeholder="与其他势力的关系：盟友、敌对、中立等" />
+          <Form.Item name="ally_relationships" label="盟友关系">
+            <TextArea rows={3} placeholder="与其他势力的盟友关系" />
           </Form.Item>
-          <Form.Item name="historical_events" label="重大历史事件">
-            <TextArea rows={4} placeholder="该势力经历的重要历史事件和发展历程" />
+          <Form.Item name="enemy_relationships" label="敌对关系">
+            <TextArea rows={3} placeholder="与其他势力的敌对关系" />
+          </Form.Item>
+          <Form.Item name="neutral_relationships" label="中立关系">
+            <TextArea rows={3} placeholder="与其他势力的中立关系" />
+          </Form.Item>
+          <Form.Item name="subordinate_relationships" label="从属关系">
+            <TextArea rows={3} placeholder="与其他势力的从属或统属关系" />
           </Form.Item>
         </>
       ),
@@ -345,7 +426,6 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
             icon={<PlusOutlined />}
             onClick={() => {
               setEditingFaction(null);
-              form.resetFields();
               setModalVisible(true);
             }}
           >
@@ -367,12 +447,15 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
       <Modal
         title={editingFaction ? '编辑势力' : '新建势力'}
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => {
+          setModalVisible(false);
+          form.resetFields();
+        }}
         onOk={() => form.submit()}
         width={800}
         destroyOnHidden
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit} preserve={false}>
           <Tabs items={formTabItems} />
         </Form>
       </Modal>
@@ -404,7 +487,7 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
                       <Tag color="blue">{selectedFaction.faction_type}</Tag>
                     </Descriptions.Item>
                     <Descriptions.Item label="当前状态">
-                      {selectedFaction.current_status || '-'}
+                      {selectedFaction.faction_status || '-'}
                     </Descriptions.Item>
                     <Descriptions.Item label="领袖">
                       {selectedFaction.leader || '-'}
@@ -413,7 +496,7 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
                       {selectedFaction.headquarters_location || '-'}
                     </Descriptions.Item>
                     <Descriptions.Item label="成立时间">
-                      {selectedFaction.founding_date || '-'}
+                      {selectedFaction.establishment_time || '-'}
                     </Descriptions.Item>
                     <Descriptions.Item label="描述" span={2}>
                       {selectedFaction.description || '-'}
@@ -434,8 +517,8 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
                     </Descriptions.Item>
                     <Descriptions.Item label="影响力等级">
                       {selectedFaction.influence_level ? (
-                        <Tag color={selectedFaction.influence_level >= 80 ? 'red' : selectedFaction.influence_level >= 50 ? 'orange' : 'default'}>
-                          {selectedFaction.influence_level}/100
+                        <Tag color={selectedFaction.influence_level === '世界' ? 'red' : selectedFaction.influence_level === '大陆' ? 'orange' : 'default'}>
+                          {selectedFaction.influence_level}
                         </Tag>
                       ) : '-'}
                     </Descriptions.Item>
@@ -447,17 +530,23 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
                 label: '实力状况',
                 children: (
                   <Descriptions column={1} bordered size="small">
-                    <Descriptions.Item label="控制领土">
-                      {selectedFaction.territory_control || '-'}
+                    <Descriptions.Item label="势力范围">
+                      {selectedFaction.sphere_of_influence || '-'}
                     </Descriptions.Item>
                     <Descriptions.Item label="经济实力">
                       {selectedFaction.economic_strength || '-'}
                     </Descriptions.Item>
-                    <Descriptions.Item label="军事实力">
-                      {selectedFaction.military_strength || '-'}
+                    <Descriptions.Item label="领导体制">
+                      {selectedFaction.leadership_system || '-'}
                     </Descriptions.Item>
-                    <Descriptions.Item label="内部结构">
-                      {selectedFaction.internal_structure || '-'}
+                    <Descriptions.Item label="等级制度">
+                      {selectedFaction.hierarchy || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="部门设置">
+                      {selectedFaction.department_setup || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="决策机制">
+                      {selectedFaction.decision_mechanism || '-'}
                     </Descriptions.Item>
                   </Descriptions>
                 ),
@@ -467,11 +556,17 @@ const FactionOverviewManagement = ({ worldId, projectId }) => {
                 label: '关系历史',
                 children: (
                   <Descriptions column={1} bordered size="small">
-                    <Descriptions.Item label="外交关系">
-                      {selectedFaction.diplomatic_relations || '-'}
+                    <Descriptions.Item label="盟友关系">
+                      {selectedFaction.ally_relationships || '-'}
                     </Descriptions.Item>
-                    <Descriptions.Item label="重大历史事件">
-                      {selectedFaction.historical_events || '-'}
+                    <Descriptions.Item label="敌对关系">
+                      {selectedFaction.enemy_relationships || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="中立关系">
+                      {selectedFaction.neutral_relationships || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="从属关系">
+                      {selectedFaction.subordinate_relationships || '-'}
                     </Descriptions.Item>
                   </Descriptions>
                 ),
@@ -501,7 +596,7 @@ const FactionStructureManagement = ({ worldId, projectId }) => {
 };
 
 // 组织势力管理主组件
-const FactionManagement = ({ worldId, projectId }) => {
+const FactionManagement = ({ worldId, projectId, quickCreateTarget, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState({
     total: 0,
@@ -510,7 +605,7 @@ const FactionManagement = ({ worldId, projectId }) => {
     religions: 0,
   });
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
     if (worldId) {
       factionApi.getFactions(projectId, worldId).then((response) => {
         const data = response.data || [];
@@ -524,11 +619,15 @@ const FactionManagement = ({ worldId, projectId }) => {
     }
   }, [worldId, projectId]);
 
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
   const tabItems = [
     {
       key: 'overview',
       label: '组织概况',
-      children: <FactionOverviewManagement worldId={worldId} projectId={projectId} />,
+      children: <FactionOverviewManagement worldId={worldId} projectId={projectId} quickCreateTarget={quickCreateTarget} onUpdate={onUpdate} onRefresh={loadStats} />,
     },
     {
       key: 'structure',

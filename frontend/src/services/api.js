@@ -707,6 +707,7 @@ export const worldApi = {
     return response;
   },
   getWorldStats: (id) => api.get(`/worlds/${id}/stats`),
+  getWorldActivities: (id) => api.get(`/worlds/${id}/activities`),
 };
 
 // AI相关API
@@ -1004,7 +1005,15 @@ export const tagsRelationsApi = {
     api.get(`/tags-relations/entities/${entityType}/${entityId}/relations`),
   
   // 关系网络数据（用于可视化）
-  getRelationNetwork: (worldId) => api.get(`/tags-relations/network/${worldId}`),
+  getRelationNetwork: (worldId, entityTypes, relationTypes) => {
+    const params = {};
+    if (entityTypes) params.entity_type = entityTypes;
+    if (relationTypes) params.relation_type = relationTypes;
+    return api.get(`/tags-relations/network/${worldId}`, { params });
+  },
+  
+  // 关系网络统计
+  getRelationNetworkStats: (worldId) => api.get(`/tags-relations/network/stats/${worldId}`),
 };
 
 export default api;

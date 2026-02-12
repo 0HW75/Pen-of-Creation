@@ -5,7 +5,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import (
     Tag, EntityTag, EntityRelation,
-    World, db
+    World, Character, Location, Item, Faction, db
 )
 
 tags_relations_bp = Blueprint('tags_relations', __name__, url_prefix='/tags-relations')
@@ -385,6 +385,32 @@ def get_entity_relations_by_entity(entity_type, entity_id):
 
 # ==================== 关系网络分析 ====================
 
+# 实体类型到模型的映射
+ENTITY_MODEL_MAP = {
+    'character': Character,
+    'location': Location,
+    'item': Item,
+    'faction': Faction
+}
+
+# 实体类型显示配置
+ENTITY_TYPE_CONFIG = {
+    'character': {'name': '角色', 'color': '#1890ff', 'icon': 'user'},
+    'location': {'name': '地点', 'color': '#52c41a', 'icon': 'environment'},
+    'item': {'name': '物品', 'color': '#faad14', 'icon': 'gift'},
+    'faction': {'name': '势力', 'color': '#722ed1', 'icon': 'bank'}
+}
+
+
+def get_entity_name(entity_type, entity_id):
+    """获取实体名称"""
+    model = ENTITY_MODEL_MAP.get(entity_type)
+    if not model:
+        return f"未知{entity_type}"
+    entity = model.query.get(entity_id)
+    return entity.name if entity else f"已删除{entity_type}"
+
+
 @tags_relations_bp.route('/network/<int:world_id>', methods=['GET'])
 def get_relation_network(world_id):
     """获取世界的关系网络数据（用于可视化）"""
@@ -393,30 +419,52 @@ def get_relation_network(world_id):
         if not world:
             return error_response('世界不存在', 404)
         
+        # 获取筛选参数
+        entity_types = request.args.getlist('entity_type') or None
+        relation_types = request.args.getlist('relation_type') or None
+        
         # 获取所有关系
-        relations = EntityRelation.query.filter_by(world_id=world_id, status='active').all()
+        query = EntityRelation.query.filter_by(world_id=world_id, status='active')
+        if relation_types:
+            query = query.filter(EntityRelation.relation_type.in_(relation_types))
+        relations = query.all()
         
         # 构建节点和边
         nodes = {}
         edges = []
+        relation_type_stats = {}
         
         for relation in relations:
             # 添加源节点
             source_key = f"{relation.source_type}_{relation.source_id}"
             if source_key not in nodes:
+                entity_name = get_entity_name(relation.source_type, relation.source_id)
+                type_config = ENTITY_TYPE_CONFIG.get(relation.source_type, {'name': relation.source_type, 'color': '#999', 'icon': 'question'})
                 nodes[source_key] = {
                     'id': source_key,
+                    'name': entity_name,
                     'type': relation.source_type,
-                    'entity_id': relation.source_id
+                    'type_name': type_config['name'],
+                    'entity_id': relation.source_id,
+                    'category': relation.source_type,
+                    'itemStyle': {'color': type_config['color']},
+                    'symbol': type_config['icon']
                 }
             
             # 添加目标节点
             target_key = f"{relation.target_type}_{relation.target_id}"
             if target_key not in nodes:
+                entity_name = get_entity_name(relation.target_type, relation.target_id)
+                type_config = ENTITY_TYPE_CONFIG.get(relation.target_type, {'name': relation.target_type, 'color': '#999', 'icon': 'question'})
                 nodes[target_key] = {
                     'id': target_key,
+                    'name': entity_name,
                     'type': relation.target_type,
-                    'entity_id': relation.target_id
+                    'type_name': type_config['name'],
+                    'entity_id': relation.target_id,
+                    'category': relation.target_type,
+                    'itemStyle': {'color': type_config['color']},
+                    'symbol': type_config['icon']
                 }
             
             # 添加边
@@ -425,12 +473,77 @@ def get_relation_network(world_id):
                 'target': target_key,
                 'relation_type': relation.relation_type,
                 'strength': relation.strength,
-                'description': relation.description
+                'description': relation.description,
+                'value': relation.strength,
+                'lineStyle': {
+                    'width': max(1, relation.strength / 2),
+                    'curveness': 0.2
+                }
             })
+            
+            # 统计关系类型
+            relation_type_stats[relation.relation_type] = relation_type_stats.get(relation.relation_type, 0) + 1
+        
+        # 如果指定了实体类型筛选，过滤节点
+        if entity_types:
+            filtered_nodes = {k: v for k, v in nodes.items() if v['type'] in entity_types}
+            # 只保留与筛选后节点相关的边
+            filtered_node_ids = set(filtered_nodes.keys())
+            filtered_edges = [e for e in edges if e['source'] in filtered_node_ids and e['target'] in filtered_node_ids]
+            nodes = filtered_nodes
+            edges = filtered_edges
         
         return success_response({
             'nodes': list(nodes.values()),
-            'edges': edges
+            'edges': edges,
+            'stats': {
+                'total_nodes': len(nodes),
+                'total_edges': len(edges),
+                'relation_type_stats': relation_type_stats
+            }
         }, '获取关系网络成功')
     except Exception as e:
         return error_response(f'获取关系网络失败: {str(e)}', 500)
+
+
+@tags_relations_bp.route('/network/stats/<int:world_id>', methods=['GET'])
+def get_relation_network_stats(world_id):
+    """获取关系网络统计信息"""
+    try:
+        world = World.query.get(world_id)
+        if not world:
+            return error_response('世界不存在', 404)
+        
+        # 获取各类实体数量
+        character_count = Character.query.filter_by(world_id=world_id).count()
+        location_count = Location.query.filter_by(world_id=world_id).count()
+        item_count = Item.query.filter_by(world_id=world_id).count()
+        faction_count = Faction.query.filter_by(world_id=world_id).count()
+        
+        # 获取关系统计
+        relations = EntityRelation.query.filter_by(world_id=world_id, status='active').all()
+        relation_count = len(relations)
+        
+        # 按类型统计关系
+        relation_type_stats = {}
+        entity_type_stats = {'character': 0, 'location': 0, 'item': 0, 'faction': 0}
+        
+        for relation in relations:
+            relation_type_stats[relation.relation_type] = relation_type_stats.get(relation.relation_type, 0) + 1
+            entity_type_stats[relation.source_type] = entity_type_stats.get(relation.source_type, 0) + 1
+            entity_type_stats[relation.target_type] = entity_type_stats.get(relation.target_type, 0) + 1
+        
+        return success_response({
+            'entity_counts': {
+                'character': character_count,
+                'location': location_count,
+                'item': item_count,
+                'faction': faction_count,
+                'total': character_count + location_count + item_count + faction_count
+            },
+            'relation_count': relation_count,
+            'relation_type_stats': relation_type_stats,
+            'entity_involvement': entity_type_stats
+        }, '获取关系网络统计成功')
+    except Exception as e:
+        return error_response(f'获取关系网络统计失败: {str(e)}', 500)

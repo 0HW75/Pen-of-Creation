@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app import db
-from app.models import World, Character, Location, Faction, HistoricalEvent
-from datetime import datetime
+from app.models import World, Character, Location, Faction, HistoricalEvent, Item
+from datetime import datetime, timedelta
 
 worlds_bp = Blueprint('worlds', __name__)
 
@@ -160,11 +160,43 @@ def get_world_stats(world_id):
                 'message': '世界不存在'
             }), 404
         
-        # 统计各类数据数量
+        # 计算本周开始时间（周一）
+        today = datetime.utcnow()
+        week_start = today - timedelta(days=today.weekday())
+        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # 统计各类数据总数
         character_count = Character.query.filter_by(world_id=world_id).count()
         location_count = Location.query.filter_by(world_id=world_id).count()
         faction_count = Faction.query.filter_by(world_id=world_id).count()
         event_count = HistoricalEvent.query.filter_by(world_id=world_id).count()
+        item_count = Item.query.filter_by(world_id=world_id).count()
+        
+        # 统计本周新增数量
+        character_weekly = Character.query.filter(
+            Character.world_id == world_id,
+            Character.created_at >= week_start
+        ).count()
+        
+        location_weekly = Location.query.filter(
+            Location.world_id == world_id,
+            Location.created_at >= week_start
+        ).count()
+        
+        faction_weekly = Faction.query.filter(
+            Faction.world_id == world_id,
+            Faction.created_at >= week_start
+        ).count()
+        
+        event_weekly = HistoricalEvent.query.filter(
+            HistoricalEvent.world_id == world_id,
+            HistoricalEvent.created_at >= week_start
+        ).count()
+        
+        item_weekly = Item.query.filter(
+            Item.world_id == world_id,
+            Item.created_at >= week_start
+        ).count()
         
         return jsonify({
             'code': 200,
@@ -172,7 +204,15 @@ def get_world_stats(world_id):
                 'character_count': character_count,
                 'location_count': location_count,
                 'faction_count': faction_count,
-                'event_count': event_count
+                'event_count': event_count,
+                'item_count': item_count,
+                'weekly_new': {
+                    'characters': character_weekly,
+                    'locations': location_weekly,
+                    'factions': faction_weekly,
+                    'events': event_weekly,
+                    'items': item_weekly
+                }
             },
             'message': '获取世界统计信息成功'
         })
@@ -180,4 +220,90 @@ def get_world_stats(world_id):
         return jsonify({
             'code': 500,
             'message': f'获取世界统计信息失败: {str(e)}'
+        }), 500
+
+
+@worlds_bp.route('/<int:world_id>/activities', methods=['GET'])
+def get_world_activities(world_id):
+    """获取世界最近活动"""
+    try:
+        world = World.query.get(world_id)
+        if not world:
+            return jsonify({
+                'code': 404,
+                'message': '世界不存在'
+            }), 404
+        
+        # 获取最近创建的角色
+        characters = Character.query.filter_by(world_id=world_id).order_by(Character.created_at.desc()).limit(5).all()
+        # 获取最近创建的地点
+        locations = Location.query.filter_by(world_id=world_id).order_by(Location.created_at.desc()).limit(5).all()
+        # 获取最近创建的势力
+        factions = Faction.query.filter_by(world_id=world_id).order_by(Faction.created_at.desc()).limit(5).all()
+        # 获取最近创建的物品
+        items = Item.query.filter_by(world_id=world_id).order_by(Item.created_at.desc()).limit(5).all()
+        # 获取最近创建的事件
+        events = HistoricalEvent.query.filter_by(world_id=world_id).order_by(HistoricalEvent.created_at.desc()).limit(5).all()
+        
+        # 合并所有活动并按时间排序
+        activities = []
+        
+        for char in characters:
+            activities.append({
+                'id': f'char_{char.id}',
+                'type': 'character',
+                'action': 'create',
+                'name': char.name,
+                'created_at': char.created_at.isoformat()
+            })
+        
+        for loc in locations:
+            activities.append({
+                'id': f'loc_{loc.id}',
+                'type': 'location',
+                'action': 'create',
+                'name': loc.name,
+                'created_at': loc.created_at.isoformat()
+            })
+        
+        for faction in factions:
+            activities.append({
+                'id': f'faction_{faction.id}',
+                'type': 'faction',
+                'action': 'create',
+                'name': faction.name,
+                'created_at': faction.created_at.isoformat()
+            })
+        
+        for item in items:
+            activities.append({
+                'id': f'item_{item.id}',
+                'type': 'item',
+                'action': 'create',
+                'name': item.name,
+                'created_at': item.created_at.isoformat()
+            })
+        
+        for event in events:
+            activities.append({
+                'id': f'event_{event.id}',
+                'type': 'event',
+                'action': 'create',
+                'name': event.name,
+                'created_at': event.created_at.isoformat()
+            })
+        
+        # 按时间排序并取前10条
+        activities.sort(key=lambda x: x['created_at'], reverse=True)
+        activities = activities[:10]
+        
+        return jsonify({
+            'code': 200,
+            'data': activities,
+            'message': '获取最近活动成功'
+        })
+    except Exception as e:
+        return jsonify({
+            'code': 500,
+            'message': f'获取最近活动失败: {str(e)}'
         }), 500

@@ -38,7 +38,7 @@ def create_faction():
         sphere_of_influence=data.get('sphere_of_influence', ''),
         influence_level=data.get('influence_level', '区域'),
         establishment_time=data.get('establishment_time', ''),
-        member_size=data.get('member_size', 0),
+        member_size=data.get('member_size', ''),
         headquarters_location=data.get('headquarters_location', ''),
         economic_strength=data.get('economic_strength', ''),
         leadership_system=data.get('leadership_system', ''),

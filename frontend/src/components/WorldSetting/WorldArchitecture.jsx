@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card, Button, Table, Modal, Form, Input, Select, Tree,
   message, Space, Tag, Empty, Tabs, Row, Col, Statistic, Divider
@@ -14,7 +14,7 @@ const { TextArea } = Input;
 const { TabPane } = Tabs;
 
 // 维度管理组件
-const DimensionManagement = ({ worldId }) => {
+const DimensionManagement = ({ worldId, onRefresh }) => {
   const [dimensions, setDimensions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -62,6 +62,7 @@ const DimensionManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchDimensions();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingDimension ? '更新失败' : '创建失败');
     }
@@ -70,6 +71,7 @@ const DimensionManagement = ({ worldId }) => {
   const handleDelete = async (id) => {
     try {
       await worldSettingApi.deleteDimension(id);
+      if (onRefresh) onRefresh();
       message.success('删除成功');
       fetchDimensions();
     } catch (error) {
@@ -310,7 +312,7 @@ const DimensionManagement = ({ worldId }) => {
 };
 
 // 区域管理组件
-const RegionManagement = ({ worldId }) => {
+const RegionManagement = ({ worldId, onRefresh }) => {
   const [regions, setRegions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -378,6 +380,7 @@ const RegionManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchRegions();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingRegion ? '更新失败' : '创建失败');
     }
@@ -388,6 +391,7 @@ const RegionManagement = ({ worldId }) => {
       await worldSettingApi.deleteRegion(id);
       message.success('删除成功');
       fetchRegions();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -586,7 +590,7 @@ const RegionManagement = ({ worldId }) => {
 };
 
 // 天体管理组件
-const CelestialBodyManagement = ({ worldId }) => {
+const CelestialBodyManagement = ({ worldId, onRefresh }) => {
   const [celestialBodies, setCelestialBodies] = useState([]);
   const [dimensions, setDimensions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -642,6 +646,7 @@ const CelestialBodyManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchData();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingBody ? '更新失败' : '创建失败');
     }
@@ -652,6 +657,7 @@ const CelestialBodyManagement = ({ worldId }) => {
       await worldSettingApi.deleteCelestialBody(id);
       message.success('删除成功');
       fetchData();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -908,7 +914,7 @@ const CelestialBodyManagement = ({ worldId }) => {
 };
 
 // 自然法则管理组件
-const NaturalLawManagement = ({ worldId }) => {
+const NaturalLawManagement = ({ worldId, onRefresh }) => {
   const [laws, setLaws] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -955,6 +961,7 @@ const NaturalLawManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchLaws();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingLaw ? '更新失败' : '创建失败');
     }
@@ -965,6 +972,7 @@ const NaturalLawManagement = ({ worldId }) => {
       await worldSettingApi.deleteNaturalLaw(id);
       message.success('删除成功');
       fetchLaws();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -1218,7 +1226,7 @@ const WorldArchitecture = ({ worldId }) => {
     naturalLaws: 0,
   });
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
     if (worldId) {
       // 获取统计数据
       Promise.all([
@@ -1237,26 +1245,30 @@ const WorldArchitecture = ({ worldId }) => {
     }
   }, [worldId]);
 
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
   const tabItems = [
     {
       key: 'dimensions',
       label: '维度/位面',
-      children: <DimensionManagement worldId={worldId} />,
+      children: <DimensionManagement worldId={worldId} onRefresh={loadStats} />,
     },
     {
       key: 'regions',
       label: '地理区域',
-      children: <RegionManagement worldId={worldId} />,
+      children: <RegionManagement worldId={worldId} onRefresh={loadStats} />,
     },
     {
       key: 'celestial',
       label: '天体',
-      children: <CelestialBodyManagement worldId={worldId} />,
+      children: <CelestialBodyManagement worldId={worldId} onRefresh={loadStats} />,
     },
     {
       key: 'laws',
       label: '自然法则',
-      children: <NaturalLawManagement worldId={worldId} />,
+      children: <NaturalLawManagement worldId={worldId} onRefresh={loadStats} />,
     },
   ];
 

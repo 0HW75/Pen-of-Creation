@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card, Button, Table, Modal, Form, Input, Select, Tag,
   message, Space, Empty, Tabs, Row, Col, Statistic, InputNumber
@@ -254,7 +254,7 @@ const HistoricalEraManagement = ({ worldId }) => {
 };
 
 // ==================== 历史事件管理 ====================
-const HistoryEventManagement = ({ worldId }) => {
+const HistoryEventManagement = ({ worldId, quickCreateTarget, onUpdate, onRefresh }) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -278,6 +278,13 @@ const HistoryEventManagement = ({ worldId }) => {
   useEffect(() => {
     if (worldId) fetchEvents();
   }, [worldId]);
+
+  // 响应快速创建
+  useEffect(() => {
+    if (quickCreateTarget) {
+      showModal();
+    }
+  }, [quickCreateTarget]);
 
   const handleSubmit = async (values) => {
     try {
@@ -309,6 +316,8 @@ const HistoryEventManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchEvents();
+      if (onUpdate) onUpdate();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingEvent ? '更新失败' : '创建失败');
     }
@@ -319,6 +328,8 @@ const HistoryEventManagement = ({ worldId }) => {
       await historyTimelineApi.deleteHistoricalEvent(id);
       message.success('删除成功');
       fetchEvents();
+      if (onUpdate) onUpdate();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -827,7 +838,7 @@ const HistoricalFigureManagement = ({ worldId }) => {
 };
 
 // ==================== 主组件 ====================
-const HistoryTimeline = ({ worldId }) => {
+const HistoryTimeline = ({ worldId, quickCreateTarget, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('eras');
   const [stats, setStats] = useState({
     eras: 0,
@@ -835,7 +846,14 @@ const HistoryTimeline = ({ worldId }) => {
     figures: 0,
   });
 
+  // 当快速创建事件时，自动切换到事件标签页
   useEffect(() => {
+    if (quickCreateTarget) {
+      setActiveTab('events');
+    }
+  }, [quickCreateTarget]);
+
+  const loadStats = useCallback(() => {
     if (worldId) {
       Promise.all([
         historyTimelineApi.getHistoricalEras(worldId),
@@ -853,6 +871,10 @@ const HistoryTimeline = ({ worldId }) => {
     }
   }, [worldId]);
 
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
   const tabItems = [
     {
       key: 'eras',
@@ -862,7 +884,7 @@ const HistoryTimeline = ({ worldId }) => {
     {
       key: 'events',
       label: '历史事件',
-      children: <HistoryEventManagement worldId={worldId} />,
+      children: <HistoryEventManagement worldId={worldId} quickCreateTarget={quickCreateTarget} onUpdate={onUpdate} onRefresh={loadStats} />,
     },
     {
       key: 'figures',

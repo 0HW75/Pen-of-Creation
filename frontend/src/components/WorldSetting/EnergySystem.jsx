@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card, Button, Table, Modal, Form, Input, Select, Tag,
   message, Space, Empty, Tabs, Row, Col, Statistic
@@ -13,7 +13,7 @@ import { energySocietyApi } from '../../services/api';
 const { TextArea } = Input;
 
 // 能量体系管理组件
-const EnergySystemManagement = ({ worldId }) => {
+const EnergySystemManagement = ({ worldId, onRefresh }) => {
   const [energySystems, setEnergySystems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -67,6 +67,7 @@ const EnergySystemManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchEnergySystems();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingSystem ? '更新失败' : '创建失败');
     }
@@ -77,6 +78,7 @@ const EnergySystemManagement = ({ worldId }) => {
       await energySocietyApi.deleteEnergySystem(id);
       message.success('删除成功');
       fetchEnergySystems();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -240,7 +242,7 @@ const EnergySystemManagement = ({ worldId }) => {
 };
 
 // 能量形态管理组件
-const EnergyFormManagement = ({ worldId }) => {
+const EnergyFormManagement = ({ worldId, onRefresh }) => {
   const [energyForms, setEnergyForms] = useState([]);
   const [energySystems, setEnergySystems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -284,6 +286,7 @@ const EnergyFormManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchData();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingForm ? '更新失败' : '创建失败');
     }
@@ -294,6 +297,7 @@ const EnergyFormManagement = ({ worldId }) => {
       await energySocietyApi.deleteEnergyForm(id);
       message.success('删除成功');
       fetchData();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -472,7 +476,7 @@ const EnergyFormManagement = ({ worldId }) => {
 };
 
 // 力量等级管理组件
-const PowerLevelManagement = ({ worldId }) => {
+const PowerLevelManagement = ({ worldId, onRefresh }) => {
   const [powerLevels, setPowerLevels] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -519,6 +523,7 @@ const PowerLevelManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchPowerLevels();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingLevel ? '更新失败' : '创建失败');
     }
@@ -529,6 +534,7 @@ const PowerLevelManagement = ({ worldId }) => {
       await energySocietyApi.deletePowerLevel(id);
       message.success('删除成功');
       fetchPowerLevels();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -683,7 +689,7 @@ const PowerLevelManagement = ({ worldId }) => {
 };
 
 // 力量代价管理组件
-const PowerCostManagement = ({ worldId }) => {
+const PowerCostManagement = ({ worldId, onRefresh }) => {
   const [powerCosts, setPowerCosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -720,6 +726,7 @@ const PowerCostManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchPowerCosts();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingCost ? '更新失败' : '创建失败');
     }
@@ -730,6 +737,7 @@ const PowerCostManagement = ({ worldId }) => {
       await energySocietyApi.deletePowerCost(id);
       message.success('删除成功');
       fetchPowerCosts();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -920,7 +928,7 @@ const PowerCostManagement = ({ worldId }) => {
 };
 
 // 通用技能管理组件
-const CommonSkillManagement = ({ worldId }) => {
+const CommonSkillManagement = ({ worldId, onRefresh }) => {
   const [commonSkills, setCommonSkills] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -967,6 +975,7 @@ const CommonSkillManagement = ({ worldId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchCommonSkills();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingSkill ? '更新失败' : '创建失败');
     }
@@ -977,6 +986,7 @@ const CommonSkillManagement = ({ worldId }) => {
       await energySocietyApi.deleteCommonSkill(id);
       message.success('删除成功');
       fetchCommonSkills();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -1167,7 +1177,7 @@ const EnergySystem = ({ worldId }) => {
     commonSkills: 0,
   });
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
     if (worldId) {
       // 获取统计数据
       Promise.all([
@@ -1188,31 +1198,35 @@ const EnergySystem = ({ worldId }) => {
     }
   }, [worldId]);
 
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
   const tabItems = [
     {
       key: 'systems',
       label: '能量体系',
-      children: <EnergySystemManagement worldId={worldId} />,
+      children: <EnergySystemManagement worldId={worldId} onRefresh={loadStats} />,
     },
     {
       key: 'forms',
       label: '能量形态',
-      children: <EnergyFormManagement worldId={worldId} />,
+      children: <EnergyFormManagement worldId={worldId} onRefresh={loadStats} />,
     },
     {
       key: 'levels',
       label: '力量等级',
-      children: <PowerLevelManagement worldId={worldId} />,
+      children: <PowerLevelManagement worldId={worldId} onRefresh={loadStats} />,
     },
     {
       key: 'costs',
       label: '力量代价',
-      children: <PowerCostManagement worldId={worldId} />,
+      children: <PowerCostManagement worldId={worldId} onRefresh={loadStats} />,
     },
     {
       key: 'skills',
       label: '通用技能',
-      children: <CommonSkillManagement worldId={worldId} />,
+      children: <CommonSkillManagement worldId={worldId} onRefresh={loadStats} />,
     },
   ];
 

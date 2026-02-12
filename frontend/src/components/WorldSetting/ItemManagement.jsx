@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card, Button, Table, Modal, Form, Input, Select,
   message, Space, Tag, Empty, Tabs, Row, Col, Statistic, Descriptions, InputNumber
@@ -13,7 +13,7 @@ import { itemApi } from '../../services/api';
 const { TextArea } = Input;
 
 // 通用物品管理组件
-const GeneralItemManagement = ({ worldId, projectId }) => {
+const GeneralItemManagement = ({ worldId, projectId, quickCreateTarget, onUpdate, onRefresh }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -38,6 +38,13 @@ const GeneralItemManagement = ({ worldId, projectId }) => {
   useEffect(() => {
     if (worldId) fetchItems();
   }, [worldId, projectId]);
+
+  // 响应快速创建
+  useEffect(() => {
+    if (quickCreateTarget) {
+      showModal();
+    }
+  }, [quickCreateTarget]);
 
   const handleSubmit = async (values) => {
     try {
@@ -70,6 +77,9 @@ const GeneralItemManagement = ({ worldId, projectId }) => {
       setModalVisible(false);
       form.resetFields();
       fetchItems();
+      console.log('ItemManagement: 调用 onUpdate');
+      if (onUpdate) onUpdate();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error(editingItem ? '更新失败' : '创建失败');
     }
@@ -80,6 +90,8 @@ const GeneralItemManagement = ({ worldId, projectId }) => {
       await itemApi.deleteItem(id);
       message.success('删除成功');
       fetchItems();
+      if (onUpdate) onUpdate();
+      if (onRefresh) onRefresh();
     } catch (error) {
       message.error('删除失败');
     }
@@ -475,7 +487,7 @@ const GeneralItemManagement = ({ worldId, projectId }) => {
 };
 
 // 物品资源管理主组件
-const ItemManagement = ({ worldId, projectId }) => {
+const ItemManagement = ({ worldId, projectId, quickCreateTarget, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [stats, setStats] = useState({
     total: 0,
@@ -484,7 +496,7 @@ const ItemManagement = ({ worldId, projectId }) => {
     consumables: 0,
   });
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
     if (worldId) {
       itemApi.getItems(projectId, worldId).then((response) => {
         const data = response.data || [];
@@ -498,11 +510,15 @@ const ItemManagement = ({ worldId, projectId }) => {
     }
   }, [worldId, projectId]);
 
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
   const tabItems = [
     {
       key: 'general',
       label: '通用物品',
-      children: <GeneralItemManagement worldId={worldId} projectId={projectId} />,
+      children: <GeneralItemManagement worldId={worldId} projectId={projectId} quickCreateTarget={quickCreateTarget} onUpdate={onUpdate} onRefresh={loadStats} />,
     },
     {
       key: 'equipment',

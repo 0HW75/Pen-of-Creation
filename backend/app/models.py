@@ -470,7 +470,7 @@ class Faction(db.Model):
     sphere_of_influence = db.Column(db.Text, default='')
     influence_level = db.Column(db.String(50), default='区域')
     establishment_time = db.Column(db.String(255), default='')
-    member_size = db.Column(db.Integer, default=0)
+    member_size = db.Column(db.String(255), default='')
     headquarters_location = db.Column(db.String(255), default='')
     economic_strength = db.Column(db.Text, default='')
     leadership_system = db.Column(db.Text, default='')
