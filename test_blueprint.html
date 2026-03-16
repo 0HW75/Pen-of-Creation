@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Blueprint Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            padding: 20px;
+            background: #f0f2f5;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .outline-content {
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .outline-content h1 {
+            color: #1a1a1a;
+            font-size: 28px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e8e8e8;
+        }
+        .outline-content h2 {
+            color: #2c3e50;
+            font-size: 20px;
+            margin-top: 28px;
+            margin-bottom: 16px;
+            padding-left: 12px;
+            border-left: 4px solid #1890ff;
+        }
+        .outline-content p {
+            color: #333;
+            font-size: 15px;
+            line-height: 1.8;
+            margin-bottom: 16px;
+            text-align: justify;
+        }
+        .outline-content ol {
+            padding-left: 24px;
+            margin-bottom: 16px;
+        }
+        .outline-content li {
+            color: #333;
+            font-size: 15px;
+            line-height: 1.8;
+            margin-bottom: 8px;
+        }
+        .outline-content pre {
+            background: #f6f8fa;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+            color: #24292e;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #1a1a1a;
+            margin: 0;
+            font-size: 24px;
+        }
+        .toggle-btn {
+            background: #1890ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .toggle-btn:hover {
+            background: #40a9ff;
+        }
+        .toggle-btn.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .toggle-btn.secondary:hover {
+            background: #d9d9d9;
+        }
+        .section-tag {
+            display: inline-block;
+            background: #e6f7ff;
+            color: #1890ff;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .card-grid {
+            display: grid;
+            gap: 16px;
+        }
+        .info-card {
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e8e8e8;
+        }
+        .info-card-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        .info-card-content {
+            color: #555;
+            line-height: 1.7;
+        }
+        .json-view {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        .json-key {
+            color: #9cdcfe;
+        }
+        .json-string {
+            color: #ce9178;
+        }
+        .json-number {
+            color: #b5cea8;
+        }
+        .json-boolean {
+            color: #569cd6;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // 复制 parseOutlineContent 函数
+        const parseOutlineContent = (content) => {
+            if (!content) return '';
+
+            try {
+                // 尝试解析JSON格式
+                const parsed = JSON.parse(content);
+
+                // 如果有 ai_generated_content 字段，优先使用
+                if (parsed.ai_generated_content) {
+                    return parsed.ai_generated_content;
+                }
+
+                // 构建格式化的 Markdown 内容
+                let markdownContent = '';
+
+                // 添加标题
+                if (parsed.title) {
+                    markdownContent += `# ${parsed.title}\n\n`;
+                }
+
+                // 添加核心冲突
+                if (parsed.core_conflict) {
+                    markdownContent += `## 核心冲突\n\n${parsed.core_conflict}\n\n`;
+                }
+
+                // 添加内容/主线剧情
+                if (parsed.content) {
+                    markdownContent += `## 内容概要\n\n${parsed.content}\n\n`;
+                }
+                if (parsed.main_plot) {
+                    markdownContent += `## 主线剧情\n\n${parsed.main_plot}\n\n`;
+                }
+
+                // 添加次要情节
+                if (parsed.sub_plots && Array.isArray(parsed.sub_plots) && parsed.sub_plots.length > 0) {
+                    markdownContent += `## 次要情节\n\n`;
+                    parsed.sub_plots.forEach((plot, index) => {
+                        markdownContent += `${index + 1}. ${plot}\n`;
+                    });
+                    markdownContent += `\n`;
+                }
+
+                // 添加关键事件
+                if (parsed.key_events && Array.isArray(parsed.key_events) && parsed.key_events.length > 0) {
+                    markdownContent += `## 关键事件\n\n`;
+                    parsed.key_events.forEach((event, index) => {
+                        markdownContent += `${index + 1}. ${event}\n`;
+                    });
+                    markdownContent += `\n`;
+                }
+
+                // 添加角色弧线
+                if (parsed.character_arcs && Array.isArray(parsed.character_arcs) && parsed.character_arcs.length > 0) {
+                    markdownContent += `## 角色弧线\n\n`;
+                    parsed.character_arcs.forEach((arc, index) => {
+                        markdownContent += `${index + 1}. ${arc}\n`;
+                    });
+                    markdownContent += `\n`;
+                }
+
+                // 添加主题
+                if (parsed.theme) {
+                    markdownContent += `## 主题\n\n${parsed.theme}\n\n`;
+                }
+
+                // 如果以上字段都没有，返回原始内容的字符串表示
+                if (!markdownContent) {
+                    // 遍历所有字段并显示
+                    Object.keys(parsed).forEach(key => {
+                        const value = parsed[key];
+                        if (typeof value === 'string' && value.trim()) {
+                            markdownContent += `## ${key}\n\n${value}\n\n`;
+                        } else if (Array.isArray(value) && value.length > 0) {
+                            markdownContent += `## ${key}\n\n`;
+                            value.forEach((item, index) => {
+                                markdownContent += `${index + 1}. ${item}\n`;
+                            });
+                            markdownContent += `\n`;
+                        }
+                    });
+                }
+
+                return markdownContent || content;
+            } catch (e) {
+                // 不是JSON，直接返回原文
+                console.log('Parse error:', e.message);
+                return content;
+            }
+        };
+
+        // 将 Markdown 渲染为 React 元素
+        const MarkdownRenderer = ({ content }) => {
+            const lines = content.split('\n');
+            const elements = [];
+            let currentList = [];
+            let inList = false;
+
+            const flushList = () => {
+                if (currentList.length > 0) {
+                    elements.push(
+                        <ol key={`list-${elements.length}`}>
+                            {currentList.map((item, idx) => (
+                                <li key={idx}>{item}</li>
+                            ))}
+                        </ol>
+                    );
+                    currentList = [];
+                    inList = false;
+                }
+            };
+
+            lines.forEach((line, index) => {
+                const trimmed = line.trim();
+
+                if (trimmed.startsWith('# ')) {
+                    flushList();
+                    elements.push(<h1 key={index}>{trimmed.substring(2)}</h1>);
+                } else if (trimmed.startsWith('## ')) {
+                    flushList();
+                    elements.push(<h2 key={index}>{trimmed.substring(3)}</h2>);
+                } else if (/^\d+\./.test(trimmed)) {
+                    inList = true;
+                    currentList.push(trimmed.replace(/^\d+\.\s*/, ''));
+                } else if (trimmed === '') {
+                    if (inList) {
+                        flushList();
+                    }
+                } else {
+                    flushList();
+                    elements.push(<p key={index}>{trimmed}</p>);
+                }
+            });
+
+            flushList();
+
+            return <>{elements}</>;
+        };
+
+        // 语法高亮 JSON
+        const formatJSON = (json) => {
+            try {
+                const obj = JSON.parse(json);
+                return JSON.stringify(obj, null, 2)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+                    .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+                    .replace(/: (\d+)/g, ': <span class="json-number">$1</span>')
+                    .replace(/: (true|false)/g, ': <span class="json-boolean">$1</span>');
+            } catch (e) {
+                return json;
+            }
+        };
+
+        // 卡片式布局渲染
+        const CardRenderer = ({ content }) => {
+            const lines = content.split('\n');
+            const cards = [];
+            let currentCard = null;
+            let currentList = [];
+
+            const flushCard = () => {
+                if (currentCard) {
+                    if (currentList.length > 0) {
+                        currentCard.content = (
+                            <ol>
+                                {currentList.map((item, idx) => (
+                                    <li key={idx}>{item}</li>
+                                ))}
+                            </ol>
+                        );
+                    }
+                    cards.push(currentCard);
+                    currentCard = null;
+                    currentList = [];
+                }
+            };
+
+            lines.forEach((line) => {
+                const trimmed = line.trim();
+
+                if (trimmed.startsWith('# ')) {
+                    flushCard();
+                    // 主标题单独处理
+                } else if (trimmed.startsWith('## ')) {
+                    flushCard();
+                    currentCard = {
+                        title: trimmed.substring(3),
+                        content: null
+                    };
+                } else if (/^\d+\./.test(trimmed)) {
+                    currentList.push(trimmed.replace(/^\d+\.\s*/, ''));
+                } else if (trimmed !== '' && currentCard && !currentCard.content) {
+                    currentCard.content = <p>{trimmed}</p>;
+                }
+            });
+
+            flushCard();
+
+            return (
+                <div className="card-grid">
+                    {cards.map((card, idx) => (
+                        <div key={idx} className="info-card">
+                            <div className="info-card-title">{card.title}</div>
+                            <div className="info-card-content">{card.content}</div>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        // 测试数据
+        const testContent = JSON.stringify({
+            "title": "双界工程：举国开发魔法纪元",
+            "core_conflict": "以陈启和国家为代表的地球文明，在系统性、和平开发魔法世界'艾瑟兰'的过程中，与艾瑟兰内部守旧势力、既得利益集团、潜藏的远古灾厄以及觊觎两个世界通道的其他地球国家或组织，产生的关于发展理念、资源分配、文明主导权与生存安全的全方位、多层次冲突。核心是'有序共赢开发'与'混乱掠夺/保守封闭'之间的路线之争。",
+            "content": "普通历史系毕业生陈启，在整理祖宅时意外触碰古物，获得了每周可双向穿越地球与魔法世界'艾瑟兰'的能力。最初，他只是利用两界差异进行倒买倒卖，改善生活。但随着对艾瑟兰了解的深入，他意识到这个魔法世界的巨大战略价值，以及其社会结构的落后性。陈启逐渐从一个投机者转变为两个世界文明交流的桥梁。他引入现代科技与管理理念，帮助艾瑟兰本地势力发展，同时也将魔法资源与知识引入地球，推动科技革命。然而，他的行动引起了艾瑟兰保守派贵族、地球野心家以及异界神明的注意。陈启必须在复杂的政治博弈中，维护两个世界的和平，推动文明的共同进步，最终建立起一个跨世界的合作体系。"
+        });
+
+        function App() {
+            const [viewMode, setViewMode] = useState('card'); // 'card', 'markdown', 'json'
+
+            const parsedContent = parseOutlineContent(testContent);
+
+            const renderContent = () => {
+                switch (viewMode) {
+                    case 'json':
+                        return (
+                            <div className="json-view"
+                                 dangerouslySetInnerHTML={{ __html: formatJSON(testContent) }} />
+                        );
+                    case 'markdown':
+                        return <MarkdownRenderer content={parsedContent} />;
+                    case 'card':
+                    default:
+                        return (
+                            <>
+                                <h1>{JSON.parse(testContent).title}</h1>
+                                <CardRenderer content={parsedContent} />
+                            </>
+                        );
+                }
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>📚 大纲内容展示</h1>
+                        <div>
+                            <button
+                                className={`toggle-btn ${viewMode === 'card' ? '' : 'secondary'}`}
+                                onClick={() => setViewMode('card')}
+                                style={{ marginRight: 8 }}
+                            >
+                                卡片视图
+                            </button>
+                            <button
+                                className={`toggle-btn ${viewMode === 'markdown' ? '' : 'secondary'}`}
+                                onClick={() => setViewMode('markdown')}
+                                style={{ marginRight: 8 }}
+                            >
+                                文档视图
+                            </button>
+                            <button
+                                className={`toggle-btn ${viewMode === 'json' ? '' : 'secondary'}`}
+                                onClick={() => setViewMode('json')}
+                            >
+                                JSON源码
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="outline-content">
+                        {renderContent()}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+/* 大纲内容渲染器样式 */
+
+/* 通用样式 */
+.outline-content-renderer {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.empty-content {
+  color: #999;
+  text-align: center;
+  padding: 40px 20px;
+  font-style: italic;
+}
+
+/* AI 内容卡片 */
+.outline-ai-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.outline-ai-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* 卡片头部 */
+.outline-card-header {
+  background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);
+  padding: 20px 24px;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.outline-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ai-icon {
+  font-size: 22px;
+}
+
+/* 卡片内容 */
+.outline-card-body {
+  padding: 24px;
+  line-height: 1.8;
+  color: #333;
+  background: #fff;
+}
+
+.ai-content-scrollable {
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.ai-content-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ai-content-scrollable::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.ai-content-scrollable::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.ai-content-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Markdown 内容样式 */
+.ai-content-scrollable h1 {
+  font-size: 1.6em;
+  margin-top: 0;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e8e8e8;
+  color: #1a1a1a;
+}
+
+.ai-content-scrollable h2 {
+  font-size: 1.3em;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  padding-left: 12px;
+  border-left: 4px solid #1890ff;
+  color: #2c3e50;
+}
+
+.ai-content-scrollable h3 {
+  font-size: 1.1em;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #34495e;
+}
+
+.ai-content-scrollable p {
+  margin-bottom: 14px;
+  line-height: 1.8;
+  text-align: justify;
+}
+
+.ai-content-scrollable ul,
+.ai-content-scrollable ol {
+  margin-bottom: 16px;
+  padding-left: 24px;
+}
+
+.ai-content-scrollable li {
+  margin-bottom: 8px;
+  line-height: 1.7;
+}
+
+.ai-content-scrollable li p {
+  margin: 0;
+}
+
+.ai-content-scrollable blockquote {
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: #f6f8fa;
+  border-left: 4px solid #1890ff;
+  color: #555;
+}
+
+.ai-content-scrollable code {
+  background: #f6f8fa;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.ai-content-scrollable pre {
+  background: #f6f8fa;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+.ai-content-scrollable pre code {
+  background: none;
+  padding: 0;
+}
+
+/* ========== 打印样式 ========== */
+@media print {
+  .outline-ai-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  .outline-card-header {
+    background: #f5f5f5 !important;
+    color: #333 !important;
+  }
+
+  .outline-card-title {
+    color: #333 !important;
+  }
+
+  .ai-content-scrollable {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* ========== 强制浅色主题 ========== */
+/* 移除暗色主题支持，强制使用浅色背景 */

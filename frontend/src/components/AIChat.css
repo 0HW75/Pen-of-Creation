@@ -1,0 +1,790 @@
+.ai-chat-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.ai-chat-modal {
+  background-color: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 1000px;
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.ai-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8e8e8;
+  background-color: #fafafa;
+}
+
+.ai-chat-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.ai-chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.batch-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #666;
+  user-select: none;
+}
+
+.batch-mode-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.ai-chat-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.ai-chat-close-btn:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.ai-chat-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 左侧选择区域 */
+.ai-chat-sidebar {
+  width: 280px;
+  border-right: 1px solid #e8e8e8;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.sidebar-header h4 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.batch-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #1890ff;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  background-color: #e6f7ff;
+  border-radius: 4px;
+}
+
+.clear-batch-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+  border: 1px solid #1890ff;
+  background-color: white;
+  color: #1890ff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-batch-btn:hover {
+  background-color: #1890ff;
+  color: white;
+}
+
+.target-type-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.target-type-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  background-color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.target-type-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.tree-loading {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
+
+.target-type-btn.active {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  color: white;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+/* 树形选择样式 */
+.tree-item {
+  margin-bottom: 4px;
+}
+
+.tree-item-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 8px;
+}
+
+.tree-item-header:hover {
+  background-color: #e6f7ff;
+}
+
+.tree-item-header.selected {
+  background-color: #1890ff;
+  color: white;
+}
+
+.tree-item-header.batch-selected {
+  background-color: #f6ffed;
+  border: 1px solid #52c41a;
+}
+
+.batch-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.tree-item-header.selected .tree-item-title,
+.tree-item-header.selected .tree-item-icon {
+  color: white;
+}
+
+.tree-item-icon {
+  font-size: 14px;
+  color: #999;
+}
+
+.tree-item-title {
+  flex: 1;
+  font-size: 13px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-item-expand {
+  font-size: 12px;
+  color: #999;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.tree-item-expand:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.tree-item-expand.expanded {
+  transform: rotate(90deg);
+}
+
+.tree-children {
+  margin-left: 20px;
+  padding-left: 12px;
+  border-left: 2px solid #e8e8e8;
+}
+
+/* 内容预览 */
+.content-preview {
+  border-top: 1px solid #e8e8e8;
+  background-color: #fafafa;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
+
+.preview-header:hover {
+  background-color: #f0f0f0;
+}
+
+.preview-icon {
+  font-size: 14px;
+}
+
+.preview-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.preview-toggle {
+  font-size: 10px;
+  color: #999;
+  transition: transform 0.2s ease;
+}
+
+.preview-toggle.expanded {
+  transform: rotate(180deg);
+}
+
+.preview-body {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 12px 16px;
+  background-color: #fff;
+  border-top: 1px solid #e8e8e8;
+}
+
+.preview-title-bar {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1890ff;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.preview-field {
+  margin-bottom: 12px;
+}
+
+.preview-field:last-child {
+  margin-bottom: 0;
+}
+
+.preview-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.preview-field-value {
+  font-size: 12px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.preview-field-value ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.preview-field-value li {
+  margin-bottom: 2px;
+}
+
+.preview-empty {
+  color: #999;
+  font-style: italic;
+}
+
+/* 选中项信息 */
+.selected-info {
+  padding: 12px 16px;
+  border-top: 1px solid #e8e8e8;
+  background-color: #f0f7ff;
+}
+
+.selected-info-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.selected-info-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1890ff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 右侧聊天区域 */
+.ai-chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f5f5;
+}
+
+.ai-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat-message {
+  display: flex;
+  gap: 12px;
+  max-width: 85%;
+}
+
+.chat-message.user-message {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.chat-message.assistant-message {
+  align-self: flex-start;
+}
+
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-message .message-avatar {
+  background-color: #1890ff;
+}
+
+.assistant-message .message-avatar {
+  background-color: #52c41a;
+}
+
+.message-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message-header {
+  font-size: 12px;
+  color: #999;
+}
+
+.user-message .message-header {
+  text-align: right;
+}
+
+.message-bubble {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.user-message .message-bubble {
+  background-color: #1890ff;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.assistant-message .message-bubble {
+  background-color: white;
+  color: #333;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 输入区域 */
+.ai-chat-input-area {
+  padding: 16px 20px;
+  background-color: white;
+  border-top: 1px solid #e8e8e8;
+}
+
+.ai-chat-input-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.ai-chat-textarea {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: none;
+  min-height: 60px;
+  max-height: 120px;
+  font-family: inherit;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+}
+
+.ai-chat-textarea:focus {
+  outline: none;
+  border-color: #1890ff;
+  box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
+}
+
+.ai-chat-send-btn {
+  padding: 12px 24px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-chat-send-btn:hover:not(:disabled) {
+  background-color: #40a9ff;
+}
+
+.ai-chat-send-btn:disabled {
+  background-color: #d9d9d9;
+  cursor: not-allowed;
+}
+
+.ai-chat-send-btn.batch-start-btn {
+  background-color: #52c41a;
+  padding: 12px 20px;
+  font-size: 13px;
+}
+
+.ai-chat-send-btn.batch-start-btn:hover:not(:disabled) {
+  background-color: #73d13d;
+}
+
+/* 批量修改进度 */
+.batch-progress {
+  padding: 16px;
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.batch-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.batch-progress-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #52c41a;
+}
+
+.batch-progress-count {
+  font-size: 13px;
+  color: #666;
+}
+
+.batch-progress-bar {
+  height: 8px;
+  background-color: #e8e8e8;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.batch-progress-fill {
+  height: 100%;
+  background-color: #52c41a;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.batch-progress-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.batch-control-btn {
+  padding: 6px 12px;
+  border: 1px solid #d9d9d9;
+  background-color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.batch-control-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.batch-control-btn.continue {
+  background-color: #52c41a;
+  border-color: #52c41a;
+  color: white;
+}
+
+.batch-control-btn.continue:hover {
+  background-color: #73d13d;
+}
+
+.batch-control-btn.cancel {
+  background-color: #ff4d4f;
+  border-color: #ff4d4f;
+  color: white;
+}
+
+.batch-control-btn.cancel:hover {
+  background-color: #ff7875;
+}
+
+.batch-processing-info {
+  padding: 16px;
+  background-color: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.batch-current-item {
+  font-size: 14px;
+  color: #1890ff;
+  font-weight: 500;
+}
+
+/* 消息操作按钮 */
+.message-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #e8e8e8;
+}
+
+.message-action-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.message-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.message-action-btn.apply-btn {
+  background-color: #52c41a;
+  color: white;
+}
+
+.message-action-btn.apply-btn:hover:not(:disabled) {
+  background-color: #73d13d;
+}
+
+.message-action-btn.continue-btn {
+  background-color: #1890ff;
+  color: white;
+}
+
+.message-action-btn.continue-btn:hover:not(:disabled) {
+  background-color: #40a9ff;
+}
+
+.message-action-btn.discard-btn {
+  background-color: #f5f5f5;
+  color: #666;
+  border: 1px solid #d9d9d9;
+}
+
+.message-action-btn.discard-btn:hover:not(:disabled) {
+  background-color: #ff4d4f;
+  color: white;
+  border-color: #ff4d4f;
+}
+
+/* 空状态 */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  padding: 40px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* 加载状态 */
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  align-self: flex-start;
+}
+
+.loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #1890ff;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .ai-chat-modal {
+    width: 95%;
+    height: 90vh;
+  }
+
+  .ai-chat-sidebar {
+    width: 200px;
+  }
+
+  .chat-message {
+    max-width: 95%;
+  }
+}
