@@ -181,6 +181,15 @@ class GenerationStrategySelector:
                 'entry_conditions', 'physical_properties',
                 'time_flow', 'special_rules', 'magic_concentration'
             ]
+        },
+        'relation': {
+            'default': GenerationStrategy.DETAILED,
+            'simple_fields': ['name', 'relation_type', 'description', 'participants'],
+            'detailed_fields': [
+                'name', 'relation_type', 'description', 'participants',
+                'relation_nature', 'relation_strength', 'formation_reason',
+                'development_history', 'current_state', 'key_events'
+            ]
         }
     }
     

@@ -2398,7 +2398,7 @@ class EntityRelation(db.Model):
 class AIGenerationCheckpoint(db.Model):
     """AI生成检查点表 - 存储生成过程的中间状态"""
     __tablename__ = 'ai_generation_checkpoint'
-    
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     session_id = db.Column(db.String(64), nullable=False, index=True)
     project_id = db.Column(db.Integer, nullable=False)
@@ -2411,7 +2411,9 @@ class AIGenerationCheckpoint(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     expires_at = db.Column(db.DateTime, nullable=True)  # 过期时间
-    
+    parent_checkpoint_id = db.Column(db.Integer, nullable=True)  # 关联的Step1检查点ID
+    name = db.Column(db.String(255), nullable=True)  # 检查点名称
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -2425,7 +2427,9 @@ class AIGenerationCheckpoint(db.Model):
             'status': self.status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'expires_at': self.expires_at.isoformat() if self.expires_at else None
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'parent_checkpoint_id': self.parent_checkpoint_id,
+            'name': self.name
         }
 
 

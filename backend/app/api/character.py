@@ -63,6 +63,7 @@ def create_character():
             name=data['name'],
             world_id=data.get('world_id'),
             project_id=project_id,
+            description=data.get('description', ''),
             alternative_names=data.get('alternative_names', ''),
             character_type=data.get('character_type', '配角'),
             role_type=data.get('role_type', '配角'),

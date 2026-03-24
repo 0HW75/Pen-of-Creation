@@ -32,6 +32,7 @@ def create_faction():
         name=data['name'],
         project_id=project_id,
         world_id=world_id,
+        description=data.get('description', ''),
         faction_type=data.get('faction_type', '国家'),
         faction_status=data.get('faction_status', '活跃'),
         logo=data.get('logo', ''),

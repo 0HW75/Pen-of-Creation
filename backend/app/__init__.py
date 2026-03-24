@@ -76,7 +76,7 @@ def create_app():
     # 导入并注册蓝图
     from app.api import api_bp
     # 导入 API 模块以注册路由
-    from app.api import project, chapter, character, location, item, faction, relationship, export, ai, analysis, blueprint, setting, worldview_generation
+    from app.api import project, chapter, character, location, item, faction, relationship, export, ai, analysis, blueprint, setting, worldview_generation, worldview_extraction, worldview_storage, worldview_validation
     app.register_blueprint(api_bp, url_prefix='/api')
     
     # 创建数据库表

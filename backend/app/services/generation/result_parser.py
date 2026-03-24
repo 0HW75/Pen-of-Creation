@@ -290,6 +290,12 @@ class ResultParser:
                 'name', 'dimension_type', 'description', 'entry_conditions',
                 'physical_properties', 'time_flow', 'spatial_hierarchy',
                 'special_rules', 'magic_concentration', 'element_activity', 'gravity'
+            ],
+            'relation': [
+                'name', 'relation_type', 'description', 'participants',
+                'relation_nature', 'relation_strength', 'formation_reason',
+                'development_history', 'current_state', 'key_events',
+                'influence_scope', 'potential_changes'
             ]
         }
         
@@ -339,9 +345,10 @@ class ResultParser:
             'civilization': ['name', 'civilization_type'],
             'historical_event': ['name', 'event_type'],
             'region': ['name', 'region_type'],
-            'dimension': ['name', 'dimension_type']
+            'dimension': ['name', 'dimension_type'],
+            'relation': ['name', 'relation_type']
         }
-        
+
         return required_map.get(entity_type, ['name'])
 
 

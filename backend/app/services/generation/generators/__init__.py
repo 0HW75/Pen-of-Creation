@@ -11,6 +11,7 @@ from .civilization_generator import CivilizationGenerator
 from .historical_event_generator import HistoricalEventGenerator
 from .region_generator import RegionGenerator
 from .dimension_generator import DimensionGenerator
+from .relation_generator import RelationGenerator
 
 __all__ = [
     'BaseGenerator',
@@ -22,5 +23,6 @@ __all__ = [
     'CivilizationGenerator',
     'HistoricalEventGenerator',
     'RegionGenerator',
-    'DimensionGenerator'
+    'DimensionGenerator',
+    'RelationGenerator'
 ]

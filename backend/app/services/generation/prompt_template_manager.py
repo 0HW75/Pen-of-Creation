@@ -880,6 +880,72 @@ class PromptTemplateManager:
 }}""",
                 'version': 1,
                 'is_default': True
+            },
+            {
+                'entity_type': 'relation',
+                'template_name': 'simple_relation',
+                'strategy': 'simple',
+                'description': '简单关系网络生成模板',
+                'variables': ['world_info', 'prompt', 'style'],
+                'prompt_template': """基于以下世界观信息，创建一个简单的关系网络设定：
+
+世界观信息：
+{world_info}
+
+用户要求：
+{prompt}
+
+风格要求：
+{style}
+
+请生成一个关系网络，包含以下字段（以JSON格式返回）：
+{{
+    "name": "关系网络名称",
+    "relation_type": "关系类型（角色关系/势力关系/物品关系等）",
+    "description": "关系网络描述",
+    "participants": "参与实体（角色/势力等）",
+    "relation_nature": "关系性质（友好/敌对/中立/复杂等）"
+}}""",
+                'version': 1,
+                'is_default': True
+            },
+            {
+                'entity_type': 'relation',
+                'template_name': 'detailed_relation',
+                'strategy': 'detailed',
+                'description': '详细关系网络生成模板',
+                'variables': ['world_info', 'prompt', 'style', 'related_entities'],
+                'prompt_template': """基于以下世界观信息，创建一个详细的关系网络设定：
+
+世界观信息：
+{world_info}
+
+用户要求：
+{prompt}
+
+风格要求：
+{style}
+
+相关实体信息：
+{related_entities}
+
+请生成一个完整的关系网络设定，包含以下字段（以JSON格式返回）：
+{{
+    "name": "关系网络名称",
+    "relation_type": "关系类型（角色关系/势力关系/物品关系等）",
+    "description": "关系网络描述",
+    "participants": ["参与者1", "参与者2"],
+    "relation_nature": "关系性质（友好/敌对/中立/复杂等）",
+    "relation_strength": 5,
+    "formation_reason": "关系形成原因",
+    "development_history": "关系发展历程",
+    "current_state": "当前状态",
+    "key_events": "关键事件",
+    "influence_scope": "影响范围",
+    "potential_changes": "潜在变化"
+}}""",
+                'version': 1,
+                'is_default': True
             }
         ]
 

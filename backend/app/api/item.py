@@ -37,6 +37,7 @@ def create_item():
             
         new_item = Item(
             name=data['name'],
+            description=data.get('description', ''),
             item_type=data.get('item_type', '普通'),
             rarity_level=data.get('rarity_level', '普通'),
             physical_properties=data.get('physical_properties', ''),

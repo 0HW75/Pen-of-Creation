@@ -25,7 +25,7 @@ class CheckpointService:
         """初始化检查点服务"""
         pass
     
-    def save_checkpoint(self, 
+    def save_checkpoint(self,
                        session_id: str,
                        project_id: int,
                        user_id: int,
@@ -33,10 +33,12 @@ class CheckpointService:
                        checkpoint_type: Optional[str] = None,
                        data: Optional[Dict[str, Any]] = None,
                        progress_percent: int = 0,
-                       status: str = "in_progress") -> AIGenerationCheckpoint:
+                       status: str = "in_progress",
+                       parent_checkpoint_id: Optional[int] = None,
+                       name: Optional[str] = None) -> AIGenerationCheckpoint:
         """
         保存检查点
-        
+
         Args:
             session_id: 会话ID
             project_id: 项目ID
@@ -46,16 +48,22 @@ class CheckpointService:
             data: 检查点数据（将被序列化为JSON）
             progress_percent: 进度百分比
             status: 状态 (in_progress/completed/aborted)
-        
+            parent_checkpoint_id: 关联的Step1检查点ID
+            name: 检查点名称
+
         Returns:
             AIGenerationCheckpoint: 保存的检查点对象
         """
         try:
+            # 如果没有提供名称，自动生成
+            if not name and data:
+                name = self._generate_checkpoint_name(stage, checkpoint_type, data)
+
             # 检查是否已存在相同session_id的检查点
             existing = AIGenerationCheckpoint.query.filter_by(
                 session_id=session_id
             ).first()
-            
+
             if existing:
                 # 更新现有检查点
                 existing.stage = stage
@@ -65,8 +73,12 @@ class CheckpointService:
                 existing.status = status
                 existing.updated_at = datetime.utcnow()
                 existing.expires_at = datetime.utcnow() + timedelta(days=self.DEFAULT_EXPIRY_DAYS)
+                if parent_checkpoint_id is not None:
+                    existing.parent_checkpoint_id = parent_checkpoint_id
+                if name:
+                    existing.name = name
                 checkpoint = existing
-                logger.info(f"更新检查点: session_id={session_id}, stage={stage}")
+                logger.info(f"更新检查点: session_id={session_id}, stage={stage}, name={name}")
             else:
                 # 创建新检查点
                 checkpoint = AIGenerationCheckpoint(
@@ -78,18 +90,92 @@ class CheckpointService:
                     checkpoint_data=json.dumps(data, ensure_ascii=False) if data else None,
                     progress_percent=progress_percent,
                     status=status,
-                    expires_at=datetime.utcnow() + timedelta(days=self.DEFAULT_EXPIRY_DAYS)
+                    expires_at=datetime.utcnow() + timedelta(days=self.DEFAULT_EXPIRY_DAYS),
+                    parent_checkpoint_id=parent_checkpoint_id,
+                    name=name
                 )
                 db.session.add(checkpoint)
-                logger.info(f"创建新检查点: session_id={session_id}, stage={stage}")
-            
+                logger.info(f"创建新检查点: session_id={session_id}, stage={stage}, name={name}")
+
             db.session.commit()
             return checkpoint
-            
+
         except Exception as e:
             db.session.rollback()
             logger.error(f"保存检查点失败: {e}")
             raise
+
+    def _generate_checkpoint_name(self, stage: str, checkpoint_type: Optional[str], data: Dict[str, Any]) -> str:
+        """
+        自动生成检查点名称
+
+        Args:
+            stage: 当前阶段
+            checkpoint_type: 检查点类型
+            data: 检查点数据
+
+        Returns:
+            str: 生成的名称
+        """
+        try:
+            # Step1 检查点命名
+            if stage == 'extraction':
+                if checkpoint_type == 'outline':
+                    return '世界观提取 - 大纲'
+                elif checkpoint_type == 'volume':
+                    volumes = data.get('volumes', [])
+                    volume_names = [v.get('name', '') for v in volumes[:2]]
+                    return f'章节提取 - {", ".join(volume_names)}' if volume_names else '章节提取'
+                elif checkpoint_type == 'chapter':
+                    chapters = data.get('chapters', [])
+                    return f'章节提取 - {len(chapters)}个章节'
+                else:
+                    return '世界观提取'
+
+            # Step3 检查点命名
+            elif stage == 'generation':
+                batch_config = data.get('batch_config', {})
+                entity_type = batch_config.get('entity_type', '设定')
+                results = data.get('results', [])
+
+                # 获取元素名称列表
+                element_names = []
+                for result in results[:3]:  # 最多取3个
+                    if isinstance(result, dict):
+                        element_name = result.get('element_name', '')
+                        if element_name:
+                            element_names.append(element_name)
+
+                # 根据实体类型生成名称
+                type_names = {
+                    'character': '角色设定',
+                    'location': '地点设定',
+                    'faction': '势力设定',
+                    'item': '物品设定',
+                    'energy_system': '能量体系',
+                    'civilization': '文明设定',
+                    'historical_event': '历史事件',
+                    'dimension': '维度设定',
+                    'world_architecture': '世界架构',
+                    'region': '区域设定'
+                }
+
+                type_name = type_names.get(entity_type, f'{entity_type}设定')
+
+                if element_names:
+                    names_str = '、'.join(element_names)
+                    if len(results) > 3:
+                        return f'{type_name} - {names_str}等{len(results)}个'
+                    else:
+                        return f'{type_name} - {names_str}'
+                else:
+                    return type_name
+
+            return f'{stage} - {checkpoint_type or "检查点"}'
+
+        except Exception as e:
+            logger.warning(f"生成检查点名称失败: {e}")
+            return f'{stage} - {checkpoint_type or "检查点"}'
     
     def load_checkpoint(self, checkpoint_id: int) -> Optional[Dict[str, Any]]:
         """
@@ -164,30 +250,32 @@ class CheckpointService:
             logger.error(f"加载会话检查点失败: {e}")
             return None
     
-    def list_checkpoints(self, 
+    def list_checkpoints(self,
                         project_id: Optional[int] = None,
                         user_id: Optional[int] = None,
                         stage: Optional[str] = None,
                         status: Optional[str] = None,
+                        parent_id: Optional[int] = None,
                         limit: int = 50,
                         offset: int = 0) -> Dict[str, Any]:
         """
         列出检查点
-        
+
         Args:
             project_id: 可选的项目ID过滤
             user_id: 可选的用户ID过滤
             stage: 可选的阶段过滤
             status: 可选的状态过滤
+            parent_id: 可选的父检查点ID过滤（用于级联恢复）
             limit: 返回数量限制
             offset: 偏移量
-        
+
         Returns:
             dict: 包含检查点列表和总数的字典
         """
         try:
             query = AIGenerationCheckpoint.query
-            
+
             if project_id is not None:
                 query = query.filter_by(project_id=project_id)
             if user_id is not None:
@@ -196,13 +284,15 @@ class CheckpointService:
                 query = query.filter_by(stage=stage)
             if status is not None:
                 query = query.filter_by(status=status)
-            
+            if parent_id is not None:
+                query = query.filter_by(parent_checkpoint_id=parent_id)
+
             # 按创建时间倒序排列
             query = query.order_by(AIGenerationCheckpoint.created_at.desc())
-            
+
             total = query.count()
             checkpoints = query.offset(offset).limit(limit).all()
-            
+
             result = []
             for cp in checkpoints:
                 cp_dict = cp.to_dict()
@@ -216,16 +306,16 @@ class CheckpointService:
                     except:
                         pass
                 result.append(cp_dict)
-            
-            logger.info(f"列出检查点: 总数={total}, 返回={len(result)}")
-            
+
+            logger.info(f"列出检查点: 总数={total}, 返回={len(result)}, parent_id={parent_id}")
+
             return {
                 'total': total,
                 'checkpoints': result,
                 'limit': limit,
                 'offset': offset
             }
-            
+
         except Exception as e:
             logger.error(f"列出检查点失败: {e}")
             return {'total': 0, 'checkpoints': [], 'limit': limit, 'offset': offset}
@@ -349,10 +439,11 @@ class CheckpointService:
                                  current_index: int,
                                  results: List[Dict[str, Any]],
                                  story_context: Optional[Dict[str, Any]] = None,
-                                 batch_config: Optional[Dict[str, Any]] = None) -> AIGenerationCheckpoint:
+                                 batch_config: Optional[Dict[str, Any]] = None,
+                                 parent_checkpoint_id: Optional[int] = None) -> AIGenerationCheckpoint:
         """
         保存生成进度（专门用于批次生成）
-        
+
         Args:
             session_id: 会话ID
             project_id: 项目ID
@@ -363,7 +454,8 @@ class CheckpointService:
             results: 已生成的结果列表
             story_context: 故事上下文
             batch_config: 批次配置
-        
+            parent_checkpoint_id: 关联的Step1检查点ID
+
         Returns:
             AIGenerationCheckpoint: 保存的检查点
         """
@@ -377,9 +469,9 @@ class CheckpointService:
             'batch_config': batch_config,
             'saved_at': datetime.utcnow().isoformat()
         }
-        
+
         progress_percent = int((current_index / len(elements)) * 100) if elements else 0
-        
+
         return self.save_checkpoint(
             session_id=session_id,
             project_id=project_id,
@@ -388,7 +480,8 @@ class CheckpointService:
             checkpoint_type='generation_progress',
             data=data,
             progress_percent=progress_percent,
-            status='in_progress'
+            status='in_progress',
+            parent_checkpoint_id=parent_checkpoint_id
         )
     
     def load_generation_progress(self, session_id: str) -> Optional[Dict[str, Any]]:
