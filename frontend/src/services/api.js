@@ -1175,6 +1175,17 @@ export const worldviewGenerationApi = {
   
   // 清理过期检查点
   cleanupExpiredCheckpoints: () => api.post('/worldview/cleanup-expired-checkpoints'),
+
+  // 整合元素（合并相似条目）
+  integrateElements: (elements) => api.post('/worldview/integrate-elements', { elements }),
+  
+  integrateElementsStream: (elements) => {
+    return fetch(`${API_BASE_URL}/worldview/integrate-elements-stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ elements }),
+    });
+  },
 };
 
 // 章节出现索引API

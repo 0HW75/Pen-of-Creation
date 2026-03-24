@@ -15,7 +15,8 @@ from app.services.generation.generators import (
     CivilizationGenerator,
     HistoricalEventGenerator,
     RegionGenerator,
-    DimensionGenerator
+    DimensionGenerator,
+    RelationGenerator
 )
 from app.services.generation.session_manager import session_manager
 from app.services.generation.checkpoint_service import checkpoint_service
@@ -40,7 +41,8 @@ generators = {
     'historical_event': HistoricalEventGenerator(),
     'region': RegionGenerator(),
     'dimension': DimensionGenerator(),
-    'world_architecture': DimensionGenerator()  # 世界架构使用维度生成器
+    'world_architecture': DimensionGenerator(),  # 世界架构使用维度生成器
+    'relation': RelationGenerator()  # 关系网络生成器
 }
 
 # 创建元素提取器实例
@@ -415,6 +417,9 @@ def execute_batch_generation_stream():
                 'world_id': world_id,
                 'total_elements': total_elements
             }
+
+            # 获取父检查点ID（用于级联恢复）
+            parent_checkpoint_id = data.get('parent_checkpoint_id')
             
             for idx in range(start_index, total_elements):
                 element = elements[idx]
@@ -445,7 +450,8 @@ def execute_batch_generation_stream():
                             current_index=idx,
                             results=generated_results,
                             story_context=story_context,
-                            batch_config=batch_config
+                            batch_config=batch_config,
+                            parent_checkpoint_id=parent_checkpoint_id
                         )
                     except Exception as cp_e:
                         logger.error(f"保存检查点失败: {cp_e}")
@@ -620,7 +626,8 @@ def execute_batch_generation_stream():
                             # 强制修正名称为输入的元素名称
                             result_data['name'] = element_name
                             logger.info(f"[{session_id}] 元素 '{element_name}' - 已强制修正名称为: '{element_name}'")
-                            yield f"data: {json.dumps({'type': 'output', 'content': f'⚠️ AI返回的名称"{returned_name}"与输入不匹配，已修正为"{element_name}"'}, ensure_ascii=False)}\n\n"
+                            warn_msg = f'⚠️ AI返回的名称"{returned_name}"与输入不匹配，已修正为"{element_name}"'
+                            yield f"data: {json.dumps({'type': 'output', 'content': warn_msg}, ensure_ascii=False)}\n\n"
                         
                         result_item = {
                             'element_id': element_id,
@@ -673,7 +680,8 @@ def execute_batch_generation_stream():
                         current_index=idx + 1,
                         results=generated_results,
                         story_context=story_context,
-                        batch_config=batch_config
+                        batch_config=batch_config,
+                        parent_checkpoint_id=parent_checkpoint_id
                     )
                     logger.debug(f"[{session_id}] 检查点已保存: 索引 {idx + 1}/{total_elements}")
                 except Exception as cp_e:
@@ -709,7 +717,8 @@ def execute_batch_generation_stream():
                         current_index=idx if 'idx' in locals() else 0,
                         results=generated_results,
                         story_context=story_context if 'story_context' in locals() else {},
-                        batch_config=batch_config if 'batch_config' in locals() else {}
+                        batch_config=batch_config if 'batch_config' in locals() else {},
+                        parent_checkpoint_id=parent_checkpoint_id if 'parent_checkpoint_id' in locals() else None
                     )
                 except Exception as cp_e:
                     logger.error(f"错误时保存检查点失败: {cp_e}")
@@ -1073,7 +1082,8 @@ def extract_blueprint_elements_stream():
                                     elem_names += f' 等{len(elems)}个'
                                 yield f"data: {json.dumps({'type': 'output', 'content': f'  📌 {elem_type}: {elem_names}'}, ensure_ascii=False)}\n\n"
                     elif chunk['type'] == 'error':
-                        yield f"data: {json.dumps({'type': 'output', 'content': f'⚠️ 分析 {context_name} 时出错: {chunk.get("message", "未知错误")}'}, ensure_ascii=False)}\n\n"
+                        err_msg = f'⚠️ 分析 {context_name} 时出错: {chunk.get("message", "未知错误")}'
+                        yield f"data: {json.dumps({'type': 'output', 'content': err_msg}, ensure_ascii=False)}\n\n"
             
             # 初始化故事上下文收集变量
             story_context_outline = ""
@@ -1460,26 +1470,37 @@ def extract_blueprint_elements_stream():
                             logger.info(f"[提取阶段] 章纲检查点已保存: session_id={session_id}, chapter={chapter.title}")
             
             # 完成，发送最终结果
+            # 使用AI智能整合元素：合并相似条目，分析差异
+            integrated_elements = _integrate_elements_with_ai(merged_result)
+
             statistics = {
-                'characters': len(merged_result.get('characters', [])),
-                'locations': len(merged_result.get('locations', [])),
-                'factions': len(merged_result.get('factions', [])),
-                'items': len(merged_result.get('items', [])),
-                'world_architecture': len(merged_result.get('world_architecture', [])),
-                'energy_systems': len(merged_result.get('energy_systems', [])),
-                'society_systems': len(merged_result.get('society_systems', [])),
-                'timeline_events': len(merged_result.get('timeline_events', [])),
-                'relations': len(merged_result.get('relations', []))
+                'characters': len(integrated_elements.get('characters', [])),
+                'locations': len(integrated_elements.get('locations', [])),
+                'factions': len(integrated_elements.get('factions', [])),
+                'items': len(integrated_elements.get('items', [])),
+                'world_architecture': len(integrated_elements.get('world_architecture', [])),
+                'energy_systems': len(integrated_elements.get('energy_systems', [])),
+                'society_systems': len(integrated_elements.get('society_systems', [])),
+                'timeline_events': len(integrated_elements.get('timeline_events', [])),
+                'relations': len(integrated_elements.get('relations', []))
             }
-            
+
+            # 统计整合信息
+            integrated_count = sum(
+                1 for items in integrated_elements.values()
+                for item in items if item.get('is_integrated')
+            )
+
+            logger.info(f"[提取阶段] 元素整合完成，共整合 {integrated_count} 个相似条目")
+
             # 构建故事上下文
             story_context = {
                 'outline': story_context_outline,
                 'volume': story_context_volume,
                 'chapters': story_context_chapters
             }
-            
-            yield f"data: {json.dumps({'type': 'complete', 'progress': 100, 'message': '提取完成', 'elements': merged_result, 'statistics': statistics, 'story_context': story_context}, ensure_ascii=False)}\n\n"
+
+            yield f"data: {json.dumps({'type': 'complete', 'progress': 100, 'message': '提取完成', 'elements': integrated_elements, 'original_elements': merged_result, 'statistics': statistics, 'story_context': story_context, 'integration_info': {'integrated_count': integrated_count}}, ensure_ascii=False)}\n\n"
             
             # 标记会话完成
             if session_id:
@@ -1748,19 +1769,280 @@ def _parse_ai_response(ai_response: str) -> dict:
 def _merge_results(existing: dict, new_elements: dict) -> dict:
     """合并提取结果，去重"""
     result = {key: list(existing.get(key, [])) for key in existing}
-    
+
     for key in new_elements:
         if key not in result:
             result[key] = []
-        
+
         existing_names = {item.get('name', '').lower() for item in result[key]}
-        
+
         for item in new_elements[key]:
             name = item.get('name', '').lower()
             if name and name not in existing_names:
                 result[key].append(item)
                 existing_names.add(name)
-    
+
+    return result
+
+
+def _integrate_elements_with_ai(elements: dict) -> dict:
+    """
+    使用AI智能整合元素列表
+
+    对相似/重复条目进行智能合并和差异分析，调用AI来识别语义相似性。
+
+    Args:
+        elements: 原始元素字典，按类型组织
+
+    Returns:
+        整合后的元素字典
+    """
+    import difflib
+
+    def calculate_name_similarity(name1: str, name2: str) -> float:
+        """计算两个名称的相似度"""
+        if not name1 or not name2:
+            return 0.0
+        norm1 = name1.strip().lower()
+        norm2 = name2.strip().lower()
+        if norm1 == norm2:
+            return 1.0
+        return difflib.SequenceMatcher(None, norm1, norm2).ratio()
+
+    def find_potential_duplicates(items: list, threshold: float = 0.6) -> list:
+        """找出可能重复的元素对"""
+        duplicates = []
+        for i in range(len(items)):
+            for j in range(i + 1, len(items)):
+                name_i = items[i].get('name', '')
+                name_j = items[j].get('name', '')
+                sim = calculate_name_similarity(name_i, name_j)
+                if sim >= threshold:
+                    duplicates.append((i, j, sim))
+        return duplicates
+
+    def group_similar_items(items: list, threshold: float = 0.6) -> list:
+        """将相似元素分组"""
+        if not items:
+            return []
+
+        n = len(items)
+        groups = []
+        used = set()
+
+        for i in range(n):
+            if i in used:
+                continue
+
+            current_group = [i]
+            used.add(i)
+
+            for j in range(i + 1, n):
+                if j in used:
+                    continue
+                name_i = items[i].get('name', '')
+                name_j = items[j].get('name', '')
+                if calculate_name_similarity(name_i, name_j) >= threshold:
+                    current_group.append(j)
+                    used.add(j)
+
+            groups.append([items[idx] for idx in current_group])
+
+        for i in range(n):
+            if i not in used:
+                groups.append([items[i]])
+
+        return groups
+
+    def build_ai_prompt(items: list, element_type: str) -> str:
+        """构建AI整合提示词"""
+        type_names = {
+            'characters': '角色',
+            'locations': '地点',
+            'factions': '势力组织',
+            'items': '物品道具',
+            'world_architecture': '世界架构',
+            'energy_systems': '能量体系',
+            'society_systems': '社会体系',
+            'timeline_events': '历史事件',
+            'relations': '关系'
+        }
+
+        type_name = type_names.get(element_type, element_type)
+
+        items_json = []
+        for idx, item in enumerate(items):
+            items_json.append({
+                'index': idx,
+                'name': item.get('name', ''),
+                'type': item.get('type', ''),
+                'brief': item.get('brief', ''),
+                'description': item.get('description', ''),
+                'source': item.get('source', item.get('evidence', ''))
+            })
+
+        prompt = f"""你是一位专业的小说世界观设定分析师。现在需要整合从故事中提取的重复或相似的{type_name}设定。
+
+## 任务
+1. 分析以下{len(items)}个{type_name}条目
+2. 识别哪些条目描述的是同一个概念（重复或高度相似）
+3. 对于相似的条目，提取：
+   - 共同的核心特征
+   - 各条目的独特差异点（并注明来源）
+
+## 相似判断标准（非常重要）
+以下情况应该被判定为相似/重复：
+1. **名称相同或包含同一关键词**：如"玛娜"和"魔法能量'玛娜'"、"玛娜能量"
+2. **描述同一事物**：如"门的能量特性"和"打开'门'的能力"
+3. **同一实体的不同方面**：如"陈启的开启能力"和"陈启拥有的能打开门的超自然能力"
+4. **基于同一来源的不同描述**
+
+请仔细比较名称和描述，将描述同一概念的条目归为一组。
+
+## 输出格式（必须严格遵守）
+请以JSON格式返回，结构如下：
+{{
+    "groups": [
+        {{
+            "is_duplicate": true/false,
+            "items": [原始条目索引列表],
+            "merged": {{
+                "name": "合并后的名称（选择最准确、最完整的名称）",
+                "brief": "合并后的简介/共同特征",
+                "common_points": ["共同点1", "共同点2"],
+                "diff_points": [
+                    {{"description": "差异描述", "source": "来源"}}
+                ]
+            }},
+            "reason": "判断理由"
+        }}
+    ]
+}}
+
+## 待分析{type_name}条目
+{json.dumps(items_json, ensure_ascii=False, indent=2)}
+
+请严格以JSON格式返回结果，不要包含其他内容。"""
+        return prompt
+
+    def call_ai_integrate(prompt: str) -> dict:
+        """调用AI进行整合"""
+        import re
+
+        messages = [
+            {"role": "system", "content": "你是一位专业的小说世界观设定分析师，擅长识别重复概念并整合差异。必须以JSON格式返回结果。"},
+            {"role": "user", "content": prompt}
+        ]
+
+        try:
+            result = ai_service.chat_completion(
+                messages=messages,
+                temperature=0.3,
+                max_tokens=4000
+            )
+            content = result.get('content', '')
+
+            if not content:
+                logger.warning("AI返回内容为空")
+                return None
+
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError:
+                json_match = re.search(r'\{[\s\S]*\}', content)
+                if json_match:
+                    try:
+                        return json.loads(json_match.group())
+                    except json.JSONDecodeError:
+                        pass
+                logger.warning(f"AI返回内容无法解析为JSON: {content[:200]}...")
+                return None
+        except Exception as e:
+            logger.error(f"AI整合失败: {str(e)}")
+            return None
+
+    def merge_group_with_ai(group: list, element_type: str) -> dict:
+        """使用AI合并一组元素"""
+        if len(group) == 1:
+            item = group[0]
+            return {
+                'id': item.get('id', ''),
+                'name': item.get('name', ''),
+                'type': item.get('type', ''),
+                'brief': item.get('brief', ''),
+                'description': item.get('description', ''),
+                'is_integrated': False,
+                'integrated_count': 1,
+                'sources': [item.get('source', item.get('evidence', ''))],
+                'common_description': item.get('brief', ''),
+                'diff_points': []
+            }
+
+        prompt = build_ai_prompt(group, element_type)
+        ai_result = call_ai_integrate(prompt)
+
+        if not ai_result or 'groups' not in ai_result:
+            names = [item.get('name', '') for item in group]
+            briefs = [item.get('brief', '') for item in group]
+            return {
+                'id': group[0].get('id', ''),
+                'name': names[0] if names else '',
+                'type': group[0].get('type', ''),
+                'brief': briefs[0] if briefs else '',
+                'is_integrated': len(group) > 1,
+                'integrated_count': len(group),
+                'sources': [item.get('source', item.get('evidence', '')) for item in group],
+                'common_description': '; '.join(set(briefs)),
+                'diff_points': [{'description': f"条目{i+1}: {n}", 'source': group[i].get('source', '')} for i, n in enumerate(names) if n]
+            }
+
+        merged_group = ai_result.get('groups', [])
+        if not merged_group:
+            return {
+                'id': group[0].get('id', ''),
+                'name': group[0].get('name', ''),
+                'type': group[0].get('type', ''),
+                'is_integrated': False,
+                'integrated_count': 1,
+                'sources': [item.get('source', item.get('evidence', '')) for item in group]
+            }
+
+        result_item = merged_group[0].get('merged', {})
+        result_item['is_integrated'] = True
+        result_item['integrated_count'] = len(group)
+        result_item['sources'] = [item.get('source', item.get('evidence', '')) for item in group]
+        result_item['id'] = group[0].get('id', '')
+        result_item['type'] = group[0].get('type', '')
+        return result_item
+
+    result = {}
+    element_types = ['characters', 'locations', 'factions', 'items',
+                     'world_architecture', 'energy_systems', 'society_systems',
+                     'timeline_events', 'relations']
+
+    for elem_type in element_types:
+        items = elements.get(elem_type, [])
+        if not items:
+            result[elem_type] = []
+            continue
+
+        groups = group_similar_items(items, threshold=0.6)
+
+        integrated_items = []
+        for group in groups:
+            if len(group) > 1:
+                merged = merge_group_with_ai(group, elem_type)
+                integrated_items.append(merged)
+            else:
+                item = group[0]
+                item['is_integrated'] = False
+                item['integrated_count'] = 1
+                item['sources'] = [item.get('source', item.get('evidence', ''))]
+                integrated_items.append(item)
+
+        result[elem_type] = integrated_items
+        logger.info(f"[AI整合] {elem_type}类型: {len(items)}个元素 -> {len(integrated_items)}个整合后元素")
+
     return result
 
 
@@ -1881,15 +2163,16 @@ def get_generation_status(session_id):
 def list_checkpoints():
     """
     获取检查点列表
-    
+
     Query Parameters:
         project_id: 项目ID（可选）
         user_id: 用户ID（可选）
         stage: 阶段过滤（可选，extraction/generation）
         status: 状态过滤（可选）
+        parent_id: 父检查点ID（可选，用于级联恢复）
         limit: 返回数量限制（默认50）
         offset: 偏移量（默认0）
-    
+
     Response:
     {
         "code": 200,
@@ -1906,23 +2189,25 @@ def list_checkpoints():
         user_id = request.args.get('user_id', type=int)
         stage = request.args.get('stage')
         status = request.args.get('status')
+        parent_id = request.args.get('parent_id', type=int)
         limit = request.args.get('limit', 50, type=int)
         offset = request.args.get('offset', 0, type=int)
-        
+
         result = checkpoint_service.list_checkpoints(
             project_id=project_id,
             user_id=user_id,
             stage=stage,
             status=status,
+            parent_id=parent_id,
             limit=limit,
             offset=offset
         )
-        
+
         return jsonify({
             'code': 200,
             'data': result
         })
-        
+
     except Exception as e:
         logger.error(f'获取检查点列表失败: {str(e)}', exc_info=True)
         return jsonify({'code': 500, 'message': f'获取检查点列表失败: {str(e)}'}), 500
@@ -1950,21 +2235,205 @@ def get_checkpoint(checkpoint_id):
     """
     try:
         checkpoint = checkpoint_service.load_checkpoint(checkpoint_id)
-        
+
         if not checkpoint:
             return jsonify({
                 'code': 404,
                 'message': '检查点不存在'
             }), 404
-        
+
         return jsonify({
             'code': 200,
             'data': checkpoint
         })
-        
+
     except Exception as e:
         logger.error(f'获取检查点失败: {str(e)}', exc_info=True)
         return jsonify({'code': 500, 'message': f'获取检查点失败: {str(e)}'}), 500
+
+
+@api_bp.route('/worldview/integrate-elements-stream', methods=['POST'])
+def integrate_elements_stream():
+    """
+    流式触发元素整合（逐类型返回结果）
+
+    将提取的元素列表进行AI智能整合，每整合完一个类型就返回结果。
+
+    Request Body:
+    {
+        "elements": {
+            "characters": [...],
+            "locations": [...],
+            ...
+        }
+    }
+    """
+    def generate():
+        try:
+            data = request.get_json()
+            elements = data.get('elements', {})
+
+            if not elements:
+                yield f"data: {json.dumps({'type': 'error', 'message': '没有要整合的元素'}, ensure_ascii=False)}\n\n"
+                return
+
+            type_names = {
+                'characters': '角色',
+                'locations': '地点',
+                'factions': '势力组织',
+                'items': '物品道具',
+                'world_architecture': '世界架构',
+                'energy_systems': '能量体系',
+                'society_systems': '社会体系',
+                'timeline_events': '历史事件',
+                'relations': '关系'
+            }
+
+            all_integrated = {}
+            total_original = 0
+            total_integrated = 0
+            total_merged_groups = 0
+
+            for elem_type, type_name in type_names.items():
+                items = elements.get(elem_type, [])
+                if not items:
+                    continue
+
+                original_count = len(items)
+                total_original += original_count
+
+                json_data = json.dumps({
+                    'type': 'progress',
+                    'element_type': elem_type,
+                    'type_name': type_name,
+                    'message': f'正在使用AI整合 {type_name}...',
+                    'original_count': original_count
+                }, ensure_ascii=False)
+                yield f"data: {json_data}\n\n"
+
+                merged_result = _integrate_elements_with_ai({elem_type: items})
+                integrated_items = merged_result.get(elem_type, [])
+
+                merged_count = sum(1 for item in integrated_items if item.get('is_integrated'))
+
+                all_integrated[elem_type] = integrated_items
+                integrated_count = len(integrated_items)
+                total_integrated += integrated_count
+                total_merged_groups += merged_count
+
+                type_complete_data = json.dumps({
+                    'type': 'type_complete',
+                    'element_type': elem_type,
+                    'type_name': type_name,
+                    'message': f'{type_name} 整合完成: {original_count} -> {integrated_count} 个',
+                    'original_count': original_count,
+                    'integrated_count': integrated_count,
+                    'merged_groups': merged_count
+                }, ensure_ascii=False)
+                yield f"data: {type_complete_data}\n\n"
+
+            statistics = {
+                'characters': len(all_integrated.get('characters', [])),
+                'locations': len(all_integrated.get('locations', [])),
+                'factions': len(all_integrated.get('factions', [])),
+                'items': len(all_integrated.get('items', [])),
+                'world_architecture': len(all_integrated.get('world_architecture', [])),
+                'energy_systems': len(all_integrated.get('energy_systems', [])),
+                'society_systems': len(all_integrated.get('society_systems', [])),
+                'timeline_events': len(all_integrated.get('timeline_events', [])),
+                'relations': len(all_integrated.get('relations', []))
+            }
+
+            complete_data = json.dumps({
+                'type': 'complete',
+                'message': f'整合完成！从 {total_original} 个条目整合为 {total_integrated} 个，共合并 {total_merged_groups} 组',
+                'integrated_elements': all_integrated,
+                'original_elements': elements,
+                'statistics': statistics,
+                'integration_info': {
+                    'total_original': total_original,
+                    'total_integrated': total_integrated,
+                    'merged_groups': total_merged_groups
+                }
+            }, ensure_ascii=False)
+            yield f"data: {complete_data}\n\n"
+
+        except Exception as e:
+            logger.error(f'流式整合元素失败: {str(e)}', exc_info=True)
+            yield f"data: {json.dumps({'type': 'error', 'message': f'整合失败: {str(e)}'}, ensure_ascii=False)}\n\n"
+
+    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+
+
+@api_bp.route('/worldview/integrate-elements', methods=['POST'])
+def integrate_elements():
+    """
+    手动触发元素整合
+
+    将提取的元素列表进行AI智能整合，合并相似条目并分析差异。
+
+    Request Body:
+    {
+        "elements": {
+            "characters": [...],
+            "locations": [...],
+            ...
+        }
+    }
+
+    Response:
+    {
+        "code": 200,
+        "data": {
+            "integrated_elements": {...},
+            "statistics": {...},
+            "integration_info": {
+                "integrated_count": 5
+            }
+        }
+    }
+    """
+    try:
+        data = request.get_json()
+        elements = data.get('elements', {})
+
+        if not elements:
+            return jsonify({'code': 400, 'message': '没有要整合的元素'}), 400
+
+        integrated_elements = _integrate_elements_with_ai(elements)
+
+        statistics = {
+            'characters': len(integrated_elements.get('characters', [])),
+            'locations': len(integrated_elements.get('locations', [])),
+            'factions': len(integrated_elements.get('factions', [])),
+            'items': len(integrated_elements.get('items', [])),
+            'world_architecture': len(integrated_elements.get('world_architecture', [])),
+            'energy_systems': len(integrated_elements.get('energy_systems', [])),
+            'society_systems': len(integrated_elements.get('society_systems', [])),
+            'timeline_events': len(integrated_elements.get('timeline_events', [])),
+            'relations': len(integrated_elements.get('relations', []))
+        }
+
+        integrated_count = sum(
+            1 for items in integrated_elements.values()
+            for item in items if item.get('is_integrated')
+        )
+
+        return jsonify({
+            'code': 200,
+            'data': {
+                'integrated_elements': integrated_elements,
+                'original_elements': elements,
+                'statistics': statistics,
+                'integration_info': {
+                    'integrated_count': integrated_count
+                }
+            }
+        })
+
+    except Exception as e:
+        logger.error(f'整合元素失败: {str(e)}', exc_info=True)
+        return jsonify({'code': 500, 'message': f'整合元素失败: {str(e)}'}), 500
 
 
 @api_bp.route('/worldview/resume-generation', methods=['POST'])

@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Card, Checkbox, Button, Space, Typography, Row, Col, Badge, Tabs } from 'antd';
-import { 
+import React, { useState, useEffect } from 'react';
+import { Card, Checkbox, Button, Space, Typography, Row, Col, Badge, Tabs, message, Spin, Tag, Tooltip } from 'antd';
+import {
   UserOutlined, EnvironmentOutlined, TeamOutlined, ShoppingOutlined,
   GlobalOutlined, ThunderboltOutlined, BankOutlined, HistoryOutlined,
-  LinkOutlined
+  LinkOutlined, MergeCellsOutlined, ReloadOutlined
 } from '@ant-design/icons';
+import { worldviewGenerationApi } from '../../services/api';
 
 const { Title, Text } = Typography;
-const { TabPane } = Tabs;
 
 // 模块配置 - 与数据库 9 种类型对应
 const moduleConfig = {
@@ -22,8 +22,92 @@ const moduleConfig = {
   relations: { title: '关系网络', icon: <LinkOutlined />, color: '#2f54eb' },
 };
 
-const Step2ConfirmList = ({ elements, selectedElements, onComplete, onPrev, loading }) => {
+const Step2ConfirmList = ({ elements, selectedElements, onComplete, onPrev, loading, onElementsUpdate }) => {
   const [localSelected, setLocalSelected] = useState(selectedElements);
+  const [integrating, setIntegrating] = useState(false);
+  const [integratedCount, setIntegratedCount] = useState(null);
+  const [isIntegrated, setIsIntegrated] = useState(false);
+  const [currentElements, setCurrentElements] = useState(elements);
+  const [integrationProgress, setIntegrationProgress] = useState([]);
+
+  useEffect(() => {
+    setCurrentElements(elements);
+  }, [elements]);
+
+  const handleIntegrate = async () => {
+    setIntegrating(true);
+    setIntegrationProgress([]);
+    setIsIntegrated(false);
+    
+    try {
+      const response = await worldviewGenerationApi.integrateElementsStream(currentElements);
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let allIntegrated = {};
+      let allSelected = {};
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.type === 'progress') {
+                setIntegrationProgress(prev => [...prev, data.message]);
+              } else if (data.type === 'type_complete') {
+                setIntegrationProgress(prev => [...prev, data.message]);
+                allIntegrated[data.element_type] = currentElements[data.element_type] || [];
+                if (data.integrated_items) {
+                  allIntegrated[data.element_type] = data.integrated_items;
+                }
+              } else if (data.type === 'complete') {
+                setCurrentElements(data.integrated_elements);
+                setIntegratedCount(data.integration_info.merged_groups);
+                setIsIntegrated(true);
+                
+                if (onElementsUpdate) {
+                  onElementsUpdate(data.integrated_elements);
+                }
+                
+                const newSelected = {};
+                Object.keys(data.integrated_elements).forEach(key => {
+                  newSelected[key] = data.integrated_elements[key].map(el => el.id);
+                });
+                setLocalSelected(newSelected);
+                
+                setIntegrationProgress(prev => [...prev, data.message]);
+                message.success(data.message);
+              } else if (data.type === 'error') {
+                message.error(data.message);
+              }
+            } catch (e) {
+              console.error('解析流数据失败:', e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('整合失败:', error);
+      message.error('整合失败: ' + (error.message || '未知错误'));
+    } finally {
+      setIntegrating(false);
+    }
+  };
+
+  const handleReIntegrate = () => {
+    setIsIntegrated(false);
+    setIntegratedCount(null);
+    setIntegrationProgress([]);
+  };
 
   const handleCheckChange = (moduleKey, elementId, checked) => {
     setLocalSelected(prev => {
@@ -56,98 +140,140 @@ const Step2ConfirmList = ({ elements, selectedElements, onComplete, onPrev, load
   };
 
   const getTotalCount = (moduleKey) => {
-    return elements[moduleKey]?.length || 0;
+    return currentElements[moduleKey]?.length || 0;
   };
 
   // 过滤出有数据的模块
   const availableModules = Object.keys(moduleConfig).filter(
-    key => elements[key] && elements[key].length > 0
+    key => currentElements[key] && currentElements[key].length > 0
   );
 
   return (
     <div style={{ padding: '20px 0' }}>
-      <Title level={4} style={{ marginBottom: 24 }}>
-        确认待生成设定清单
-      </Title>
+      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+        <Col>
+          <Title level={4} style={{ margin: 0 }}>
+            确认待生成设定清单
+          </Title>
+        </Col>
+        <Col>
+          <Space>
+            {isIntegrated && (
+              <Tag color="green" icon={<MergeCellsOutlined />}>
+                已整合 {integratedCount} 组相似条目
+              </Tag>
+            )}
+            <Tooltip title={isIntegrated ? "点击重新整合" : "使用AI智能合并名称相似或内容重复的条目"}>
+              <Button 
+                type={isIntegrated ? "default" : "primary"}
+                icon={isIntegrated ? <ReloadOutlined /> : <MergeCellsOutlined />}
+                onClick={isIntegrated ? handleReIntegrate : handleIntegrate}
+                loading={integrating}
+              >
+                {integrating ? 'AI整合中...' : isIntegrated ? '重新整合' : 'AI整合相似条目'}
+              </Button>
+            </Tooltip>
+          </Space>
+        </Col>
+      </Row>
+      
+      {integrationProgress.length > 0 && (
+        <Card size="small" style={{ marginBottom: 16, backgroundColor: '#f6ffed', borderColor: '#b7eb8f' }}>
+          <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
+            <ThunderboltOutlined /> 整合进度
+          </Typography.Text>
+          {integrationProgress.map((msg, idx) => (
+            <div key={idx} style={{ fontSize: 12, color: '#52c41a' }}>
+              {idx + 1}. {msg}
+            </div>
+          ))}
+        </Card>
+      )}
       
       <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-        请勾选需要生成的设定条目，取消勾选不需要的条目
+        请勾选需要生成的设定条目，取消勾选不需要的条目。点击"AI整合相似条目"可自动合并重复内容。
       </Text>
 
-      <Tabs defaultActiveKey={availableModules[0]} type="card">
-        {availableModules.map(moduleKey => {
-          const config = moduleConfig[moduleKey];
-          const moduleElements = elements[moduleKey] || [];
-          const selectedCount = getSelectedCount(moduleKey);
-          const totalCount = getTotalCount(moduleKey);
+      <Spin spinning={integrating} tip="AI正在分析并整合相似条目...">
+        <Tabs defaultActiveKey={availableModules[0]} type="card" items={
+          availableModules.map(moduleKey => {
+            const config = moduleConfig[moduleKey];
+            const moduleElements = currentElements[moduleKey] || [];
+            const selectedCount = getSelectedCount(moduleKey);
+            const totalCount = getTotalCount(moduleKey);
 
-          return (
-            <TabPane
-              key={moduleKey}
-              tab={
+            return {
+              key: moduleKey,
+              label: (
                 <span>
                   {config.icon}
                   {config.title}
-                  <Badge 
-                    count={selectedCount} 
+                  <Badge
+                    count={selectedCount}
                     style={{ marginLeft: 8, backgroundColor: config.color }}
                     showZero
                   />
                 </span>
-              }
-            >
-              <Card 
-                size="small" 
-                title={
-                  <Space>
-                    <Checkbox
-                      checked={selectedCount === totalCount && totalCount > 0}
-                      indeterminate={selectedCount > 0 && selectedCount < totalCount}
-                      onChange={(e) => handleSelectAll(moduleKey, e.target.checked)}
-                    >
-                      全选
-                    </Checkbox>
-                    <Text type="secondary">
-                      已选择 {selectedCount} / {totalCount} 个
-                    </Text>
-                  </Space>
-                }
-              >
-                <Row gutter={[8, 8]}>
-                  {moduleElements.map(element => (
-                    <Col span={24} key={element.id}>
-                      <Card 
-                        size="small" 
-                        style={{ 
-                          borderLeft: `3px solid ${config.color}`,
-                          opacity: localSelected[moduleKey]?.includes(element.id) ? 1 : 0.5
-                        }}
+              ),
+              children: (
+                <Card
+                  size="small"
+                  title={
+                    <Space>
+                      <Checkbox
+                        checked={selectedCount === totalCount && totalCount > 0}
+                        indeterminate={selectedCount > 0 && selectedCount < totalCount}
+                        onChange={(e) => handleSelectAll(moduleKey, e.target.checked)}
                       >
-                        <Checkbox
-                          checked={localSelected[moduleKey]?.includes(element.id)}
-                          onChange={(e) => handleCheckChange(moduleKey, element.id, e.target.checked)}
+                        全选
+                      </Checkbox>
+                      <Text type="secondary">
+                        已选择 {selectedCount} / {totalCount} 个
+                      </Text>
+                    </Space>
+                  }
+                >
+                  <Row gutter={[8, 8]}>
+                    {moduleElements.map((element, idx) => (
+                      <Col span={24} key={`${moduleKey}-${idx}`}>
+                        <Card
+                          size="small"
+                          style={{
+                            borderLeft: `3px solid ${config.color}`,
+                            opacity: localSelected[moduleKey]?.includes(element.id) ? 1 : 0.5
+                          }}
                         >
-                          <Space direction="vertical" style={{ alignItems: 'flex-start' }}>
-                            <Text strong>{element.name}</Text>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              {element.brief}
-                            </Text>
-                            {element.evidence && (
-                              <Text type="secondary" style={{ fontSize: 11 }}>
-                                来源：{element.evidence.substring(0, 50)}...
+                          <Checkbox
+                            checked={localSelected[moduleKey]?.includes(element.id)}
+                            onChange={(e) => handleCheckChange(moduleKey, element.id, e.target.checked)}
+                          >
+                            <Space direction="vertical" style={{ alignItems: 'flex-start' }}>
+                              <Text strong>{element.name}</Text>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                {element.brief}
                               </Text>
-                            )}
-                          </Space>
-                        </Checkbox>
-                      </Card>
-                    </Col>
-                  ))}
-                </Row>
-              </Card>
-            </TabPane>
-          );
-        })}
-      </Tabs>
+                              {element.evidence && (
+                                <Text type="secondary" style={{ fontSize: 11 }}>
+                                  来源：{element.evidence.substring(0, 50)}...
+                                </Text>
+                              )}
+                              {element.is_integrated && (
+                                <Tag color="blue" style={{ marginTop: 4 }}>
+                                  已整合 {element.integrated_count} 个相似条目
+                                </Tag>
+                              )}
+                            </Space>
+                          </Checkbox>
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card>
+              )
+            };
+          })
+        } />
+      </Spin>
 
       <Row justify="space-between" style={{ marginTop: 32 }}>
         <Col>

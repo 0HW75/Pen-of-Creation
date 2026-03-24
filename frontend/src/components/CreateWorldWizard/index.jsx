@@ -31,6 +31,7 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
     generationSessionId: null,
     batches: [],
     generatedWorldId: null,
+    parentCheckpointId: null, // 关联的Step1检查点ID
   });
 
   // 重置状态
@@ -39,7 +40,7 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
       setCurrentStep(0);
       setStep1Data({ projectId: null, contentScope: null, storyContext: null });
       setStep2Data({ extractionId: null, elements: {}, selectedElements: {} });
-      setStep3Data({ generationSessionId: null, batches: [], generatedWorldId: null });
+      setStep3Data({ generationSessionId: null, batches: [], generatedWorldId: null, parentCheckpointId: null });
     }
   }, [visible]);
 
@@ -137,8 +138,9 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
           generationSessionId: response.data.data.generation_session_id,
           batches: response.data.data.batches,
           generatedWorldId: null,
+          parentCheckpointId: step1Data.checkpointId, // 保存Step1的检查点ID
         });
-        
+
         setCurrentStep(2);
         message.success('已创建生成批次，共 ' + response.data.data.batches.length + ' 个批次');
       }
@@ -181,6 +183,12 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
           onComplete={handleStep2Complete}
           onPrev={handlePrev}
           loading={loading}
+          onElementsUpdate={(integratedElements) => {
+            setStep2Data(prev => ({
+              ...prev,
+              elements: integratedElements,
+            }));
+          }}
         />
       ),
     },
@@ -196,6 +204,7 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
           projectId={step1Data.projectId}
           worldId={step3Data.generatedWorldId}
           storyContext={step1Data.storyContext}
+          parentCheckpointId={step3Data.parentCheckpointId}
         />
       ),
     },
