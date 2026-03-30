@@ -185,6 +185,7 @@ def update_character(character_id):
     
     # 更新基本字段
     character.name = data.get('name', character.name)
+    character.description = data.get('description', character.description)
     character.world_id = data.get('world_id', character.world_id)
     character.alternative_names = data.get('alternative_names', character.alternative_names)
     character.character_type = data.get('character_type', character.character_type)

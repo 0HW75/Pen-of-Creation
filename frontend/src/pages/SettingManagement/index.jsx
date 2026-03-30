@@ -485,6 +485,7 @@ const CharacterManagementPanel = ({ worldId, quickCreateTarget, onUpdate }) => {
         message.success('创建角色成功');
       }
       setModalVisible(false);
+      setDetailVisible(false);
       fetchCharacters();
       if (onUpdate) onUpdate();
     } catch (error) {
@@ -505,6 +506,8 @@ const CharacterManagementPanel = ({ worldId, quickCreateTarget, onUpdate }) => {
 
   const handleView = (character) => {
     setViewingCharacter(character);
+    setEditingCharacter(character);
+    form.setFieldsValue(character);
     setDetailVisible(true);
   };
 
@@ -600,7 +603,21 @@ const CharacterManagementPanel = ({ worldId, quickCreateTarget, onUpdate }) => {
         )}
       </div>
 
-      <Modal title={editingCharacter ? '编辑角色' : '创建角色'} open={modalVisible} onCancel={() => setModalVisible(false)} onOk={() => form.submit()} width={900} destroyOnHidden>
+      <Modal 
+        title={editingCharacter ? '编辑角色' : '创建角色'} 
+        open={modalVisible || detailVisible} 
+        onCancel={() => { setModalVisible(false); setDetailVisible(false); }} 
+        width={900} 
+        destroyOnHidden
+        footer={[
+          <Button key="cancel" onClick={() => { setModalVisible(false); setDetailVisible(false); }}>
+            取消
+          </Button>,
+          <Button key="submit" type="primary" onClick={() => form.submit()}>
+            {editingCharacter ? '保存修改' : '创建'}
+          </Button>
+        ]}
+      >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Tabs
             items={[
@@ -657,6 +674,11 @@ const CharacterManagementPanel = ({ worldId, quickCreateTarget, onUpdate }) => {
                       <Col span={8}><Form.Item name="faction" label="所属势力"><Input placeholder="例如：白银之手" /></Form.Item></Col>
                     </Row>
                     <Row gutter={16}>
+                      <Col span={8}><Form.Item name="current_location" label="当前地点"><Input placeholder="角色当前所在地" /></Form.Item></Col>
+                      <Col span={8}><Form.Item name="birthplace" label="出生地"><Input placeholder="角色出生地" /></Form.Item></Col>
+                      <Col span={8}><Form.Item name="nationality" label="国籍"><Input placeholder="例如：禹州中央联邦" /></Form.Item></Col>
+                    </Row>
+                    <Row gutter={16}>
                       <Col span={6}>
                         <Form.Item name="gender" label="性别">
                           <Select placeholder="选择性别">
@@ -683,44 +705,80 @@ const CharacterManagementPanel = ({ worldId, quickCreateTarget, onUpdate }) => {
                   </>
                 )
               },
-              { key: 'appearance', label: '外貌特征', children: <Form.Item name="appearance" label="外貌详细描述"><TextArea rows={6} placeholder="详细描述角色的外貌特征" /></Form.Item> },
-              { key: 'personality', label: '性格心理', children: <Form.Item name="personality" label="性格描述"><TextArea rows={4} placeholder="描述角色的性格特点" /></Form.Item> },
-              { key: 'background', label: '背景经历', children: <Form.Item name="background" label="背景故事"><TextArea rows={4} placeholder="描述角色的出身和成长环境" /></Form.Item> },
-              { key: 'abilities', label: '能力设定', children: <Form.Item name="special_abilities" label="特殊能力"><TextArea rows={4} placeholder="描述角色掌握的特殊技能或法术" /></Form.Item> },
-              { key: 'items', label: '物品装备', children: <Form.Item name="special_items" label="特殊物品"><TextArea rows={3} placeholder="描述角色拥有的特殊或魔法物品" /></Form.Item> },
-              { key: 'relationships', label: '人际关系', children: <Form.Item name="family_members" label="家庭成员"><TextArea rows={3} placeholder="描述角色的家庭成员及其关系" /></Form.Item> },
-              { key: 'development', label: '角色发展', children: <Form.Item name="character_arc" label="角色弧线"><TextArea rows={3} placeholder="描述角色在故事中的成长轨迹" /></Form.Item> },
+              { key: 'appearance', label: '外貌特征', 
+                children: (
+                  <>
+                    <Form.Item name="appearance" label="外貌详细描述"><TextArea rows={4} placeholder="详细描述角色的外貌特征" /></Form.Item>
+                    <Form.Item name="appearance_age" label="外貌年龄"><InputNumber min={0} max={999} style={{ width: '100%' }} placeholder="看起来的年龄" /></Form.Item>
+                    <Form.Item name="distinguishing_features" label="显著特征"><TextArea rows={3} placeholder="描述角色的显著外貌特征，如疤痕、纹身等" /></Form.Item>
+                  </>
+                )
+              },
+              { key: 'personality', label: '性格心理', 
+                children: (
+                  <>
+                    <Form.Item name="personality" label="性格描述"><TextArea rows={3} placeholder="描述角色的性格特点" /></Form.Item>
+                    <Form.Item name="core_traits" label="核心特质"><TextArea rows={2} placeholder="角色的核心特质关键词" /></Form.Item>
+                    <Form.Item name="psychological_fear" label="心理恐惧"><TextArea rows={2} placeholder="角色最害怕或担忧的事情" /></Form.Item>
+                    <Form.Item name="values" label="价值观"><TextArea rows={2} placeholder="角色的价值观和信念" /></Form.Item>
+                  </>
+                )
+              },
+              { key: 'background', label: '背景经历', 
+                children: (
+                  <>
+                    <Form.Item name="background" label="背景故事"><TextArea rows={4} placeholder="描述角色的出身和成长环境" /></Form.Item>
+                    <Form.Item name="family_background" label="家庭背景"><TextArea rows={2} placeholder="描述角色的家庭情况" /></Form.Item>
+                    <Form.Item name="motivation" label="行为动机"><TextArea rows={2} placeholder="角色行动的主要动机" /></Form.Item>
+                    <Form.Item name="secrets" label="秘密"><TextArea rows={2} placeholder="角色隐藏的秘密" /></Form.Item>
+                  </>
+                )
+              },
+              { key: 'abilities', label: '能力设定', 
+                children: (
+                  <>
+                    <Form.Item name="special_abilities" label="特殊能力"><TextArea rows={3} placeholder="描述角色掌握的特殊技能或法术" /></Form.Item>
+                    <Form.Item name="physical_abilities" label="身体能力"><TextArea rows={2} placeholder="角色的身体素质、运动能力等" /></Form.Item>
+                    <Form.Item name="special_talents" label="特殊天赋"><TextArea rows={2} placeholder="角色的特殊天赋" /></Form.Item>
+                    <Form.Item name="current_level" label="等级/实力"><Input placeholder="如：Lv.10 或 钻石级" /></Form.Item>
+                  </>
+                )
+              },
+              { key: 'items', label: '物品装备', 
+                children: (
+                  <>
+                    <Form.Item name="special_items" label="特殊物品"><TextArea rows={3} placeholder="角色拥有的特殊或魔法物品" /></Form.Item>
+                    <Form.Item name="personal_items" label="个人物品"><TextArea rows={2} placeholder="角色的个人物品" /></Form.Item>
+                    <Form.Item name="key_items" label="关键物品"><TextArea rows={2} placeholder="对角色有特殊意义的关键物品" /></Form.Item>
+                    <Form.Item name="common_equipment" label="常用装备"><TextArea rows={2} placeholder="角色常用的装备" /></Form.Item>
+                  </>
+                )
+              },
+              { key: 'relationships', label: '人际关系', 
+                children: (
+                  <>
+                    <Form.Item name="family_members" label="家庭成员"><TextArea rows={2} placeholder="角色的家庭成员及其关系" /></Form.Item>
+                    <Form.Item name="close_friends" label="挚友"><TextArea rows={2} placeholder="角色的好朋友" /></Form.Item>
+                    <Form.Item name="mentor_student" label="师徒关系"><TextArea rows={2} placeholder="角色的师父或徒弟" /></Form.Item>
+                    <Form.Item name="colleagues" label="同事/同伴"><TextArea rows={2} placeholder="角色一起工作的同伴" /></Form.Item>
+                    <Form.Item name="grudges" label="仇敌"><TextArea rows={2} placeholder="角色的敌人或竞争对手" /></Form.Item>
+                    <Form.Item name="love_relationships" label="爱情关系"><TextArea rows={2} placeholder="角色的恋爱关系" /></Form.Item>
+                  </>
+                )
+              },
+              { key: 'development', label: '角色发展', 
+                children: (
+                  <>
+                    <Form.Item name="character_arc" label="角色弧线"><TextArea rows={3} placeholder="描述角色在故事中的成长轨迹" /></Form.Item>
+                    <Form.Item name="growth_experience" label="成长经历"><TextArea rows={2} placeholder="角色重要的成长经历" /></Form.Item>
+                    <Form.Item name="important_turning_points" label="关键转折点"><TextArea rows={2} placeholder="角色生命中的重要转折点" /></Form.Item>
+                    <Form.Item name="psychological_trauma" label="心理创伤"><TextArea rows={2} placeholder="角色经历的心理创伤" /></Form.Item>
+                  </>
+                )
+              },
             ]}
           />
         </Form>
-      </Modal>
-
-      <Modal title="角色详情" open={detailVisible} onCancel={() => setDetailVisible(false)} footer={[<Button key="close" onClick={() => setDetailVisible(false)}>关闭</Button>, <Button key="edit" type="primary" icon={<EditOutlined />} onClick={() => { setDetailVisible(false); showModal(viewingCharacter); }}>编辑</Button>]} width={800}>
-        {viewingCharacter && (
-          <div className="character-detail">
-            <div className="character-detail-header" style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
-              <Avatar size={80} icon={<UserOutlined />} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }} />
-              <div style={{ marginLeft: 16 }}>
-                <h2>{viewingCharacter.name}</h2>
-                <Space>
-                  {viewingCharacter.character_type && <Tag color="blue">{viewingCharacter.character_type}</Tag>}
-                  {viewingCharacter.race && <Tag>{viewingCharacter.race}</Tag>}
-                  {viewingCharacter.status && <Tag color={viewingCharacter.status === 'alive' ? 'success' : 'error'}>{viewingCharacter.status === 'alive' ? '存活' : '已死亡'}</Tag>}
-                </Space>
-              </div>
-            </div>
-            <Descriptions column={2} bordered>
-              <Descriptions.Item label="性别">{viewingCharacter.gender || '-'}</Descriptions.Item>
-              <Descriptions.Item label="年龄">{viewingCharacter.age || '-'}</Descriptions.Item>
-              <Descriptions.Item label="职业">{viewingCharacter.occupation || '-'}</Descriptions.Item>
-              <Descriptions.Item label="所属势力">{viewingCharacter.faction || '-'}</Descriptions.Item>
-            </Descriptions>
-            <div style={{ marginTop: 16 }}>
-              <h4>角色简介</h4>
-              <p>{viewingCharacter.description || '暂无描述'}</p>
-            </div>
-          </div>
-        )}
       </Modal>
 
       <AIGenerateModal
