@@ -107,7 +107,12 @@ class ChapterAppearanceService:
 
         created_count = 0
         for source in source_chapters:
-            if source.get('type') == 'chapter':
+            if isinstance(source, str):
+                try:
+                    source = {'type': 'chapter', 'id': int(source), 'title': ''}
+                except (ValueError, TypeError):
+                    continue
+            if isinstance(source, dict) and source.get('type') == 'chapter':
                 chapter_id = source.get('id')
                 if chapter_id:
                     appearance = cls.create_appearance(
@@ -256,12 +261,21 @@ class ChapterAppearanceService:
             'factions': 'faction',
             'civilizations': 'civilization',
             'historical_events': 'historical_event',
+            'historical_eras': 'historical_era',
             'historical_figures': 'historical_figure',
             'dimensions': 'dimension',
             'regions': 'region',
             'energy_systems': 'energy_system',
             'power_levels': 'power_level',
             'common_skills': 'common_skill',
+            'timelines': 'timeline',
+            'celestial_bodies': 'celestial_body',
+            'natural_laws': 'natural_law',
+            'social_classes': 'social_class',
+            'political_systems': 'political_system',
+            'economic_systems': 'economic_system',
+            'cultural_customs': 'cultural_custom',
+            'relations': 'relation',
         }
         return type_mapping.get(entity_type, entity_type)
 

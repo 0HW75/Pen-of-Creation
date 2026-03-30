@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional, List
 import logging
 
 from .base_generator import BaseGenerator
+from logs import generation_logger
 
 logger = logging.getLogger(__name__)
 
@@ -53,15 +54,19 @@ class ItemGenerator(BaseGenerator):
                 'historical_heritage': data.get('historical_heritage', ''),
                 'current_owner': data.get('current_owner', ''),
                 'acquisition_method': data.get('acquisition_method', ''),
-                'importance': int(data.get('importance', 0)) if data.get('importance') else 0
+                'importance_level': int(data.get('importance_level', 5)) if data.get('importance_level') else 5
             }
             
             item = Item(**item_data)
             db.session.add(item)
             db.session.commit()
-            
+
             logger.info(f"物品已保存到数据库: {item.name} (ID: {item.id})")
-            
+            generation_logger.log_step4_save('item', item.name, item_data, {
+                'success': True,
+                'item_id': item.id
+            })
+
             if source_chapters and project_id:
                 chapter_appearance_service.create_appearances_from_source(
                     project_id=project_id,

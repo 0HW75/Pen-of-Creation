@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional
 import logging
 
 from .base_generator import BaseGenerator
+from logs import generation_logger
 
 logger = logging.getLogger(__name__)
 
@@ -18,15 +19,17 @@ class EnergySystemGenerator(BaseGenerator):
     
     def save_to_database(self, data: Dict[str, Any],
                         world_id: Optional[int] = None,
-                        project_id: Optional[int] = None) -> Dict[str, Any]:
+                        project_id: Optional[int] = None,
+                        source_chapters: Any = None) -> Dict[str, Any]:
         """
         保存能量体系数据到数据库
-        
+
         Args:
             data: 生成的能量体系数据
             world_id: 世界观ID
             project_id: 项目ID
-        
+            source_chapters: 来源章节列表
+
         Returns:
             保存结果
         """
@@ -48,15 +51,30 @@ class EnergySystemGenerator(BaseGenerator):
                 'stability': data.get('stability', '稳定'),
                 'interaction_with_other_energies': data.get('interaction_with_other_energies', ''),
                 'cultivation_method': data.get('cultivation_method', ''),
-                'typical_manifestations': data.get('typical_manifestations', '')
+                'typical_manifestations': data.get('typical_manifestations', ''),
+                'importance_level': int(data.get('importance_level', 5)) if data.get('importance_level') else 5
             }
-            
+
             energy_system = EnergySystem(**energy_data)
             db.session.add(energy_system)
             db.session.commit()
-            
+
             logger.info(f"能量体系已保存到数据库: {energy_system.name} (ID: {energy_system.id})")
-            
+            generation_logger.log_step4_save('energy_system', energy_system.name, energy_data, {
+                'success': True,
+                'energy_system_id': energy_system.id
+            })
+
+            if source_chapters and project_id:
+                from app.services.chapter_appearance_service import chapter_appearance_service
+                chapter_appearance_service.create_appearances_from_source(
+                    project_id=project_id,
+                    entity_type='energy_system',
+                    entity_id=energy_system.id,
+                    source_chapters=source_chapters,
+                    appearance_type='首次出现'
+                )
+
             return {
                 'success': True,
                 'energy_system_id': energy_system.id,

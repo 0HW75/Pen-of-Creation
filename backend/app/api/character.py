@@ -3,6 +3,10 @@ from app import db
 from app.models import Character, Project, CharacterBackground, CharacterAbilityDetail
 from app.api import api_bp
 from app.services.chapter_appearance_service import chapter_appearance_service
+import logging
+import traceback
+
+logger = logging.getLogger(__name__)
 
 @api_bp.route('/characters', methods=['GET'])
 def get_characters():
@@ -167,8 +171,12 @@ def create_character():
         return jsonify(new_character.to_dict()), 201
     except Exception as e:
         db.session.rollback()
-        print(f'创建失败: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        error_msg = str(e)
+        tb = traceback.format_exc()
+        print(f'创建角色失败: {error_msg}')
+        print(f'详细堆栈: {tb}')
+        logger.error(f'创建角色失败 - 数据: {data}, 错误: {error_msg}, 堆栈: {tb}')
+        return jsonify({'error': error_msg}), 500
 
 @api_bp.route('/characters/<int:character_id>', methods=['PUT'])
 def update_character(character_id):

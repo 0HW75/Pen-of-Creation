@@ -4,10 +4,49 @@
 """
 from typing import Dict, Any, Optional, List
 import logging
+import re
 
 from .base_generator import BaseGenerator
+from logs import generation_logger
 
 logger = logging.getLogger(__name__)
+
+
+def extract_age(age_str: Any) -> int:
+    """
+    从字符串中提取年龄数字
+
+    Args:
+        age_str: 年龄值，可能是字符串如"约40岁"、"二十岁"、数字等
+
+    Returns:
+        年龄整数，默认为0
+    """
+    if isinstance(age_str, int):
+        return age_str if age_str >= 0 else 0
+    if isinstance(age_str, float):
+        return int(age_str) if age_str >= 0 else 0
+
+    if not age_str:
+        return 0
+
+    age_str = str(age_str)
+
+    chinese_nums = {'一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10}
+    for cn, num in chinese_nums.items():
+        if cn in age_str:
+            match = re.search(r'(\d+)', age_str)
+            if match:
+                return max(0, int(match.group(1)))
+            if cn == '十':
+                return 10
+            return num
+
+    match = re.search(r'(\d+)', age_str)
+    if match:
+        return max(0, int(match.group(1)))
+
+    return 0
 
 
 class CharacterGenerator(BaseGenerator):
@@ -43,10 +82,10 @@ class CharacterGenerator(BaseGenerator):
                 'name': data.get('name', '未命名角色'),
                 'race': data.get('race', ''),
                 'gender': data.get('gender', ''),
-                'age': int(data.get('age', 0)) if data.get('age') else 0,
+                'age': extract_age(data.get('age', 0)),
                 'description': data.get('description', ''),
                 'appearance': data.get('appearance', ''),
-                'appearance_age': int(data.get('appearance_age', 0)) if data.get('appearance_age') else 0,
+                'appearance_age': extract_age(data.get('appearance_age', 0)),
                 'distinguishing_features': data.get('distinguishing_features', ''),
                 'personality': data.get('personality', ''),
                 'background': data.get('background', ''),
@@ -85,15 +124,26 @@ class CharacterGenerator(BaseGenerator):
                 'love_relationships': data.get('love_relationships', ''),
                 'complex_emotions': data.get('complex_emotions', ''),
                 'unrequited_love': data.get('unrequited_love', ''),
-                'emotional_changes': data.get('emotional_changes', '')
+                'emotional_changes': data.get('emotional_changes', ''),
+                'importance_level': int(data.get('importance_level', 5)) if data.get('importance_level') else 5,
+                'character_type': data.get('character_type', ''),
+                'role_type': data.get('role_type', ''),
+                'status': data.get('status', 'active'),
+                'birth_date': data.get('birth_date'),
+                'death_date': data.get('death_date'),
+                'alternative_names': data.get('alternative_names', '')
             }
             
             character = Character(**character_data)
             db.session.add(character)
             db.session.commit()
-            
+
             logger.info(f"角色已保存到数据库: {character.name} (ID: {character.id})")
-            
+            generation_logger.log_step4_save('character', character.name, character_data, {
+                'success': True,
+                'character_id': character.id
+            })
+
             if source_chapters and project_id:
                 chapter_appearance_service.create_appearances_from_source(
                     project_id=project_id,

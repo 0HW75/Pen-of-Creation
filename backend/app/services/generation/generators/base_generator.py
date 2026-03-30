@@ -92,7 +92,7 @@ class BaseGenerator(ABC):
             
             # 6. 调用AI服务
             messages = [
-                {"role": "system", "content": "你是一位专业的小说设定创作助手。请根据提供的世界观信息和用户要求，生成详细的设定内容。必须以JSON格式返回结果。"},
+                {"role": "system", "content": "你是一位专业的小说设定创作助手。请根据提供的世界观信息和用户要求，生成详细的设定内容。必须以JSON格式返回结果。**禁止使用\\uXXXX Unicode转义序列，所有文字必须直接使用UTF-8中文字符。**"},
                 {"role": "user", "content": final_prompt}
             ]
             

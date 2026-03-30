@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional, List
 import logging
 
 from .base_generator import BaseGenerator
+from logs import generation_logger
 
 logger = logging.getLogger(__name__)
 
@@ -64,15 +65,19 @@ class LocationGenerator(BaseGenerator):
                 'potential_dangers': data.get('potential_dangers', ''),
                 'access_restrictions': data.get('access_restrictions', ''),
                 'survival_conditions': data.get('survival_conditions', ''),
-                'importance': int(data.get('importance', 5)) if data.get('importance') else 5
+                'importance_level': int(data.get('importance_level', 5)) if data.get('importance_level') else 5
             }
             
             location = Location(**location_data)
             db.session.add(location)
             db.session.commit()
-            
+
             logger.info(f"地点已保存到数据库: {location.name} (ID: {location.id})")
-            
+            generation_logger.log_step4_save('location', location.name, location_data, {
+                'success': True,
+                'location_id': location.id
+            })
+
             if source_chapters and project_id:
                 chapter_appearance_service.create_appearances_from_source(
                     project_id=project_id,

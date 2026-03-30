@@ -18,15 +18,17 @@ class RegionGenerator(BaseGenerator):
     
     def save_to_database(self, data: Dict[str, Any],
                         world_id: Optional[int] = None,
-                        project_id: Optional[int] = None) -> Dict[str, Any]:
+                        project_id: Optional[int] = None,
+                        source_chapters: Any = None) -> Dict[str, Any]:
         """
         保存区域数据到数据库
-        
+
         Args:
             data: 生成的区域数据
             world_id: 世界观ID
             project_id: 项目ID
-        
+            source_chapters: 来源章节列表
+
         Returns:
             保存结果
         """
@@ -46,6 +48,7 @@ class RegionGenerator(BaseGenerator):
                 'population': int(data.get('population', 0)) if data.get('population') else 0,
                 'resources': data.get('resources', ''),
                 'strategic_importance': int(data.get('strategic_importance', 5)) if data.get('strategic_importance') else 5,
+                'importance_level': int(data.get('importance_level', 5)) if data.get('importance_level') else 5,
                 'danger_level': data.get('danger_level', '安全')
             }
             

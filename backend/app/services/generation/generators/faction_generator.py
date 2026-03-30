@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional, List
 import logging
 
 from .base_generator import BaseGenerator
+from logs import generation_logger
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ class FactionGenerator(BaseGenerator):
                 'faction_type': data.get('faction_type', '国家'),
                 'faction_status': data.get('faction_status', '活跃'),
                 'description': data.get('description', ''),
+                'logo': data.get('logo', ''),
                 'core_ideology': data.get('core_ideology', ''),
                 'sphere_of_influence': data.get('sphere_of_influence', ''),
                 'influence_level': data.get('influence_level', '区域'),
@@ -75,15 +77,19 @@ class FactionGenerator(BaseGenerator):
                 'enemy_relationships': data.get('enemy_relationships', ''),
                 'subordinate_relationships': data.get('subordinate_relationships', ''),
                 'neutral_relationships': data.get('neutral_relationships', ''),
-                'importance': int(data.get('importance', 0)) if data.get('importance') else 0
+                'importance_level': int(data.get('importance_level', 5)) if data.get('importance_level') else 5
             }
             
             faction = Faction(**faction_data)
             db.session.add(faction)
             db.session.commit()
-            
+
             logger.info(f"势力已保存到数据库: {faction.name} (ID: {faction.id})")
-            
+            generation_logger.log_step4_save('faction', faction.name, faction_data, {
+                'success': True,
+                'faction_id': faction.id
+            })
+
             if source_chapters and project_id:
                 chapter_appearance_service.create_appearances_from_source(
                     project_id=project_id,

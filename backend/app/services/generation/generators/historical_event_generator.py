@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional
 import logging
 
 from .base_generator import BaseGenerator
+from logs import generation_logger
 
 logger = logging.getLogger(__name__)
 
@@ -18,15 +19,17 @@ class HistoricalEventGenerator(BaseGenerator):
     
     def save_to_database(self, data: Dict[str, Any],
                         world_id: Optional[int] = None,
-                        project_id: Optional[int] = None) -> Dict[str, Any]:
+                        project_id: Optional[int] = None,
+                        source_chapters: Any = None) -> Dict[str, Any]:
         """
         保存历史事件数据到数据库
-        
+
         Args:
             data: 生成的历史事件数据
             world_id: 世界观ID
             project_id: 项目ID
-        
+            source_chapters: 来源章节列表
+
         Returns:
             保存结果
         """
@@ -53,9 +56,23 @@ class HistoricalEventGenerator(BaseGenerator):
             event = HistoricalEvent(**event_data)
             db.session.add(event)
             db.session.commit()
-            
+
             logger.info(f"历史事件已保存到数据库: {event.name} (ID: {event.id})")
-            
+            generation_logger.log_step4_save('historical_event', event.name, event_data, {
+                'success': True,
+                'event_id': event.id
+            })
+
+            if source_chapters and project_id:
+                from app.services.chapter_appearance_service import chapter_appearance_service
+                chapter_appearance_service.create_appearances_from_source(
+                    project_id=project_id,
+                    entity_type='historical_event',
+                    entity_id=event.id,
+                    source_chapters=source_chapters,
+                    appearance_type='首次出现'
+                )
+
             return {
                 'success': True,
                 'event_id': event.id,
