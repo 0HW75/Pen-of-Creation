@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { blueprintApi, projectApi, aiVersionAPI } from '../services/api';
+import { blueprintApi, projectApi, aiVersionAPI, chapterApi } from '../services/api';
 import { useBlueprintBasicState } from './useBlueprintBasicState';
 import { useBlueprintAI } from './useBlueprintAI';
 import { useBlueprintArchitects } from './useBlueprintArchitects';
@@ -77,7 +77,7 @@ export const useBlueprintManagement = (projectId) => {
     handleCloseVolumeEditModal,
   } = useBlueprintOutlines(
     outlines, volumes, chapters,
-    selectedOutline, selectedVolume,
+    selectedOutline, selectedVolume, selectedChapter,
     setOutlines, setVolumes, setChapters,
     setSelectedOutline, setSelectedVolume, setSelectedChapter,
     setActiveView, loadProjectOutline
@@ -896,6 +896,17 @@ ${volumeContent}
         
         let allChapters = [];
         
+        // 获取项目中所有现有章节数量，用于计算全局 order_index
+        let existingChapterCount = 0;
+        try {
+          const allChaptersRes = await chapterApi.getChapters(projectId);
+          if (allChaptersRes.data && Array.isArray(allChaptersRes.data)) {
+            existingChapterCount = allChaptersRes.data.length;
+          }
+        } catch (e) {
+          console.warn('获取现有章节数失败，将从0开始:', e);
+        }
+        
         if (useIncrementalMode) {
           setStreamingOutput('【第一步】正在规划章节结构...\n\n');
           
@@ -927,11 +938,11 @@ ${volumeContent}
                 emotional_goal: detailedChapter.emotional_goal || '',
                 keywords: detailedChapter.keywords || [],
                 word_count_estimate: detailedChapter.word_count_estimate || config.minWords || 2000,
-                order_index: detailedChapter.order_index || chOutline.order_index || i + 1
+                order_index: existingChapterCount + i
               };
               
               detailedChapters.push(chapterData);
-              setStreamingOutput(prev => prev + `✓ 第${chapterData.order_index}章《${chapterData.title}》生成完成\n\n`);
+              setStreamingOutput(prev => prev + `✓ 第${chapterData.order_index + 1}章《${chapterData.title}》生成完成\n\n`);
             } catch (error) {
               console.error(`第${chOutline.order_index}章生成失败:`, error);
               setStreamingOutput(prev => prev + `✗ 第${chOutline.order_index}章生成失败: ${error.message}\n\n`);
@@ -945,7 +956,7 @@ ${volumeContent}
                 emotional_goal: '',
                 keywords: [],
                 word_count_estimate: config.minWords || 2000,
-                order_index: chOutline.order_index || i + 1
+                order_index: existingChapterCount + i
               });
             }
           }
@@ -1019,7 +1030,7 @@ ${volumeContent}
                 emotional_goal: chapter.emotional_goal || '',
                 keywords: chapter.keywords || [],
                 word_count_estimate: chapter.word_count_estimate || 2000,
-                order_index: chapter.order_index || startChapter + index
+                order_index: existingChapterCount + allChapters.length + index
               }));
 
               allChapters = [...allChapters, ...batchChapters];

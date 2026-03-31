@@ -294,7 +294,7 @@ const ChapterManagement = ({ projectId, onChapterSelect, onChaptersChange }) => 
       title: '章号',
       key: 'chapter_number',
       width: 80,
-      render: (text, record, index) => <Text strong>第{index + 1}章</Text>,
+      render: (text, record) => <Text strong>第{(record.order_index || 0) + 1}章</Text>,
     },
     {
       title: '所属卷',

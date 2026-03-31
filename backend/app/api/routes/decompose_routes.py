@@ -14,14 +14,25 @@ def decompose_volume(id):
 
     if isinstance(data, list):
         created_chapters = []
-        for chap_data in data:
-            existing_chapter = Chapter.query.filter_by(
-                project_id=volume.project_id,
-                volume_id=volume.id,
-                order_index=chap_data.get('order_index')
-            ).first()
-
+        
+        # 获取该卷现有的所有章节
+        existing_chapters = Chapter.query.filter_by(
+            project_id=volume.project_id,
+            volume_id=volume.id
+        ).order_by(Chapter.order_index).all()
+        
+        # 按 order_index 建立映射
+        existing_by_index = {ch.order_index: ch for ch in existing_chapters}
+        
+        # 遍历传入的数据创建/更新章节
+        for idx, chap_data in enumerate(data):
+            order_index = chap_data.get('order_index', idx)
+            
+            # 尝试通过 order_index 查找现有章节
+            existing_chapter = existing_by_index.get(order_index)
+            
             if existing_chapter:
+                # 更新现有章节
                 existing_chapter.title = chap_data.get('title', existing_chapter.title)
                 existing_chapter.content = chap_data.get('content', existing_chapter.content)
                 existing_chapter.core_event = chap_data.get('core_event', existing_chapter.core_event)
@@ -36,6 +47,7 @@ def decompose_volume(id):
                 existing_chapter.version += 1
                 created_chapters.append(existing_chapter)
             else:
+                # 创建新章节
                 new_chapter = Chapter(
                     project_id=volume.project_id,
                     volume_id=volume.id,
@@ -44,7 +56,7 @@ def decompose_volume(id):
                     core_event=chap_data.get('core_event', ''),
                     emotional_goal=chap_data.get('emotional_goal', ''),
                     word_count_estimate=chap_data.get('word_count_estimate', 2000),
-                    order_index=chap_data.get('order_index', len(created_chapters) + 1),
+                    order_index=order_index,
                     version=1
                 )
                 if 'scenes' in chap_data:
@@ -55,6 +67,12 @@ def decompose_volume(id):
                     new_chapter.keywords = json.dumps(chap_data['keywords']) if isinstance(chap_data['keywords'], list) else chap_data['keywords']
                 db.session.add(new_chapter)
                 created_chapters.append(new_chapter)
+        
+        # 删除不在新数据中的旧章节
+        new_order_indices = set(chap_data.get('order_index', idx) for idx, chap_data in enumerate(data))
+        for existing_ch in existing_chapters:
+            if existing_ch.order_index not in new_order_indices:
+                db.session.delete(existing_ch)
     else:
         existing_chapter = Chapter.query.filter_by(
             project_id=volume.project_id,
