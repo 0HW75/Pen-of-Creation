@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 from app import db
-from app import now_utc_plus_8
+from datetime import datetime, timezone, timedelta
 from app.models import (
     World, Character, Location, Faction, HistoricalEvent, Item
 )
@@ -19,7 +19,7 @@ def get_world_stats(world_id):
                 'message': '世界不存在'
             }), 404
 
-        today = now_utc_plus_8()
+        today = datetime.now(timezone(timedelta(hours=8)))
         week_start = today - timedelta(days=today.weekday())
         week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
 

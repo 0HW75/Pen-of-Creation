@@ -1,0 +1,116 @@
+=== characters_GROUPS ===
+Data: {
+  "original_count": 2,
+  "group_count": 2,
+  "groups": [
+    {
+      "name": "陈启",
+      "size": 1
+    },
+    {
+      "name": "李卫国",
+      "size": 1
+    }
+  ]
+}
+=== locations_GROUPS ===
+Data: {
+  "original_count": 4,
+  "group_count": 4,
+  "groups": [
+    {
+      "name": "陈启的公寓",
+      "size": 1
+    },
+    {
+      "name": "安全屋",
+      "size": 1
+    },
+    {
+      "name": "军用机场",
+      "size": 1
+    },
+    {
+      "name": "昆仑基地",
+      "size": 1
+    }
+  ]
+}
+=== factions_GROUPS ===
+Data: {
+  "original_count": 2,
+  "group_count": 2,
+  "groups": [
+    {
+      "name": "中央联邦安全部",
+      "size": 1
+    },
+    {
+      "name": "零号工程",
+      "size": 1
+    }
+  ]
+}
+=== items_GROUPS ===
+Data: {
+  "original_count": 1,
+  "group_count": 1,
+  "groups": [
+    {
+      "name": "加密报告",
+      "size": 1
+    }
+  ]
+}
+=== energy_systems_GROUPS ===
+Data: {
+  "original_count": 1,
+  "group_count": 1,
+  "groups": [
+    {
+      "name": "门/穿越能力",
+      "size": 1
+    }
+  ]
+}
+=== civilizations_GROUPS ===
+Data: {
+  "original_count": 1,
+  "group_count": 1,
+  "groups": [
+    {
+      "name": "禹州文明（主角所在世界）",
+      "size": 1
+    }
+  ]
+}
+=== political_systems_GROUPS ===
+Data: {
+  "original_count": 1,
+  "group_count": 1,
+  "groups": [
+    {
+      "name": "禹州中央联邦政府",
+      "size": 1
+    }
+  ]
+}
+=== relations_GROUPS ===
+Data: {
+  "original_count": 3,
+  "group_count": 3,
+  "groups": [
+    {
+      "name": "陈启与零号工程的所属关系",
+      "size": 1
+    },
+    {
+      "name": "李卫国与零号工程的领导关系",
+      "size": 1
+    },
+    {
+      "name": "中央联邦安全部与零号工程的管辖关系",
+      "size": 1
+    }
+  ]
+}

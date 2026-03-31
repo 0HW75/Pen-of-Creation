@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app import db
-from app import now_utc_plus_8
+from datetime import datetime, timezone, timedelta
 from app.models import (
     World, Character, Location, Faction, HistoricalEvent, Item,
     Dimension, Region, CelestialBody, NaturalLaw, EnergySystem,
@@ -114,7 +114,7 @@ def update_world(world_id):
         world.creation_origin = data.get('creation_origin', world.creation_origin)
         world.world_essence = data.get('world_essence', world.world_essence)
         world.status = data.get('status', world.status)
-        world.updated_at = now_utc_plus_8()
+        world.updated_at = datetime.now(timezone(timedelta(hours=8)))
 
         db.session.commit()
 
