@@ -3,7 +3,7 @@ import {
   Card, Button, Table, Modal, Form, Input, Select, Tag, message, Space
 } from 'antd';
 import { CrownOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { energySocietyApi } from '../../../services/api';
+import { societyApi } from '../../../services/api';
 
 const { TextArea } = Input;
 
@@ -18,7 +18,7 @@ const PoliticalSystemManagement = ({ worldId, civilizations, onRefresh }) => {
   const fetchPoliticalSystems = async (civId = null) => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getPoliticalSystems(worldId, civId);
+      const response = await societyApi.getPoliticalSystems(worldId, civId);
       if (response.data.code === 200) {
         setPoliticalSystems(response.data.data);
       }
@@ -60,10 +60,10 @@ const PoliticalSystemManagement = ({ worldId, civilizations, onRefresh }) => {
         political_stability: values.political_stability || '稳定',
       };
       if (editingSystem) {
-        await energySocietyApi.updatePoliticalSystem(editingSystem.id, data);
+        await societyApi.updatePoliticalSystem(editingSystem.id, data);
         message.success('政治体系更新成功');
       } else {
-        await energySocietyApi.createPoliticalSystem(data);
+        await societyApi.createPoliticalSystem(data);
         message.success('政治体系创建成功');
       }
       setModalVisible(false);
@@ -77,7 +77,7 @@ const PoliticalSystemManagement = ({ worldId, civilizations, onRefresh }) => {
 
   const handleDelete = async (id) => {
     try {
-      await energySocietyApi.deletePoliticalSystem(id);
+      await societyApi.deletePoliticalSystem(id);
       message.success('删除成功');
       fetchPoliticalSystems();
       if (onRefresh) onRefresh();

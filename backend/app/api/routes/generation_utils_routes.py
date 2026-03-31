@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 ai_generation_bp = Blueprint('ai_generation', __name__)
 
+# This blueprint is used for main AI generation routes
+ai_generation_utils_bp = Blueprint('ai_generation_utils', __name__)
+
 generators = {
     'character': CharacterGenerator(),
     'location': LocationGenerator(),
@@ -34,7 +37,7 @@ generators = {
 }
 
 
-@ai_generation_bp.route('/generate-setting/save', methods=['POST'])
+@ai_generation_utils_bp.route('/generate-setting/save', methods=['POST'])
 def save_generated_setting():
     """
     保存生成的设定到数据库
@@ -78,7 +81,7 @@ def save_generated_setting():
         }), 500
 
 
-@ai_generation_bp.route('/generation-strategies', methods=['GET'])
+@ai_generation_utils_bp.route('/generation-strategies', methods=['GET'])
 def get_generation_strategies():
     """获取所有可用的生成策略"""
     try:
@@ -95,7 +98,7 @@ def get_generation_strategies():
         }), 500
 
 
-@ai_generation_bp.route('/supported-entity-types', methods=['GET'])
+@ai_generation_utils_bp.route('/supported-entity-types', methods=['GET'])
 def get_supported_entity_types():
     """获取支持的实体类型列表"""
     try:
@@ -120,7 +123,7 @@ def get_supported_entity_types():
         }), 500
 
 
-@ai_generation_bp.route('/preview-prompt', methods=['POST'])
+@ai_generation_utils_bp.route('/preview-prompt', methods=['POST'])
 def preview_prompt():
     """
     预览生成的提示词

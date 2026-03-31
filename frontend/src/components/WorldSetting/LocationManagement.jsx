@@ -78,7 +78,7 @@ const LocationArchiveManagement = ({ worldId, projectId, quickCreateTarget, onUp
         potential_dangers: values.potential_dangers,
         access_restrictions: values.access_restrictions,
         survival_conditions: values.survival_conditions,
-        importance: values.importance || 5,
+        importance_level: values.importance_level || 5,
         description: values.description,
       };
       if (editingLocation) {
@@ -160,8 +160,8 @@ const LocationArchiveManagement = ({ worldId, projectId, quickCreateTarget, onUp
     },
     {
       title: '重要度',
-      dataIndex: 'importance',
-      key: 'importance',
+      dataIndex: 'importance_level',
+      key: 'importance_level',
       width: 80,
       render: (level) => {
         const colors = ['green', 'green', 'cyan', 'cyan', 'blue', 'blue', 'purple', 'purple', 'orange', 'red'];
@@ -210,7 +210,7 @@ const LocationArchiveManagement = ({ worldId, projectId, quickCreateTarget, onUp
                 potential_dangers: record.potential_dangers,
                 access_restrictions: record.access_restrictions,
                 survival_conditions: record.survival_conditions,
-                importance: record.importance,
+                importance_level: record.importance_level,
                 description: record.description,
               });
               setModalVisible(true);
@@ -321,7 +321,7 @@ const LocationArchiveManagement = ({ worldId, projectId, quickCreateTarget, onUp
                         </Form.Item>
                       </Col>
                       <Col span={8}>
-                        <Form.Item name="importance" label="重要程度 (1-10)">
+                        <Form.Item name="importance_level" label="重要程度 (1-10)">
                           <InputNumber min={1} max={10} style={{ width: '100%' }} />
                         </Form.Item>
                       </Col>

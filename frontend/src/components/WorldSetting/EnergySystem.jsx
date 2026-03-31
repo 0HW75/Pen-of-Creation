@@ -8,7 +8,7 @@ import {
   FireOutlined, ThunderboltOutlined, StarOutlined,
   BookOutlined, WarningOutlined
 } from '@ant-design/icons';
-import { energySocietyApi } from '../../services/api';
+import { energySystemApi, societyApi } from '../../services/api';
 
 const { TextArea } = Input;
 
@@ -23,7 +23,7 @@ const EnergySystemManagement = ({ worldId, onRefresh }) => {
   const fetchEnergySystems = async () => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getEnergySystems(worldId);
+      const response = await energySystemApi.getEnergySystems(worldId);
       if (response.data.code === 200) {
         setEnergySystems(response.data.data);
       }
@@ -58,10 +58,10 @@ const EnergySystemManagement = ({ worldId, onRefresh }) => {
         typical_manifestations: '',
       };
       if (editingSystem) {
-        await energySocietyApi.updateEnergySystem(editingSystem.id, data);
+        await energySystemApi.updateEnergySystem(editingSystem.id, data);
         message.success('能量体系更新成功');
       } else {
-        await energySocietyApi.createEnergySystem(data);
+        await energySystemApi.createEnergySystem(data);
         message.success('能量体系创建成功');
       }
       setModalVisible(false);
@@ -75,7 +75,7 @@ const EnergySystemManagement = ({ worldId, onRefresh }) => {
 
   const handleDelete = async (id) => {
     try {
-      await energySocietyApi.deleteEnergySystem(id);
+      await energySystemApi.deleteEnergySystem(id);
       message.success('删除成功');
       fetchEnergySystems();
       if (onRefresh) onRefresh();
@@ -254,8 +254,8 @@ const EnergyFormManagement = ({ worldId, onRefresh }) => {
     setLoading(true);
     try {
       const [formsRes, systemsRes] = await Promise.all([
-        energySocietyApi.getEnergyForms(worldId),
-        energySocietyApi.getEnergySystems(worldId),
+        energySystemApi.getEnergyForms(worldId),
+        energySystemApi.getEnergySystems(worldId),
       ]);
       if (formsRes.data.code === 200) {
         setEnergyForms(formsRes.data.data);
@@ -277,10 +277,10 @@ const EnergyFormManagement = ({ worldId, onRefresh }) => {
   const handleSubmit = async (values) => {
     try {
       if (editingForm) {
-        await energySocietyApi.updateEnergyForm(editingForm.id, values);
+        await energySystemApi.updateEnergyForm(editingForm.id, values);
         message.success('能量形态更新成功');
       } else {
-        await energySocietyApi.createEnergyForm({ ...values, world_id: worldId });
+        await energySystemApi.createEnergyForm({ ...values, world_id: worldId });
         message.success('能量形态创建成功');
       }
       setModalVisible(false);
@@ -294,7 +294,7 @@ const EnergyFormManagement = ({ worldId, onRefresh }) => {
 
   const handleDelete = async (id) => {
     try {
-      await energySocietyApi.deleteEnergyForm(id);
+      await energySystemApi.deleteEnergyForm(id);
       message.success('删除成功');
       fetchData();
       if (onRefresh) onRefresh();
@@ -486,7 +486,7 @@ const PowerLevelManagement = ({ worldId, onRefresh }) => {
   const fetchPowerLevels = async () => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getPowerLevels(worldId);
+      const response = await societyApi.getPowerLevels(worldId);
       if (response.data.code === 200) {
         setPowerLevels(response.data.data);
       }
@@ -514,10 +514,10 @@ const PowerLevelManagement = ({ worldId, onRefresh }) => {
         world_id: worldId,
       };
       if (editingLevel) {
-        await energySocietyApi.updatePowerLevel(editingLevel.id, data);
+        await societyApi.updatePowerLevel(editingLevel.id, data);
         message.success('力量等级更新成功');
       } else {
-        await energySocietyApi.createPowerLevel(data);
+        await societyApi.createPowerLevel(data);
         message.success('力量等级创建成功');
       }
       setModalVisible(false);
@@ -531,7 +531,7 @@ const PowerLevelManagement = ({ worldId, onRefresh }) => {
 
   const handleDelete = async (id) => {
     try {
-      await energySocietyApi.deletePowerLevel(id);
+      await societyApi.deletePowerLevel(id);
       message.success('删除成功');
       fetchPowerLevels();
       if (onRefresh) onRefresh();
@@ -699,7 +699,7 @@ const PowerCostManagement = ({ worldId, onRefresh }) => {
   const fetchPowerCosts = async () => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getPowerCosts(worldId);
+      const response = await societyApi.getPowerCosts(worldId);
       if (response.data.code === 200) {
         setPowerCosts(response.data.data);
       }
@@ -717,10 +717,10 @@ const PowerCostManagement = ({ worldId, onRefresh }) => {
   const handleSubmit = async (values) => {
     try {
       if (editingCost) {
-        await energySocietyApi.updatePowerCost(editingCost.id, values);
+        await societyApi.updatePowerCost(editingCost.id, values);
         message.success('力量代价更新成功');
       } else {
-        await energySocietyApi.createPowerCost({ ...values, world_id: worldId });
+        await societyApi.createPowerCost({ ...values, world_id: worldId });
         message.success('力量代价创建成功');
       }
       setModalVisible(false);
@@ -734,7 +734,7 @@ const PowerCostManagement = ({ worldId, onRefresh }) => {
 
   const handleDelete = async (id) => {
     try {
-      await energySocietyApi.deletePowerCost(id);
+      await societyApi.deletePowerCost(id);
       message.success('删除成功');
       fetchPowerCosts();
       if (onRefresh) onRefresh();
@@ -938,7 +938,7 @@ const CommonSkillManagement = ({ worldId, onRefresh }) => {
   const fetchCommonSkills = async () => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getCommonSkills(worldId);
+      const response = await energySystemApi.getCommonSkills(worldId);
       if (response.data.code === 200) {
         setCommonSkills(response.data.data);
       }
@@ -966,10 +966,10 @@ const CommonSkillManagement = ({ worldId, onRefresh }) => {
         world_id: worldId,
       };
       if (editingSkill) {
-        await energySocietyApi.updateCommonSkill(editingSkill.id, data);
+        await energySystemApi.updateCommonSkill(editingSkill.id, data);
         message.success('通用技能更新成功');
       } else {
-        await energySocietyApi.createCommonSkill(data);
+        await energySystemApi.createCommonSkill(data);
         message.success('通用技能创建成功');
       }
       setModalVisible(false);
@@ -983,7 +983,7 @@ const CommonSkillManagement = ({ worldId, onRefresh }) => {
 
   const handleDelete = async (id) => {
     try {
-      await energySocietyApi.deleteCommonSkill(id);
+      await energySystemApi.deleteCommonSkill(id);
       message.success('删除成功');
       fetchCommonSkills();
       if (onRefresh) onRefresh();
@@ -1181,11 +1181,11 @@ const EnergySystem = ({ worldId }) => {
     if (worldId) {
       // 获取统计数据
       Promise.all([
-        energySocietyApi.getEnergySystems(worldId),
-        energySocietyApi.getEnergyForms(worldId),
-        energySocietyApi.getPowerLevels(worldId),
-        energySocietyApi.getPowerCosts(worldId),
-        energySocietyApi.getCommonSkills(worldId),
+        energySystemApi.getEnergySystems(worldId),
+        energySystemApi.getEnergyForms(worldId),
+        societyApi.getPowerLevels(worldId),
+        societyApi.getPowerCosts(worldId),
+        energySystemApi.getCommonSkills(worldId),
       ]).then(([systems, forms, levels, costs, skills]) => {
         setStats({
           energySystems: systems.data.data?.length || 0,

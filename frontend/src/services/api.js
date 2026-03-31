@@ -515,121 +515,7 @@ export const settingApi = {
     return response;
   },
   
-  // 角色内在特质
-  getCharacterTraits: (projectId) => api.get('/settings/character-trait', { params: { project_id: projectId } }),
-  getCharacterTrait: (id) => api.get(`/settings/character-trait/${id}`),
-  createCharacterTrait: async (data) => {
-    const response = await api.post('/settings/character-trait', data);
-    clearCache();
-    return response;
-  },
-  updateCharacterTrait: async (id, data) => {
-    const response = await api.put(`/settings/character-trait/${id}`, data);
-    clearCache();
-    return response;
-  },
-  deleteCharacterTrait: async (id) => {
-    const response = await api.delete(`/settings/character-trait/${id}`);
-    clearCache();
-    return response;
-  },
-  
-  // 角色能力装备
-  getCharacterAbilities: (projectId) => api.get('/settings/character-ability', { params: { project_id: projectId } }),
-  getCharacterAbility: (id) => api.get(`/settings/character-ability/${id}`),
-  createCharacterAbility: async (data) => {
-    const response = await api.post('/settings/character-ability', data);
-    clearCache();
-    return response;
-  },
-  updateCharacterAbility: async (id, data) => {
-    const response = await api.put(`/settings/character-ability/${id}`, data);
-    clearCache();
-    return response;
-  },
-  deleteCharacterAbility: async (id) => {
-    const response = await api.delete(`/settings/character-ability/${id}`);
-    clearCache();
-    return response;
-  },
-  
-  // 角色关系发展
-  getCharacterRelationships: (projectId) => api.get('/settings/character-relationship', { params: { project_id: projectId } }),
-  getCharacterRelationship: (id) => api.get(`/settings/character-relationship/${id}`),
-  createCharacterRelationship: async (data) => {
-    const response = await api.post('/settings/character-relationship', data);
-    clearCache();
-    return response;
-  },
-  updateCharacterRelationship: async (id, data) => {
-    const response = await api.put(`/settings/character-relationship/${id}`, data);
-    clearCache();
-    return response;
-  },
-  deleteCharacterRelationship: async (id) => {
-    const response = await api.delete(`/settings/character-relationship/${id}`);
-    clearCache();
-    return response;
-  },
-  
-  // 势力组织结构
-  getFactionStructures: (projectId) => api.get('/settings/faction-structure', { params: { project_id: projectId } }),
-  getFactionStructure: (id) => api.get(`/settings/faction-structure/${id}`),
-  createFactionStructure: async (data) => {
-    const response = await api.post('/settings/faction-structure', data);
-    clearCache();
-    return response;
-  },
-  updateFactionStructure: async (id, data) => {
-    const response = await api.put(`/settings/faction-structure/${id}`, data);
-    clearCache();
-    return response;
-  },
-  deleteFactionStructure: async (id) => {
-    const response = await api.delete(`/settings/faction-structure/${id}`);
-    clearCache();
-    return response;
-  },
-  
-  // 势力能力目标
-  getFactionGoals: (projectId) => api.get('/settings/faction-goal', { params: { project_id: projectId } }),
-  getFactionGoal: (id) => api.get(`/settings/faction-goal/${id}`),
-  createFactionGoal: async (data) => {
-    const response = await api.post('/settings/faction-goal', data);
-    clearCache();
-    return response;
-  },
-  updateFactionGoal: async (id, data) => {
-    const response = await api.put(`/settings/faction-goal/${id}`, data);
-    clearCache();
-    return response;
-  },
-  deleteFactionGoal: async (id) => {
-    const response = await api.delete(`/settings/faction-goal/${id}`);
-    clearCache();
-    return response;
-  },
-  
-  // 地点内部结构
-  getLocationStructures: (projectId) => api.get('/settings/location-structure', { params: { project_id: projectId } }),
-  getLocationStructure: (id) => api.get(`/settings/location-structure/${id}`),
-  createLocationStructure: async (data) => {
-    const response = await api.post('/settings/location-structure', data);
-    clearCache();
-    return response;
-  },
-  updateLocationStructure: async (id, data) => {
-    const response = await api.put(`/settings/location-structure/${id}`, data);
-    clearCache();
-    return response;
-  },
-  deleteLocationStructure: async (id) => {
-    const response = await api.delete(`/settings/location-structure/${id}`);
-    clearCache();
-    return response;
-  },
-  
-  // 地点特殊地点
+
   getSpecialLocations: (projectId) => api.get('/settings/special-location', { params: { project_id: projectId } }),
   getSpecialLocation: (id) => api.get(`/settings/special-location/${id}`),
   createSpecialLocation: async (data) => {
@@ -733,17 +619,17 @@ export const aiApi = {
 // AI设定生成API
 export const aiGenerationApi = {
   // 生成设定
-  generateSetting: (data) => api.post('/generate-setting', data),
+  generateSetting: (data) => api.post('/ai-generation/generate-setting', data),
   // 批量生成
-  generateBatch: (data) => api.post('/generate-setting/batch', data),
+  generateBatch: (data) => api.post('/ai-generation/generate-setting/batch', data),
   // 保存生成的设定
-  saveSetting: (data) => api.post('/generate-setting/save', data),
+  saveSetting: (data) => api.post('/ai-generation/generate-setting/save', data),
   // 获取生成策略列表
-  getStrategies: () => api.get('/generation-strategies'),
+  getStrategies: () => api.get('/ai-generation/generation-strategies'),
   // 获取支持的实体类型
-  getEntityTypes: () => api.get('/supported-entity-types'),
+  getEntityTypes: () => api.get('/ai-generation/supported-entity-types'),
   // 预览提示词
-  previewPrompt: (data) => api.post('/preview-prompt', data),
+  previewPrompt: (data) => api.post('/ai-generation/preview-prompt', data),
 
   // ========== 中止与恢复相关API ==========
   // 中止生成
@@ -880,87 +766,108 @@ export const worldSettingApi = {
   deleteNaturalLaw: (id) => api.delete(`/world-setting/natural-laws/${id}`),
 };
 
-// 能量与社会体系API
-export const energySocietyApi = {
+// 能量体系API
+export const energySystemApi = {
   // 能量体系
-  getEnergySystems: (worldId) => api.get('/energy-society/energy-systems', { params: { world_id: worldId } }),
-  createEnergySystem: (data) => api.post('/energy-society/energy-systems', data),
-  updateEnergySystem: (id, data) => api.put(`/energy-society/energy-systems/${id}`, data),
-  deleteEnergySystem: (id) => api.delete(`/energy-society/energy-systems/${id}`),
+  getEnergySystems: (worldId) => api.get('/energy-system/energy-systems', { params: { world_id: worldId } }),
+  createEnergySystem: (data) => api.post('/energy-system/energy-systems', data),
+  updateEnergySystem: (id, data) => api.put(`/energy-system/energy-systems/${id}`, data),
+  deleteEnergySystem: (id) => api.delete(`/energy-system/energy-systems/${id}`),
   
   // 能量形态
   getEnergyForms: (worldId, energySystemId) => {
     const params = { world_id: worldId };
     if (energySystemId) params.energy_system_id = energySystemId;
-    return api.get('/energy-society/energy-forms', { params });
+    return api.get('/energy-system/energy-forms', { params });
   },
-  createEnergyForm: (data) => api.post('/energy-society/energy-forms', data),
-  updateEnergyForm: (id, data) => api.put(`/energy-society/energy-forms/${id}`, data),
-  deleteEnergyForm: (id) => api.delete(`/energy-society/energy-forms/${id}`),
+  createEnergyForm: (data) => api.post('/energy-system/energy-forms', data),
+  updateEnergyForm: (id, data) => api.put(`/energy-system/energy-forms/${id}`, data),
+  deleteEnergyForm: (id) => api.delete(`/energy-system/energy-forms/${id}`),
   
   // 力量等级
-  getPowerLevels: (worldId) => api.get('/energy-society/power-levels', { params: { world_id: worldId } }),
-  createPowerLevel: (data) => api.post('/energy-society/power-levels', data),
-  updatePowerLevel: (id, data) => api.put(`/energy-society/power-levels/${id}`, data),
-  deletePowerLevel: (id) => api.delete(`/energy-society/power-levels/${id}`),
+  getPowerLevels: (worldId) => api.get('/society/power-levels', { params: { world_id: worldId } }),
+  createPowerLevel: (data) => api.post('/society/power-levels', data),
+  updatePowerLevel: (id, data) => api.put(`/society/power-levels/${id}`, data),
+  deletePowerLevel: (id) => api.delete(`/society/power-levels/${id}`),
   
   // 力量代价
-  getPowerCosts: (worldId) => api.get('/energy-society/power-costs', { params: { world_id: worldId } }),
-  createPowerCost: (data) => api.post('/energy-society/power-costs', data),
-  updatePowerCost: (id, data) => api.put(`/energy-society/power-costs/${id}`, data),
-  deletePowerCost: (id) => api.delete(`/energy-society/power-costs/${id}`),
+  getPowerCosts: (worldId) => api.get('/society/power-costs', { params: { world_id: worldId } }),
+  createPowerCost: (data) => api.post('/society/power-costs', data),
+  updatePowerCost: (id, data) => api.put(`/society/power-costs/${id}`, data),
+  deletePowerCost: (id) => api.delete(`/society/power-costs/${id}`),
   
   // 通用技能
-  getCommonSkills: (worldId) => api.get('/energy-society/common-skills', { params: { world_id: worldId } }),
-  createCommonSkill: (data) => api.post('/energy-society/common-skills', data),
-  updateCommonSkill: (id, data) => api.put(`/energy-society/common-skills/${id}`, data),
-  deleteCommonSkill: (id) => api.delete(`/energy-society/common-skills/${id}`),
+  getCommonSkills: (worldId) => api.get('/energy-system/common-skills', { params: { world_id: worldId } }),
+  createCommonSkill: (data) => api.post('/energy-system/common-skills', data),
+  updateCommonSkill: (id, data) => api.put(`/energy-system/common-skills/${id}`, data),
+  deleteCommonSkill: (id) => api.delete(`/energy-system/common-skills/${id}`),
+};
+
+// 社会体系API
+export const societyApi = {
+  // 力量等级
+  getPowerLevels: (worldId) => api.get('/society/power-levels', { params: { world_id: worldId } }),
+  createPowerLevel: (data) => api.post('/society/power-levels', data),
+  updatePowerLevel: (id, data) => api.put(`/society/power-levels/${id}`, data),
+  deletePowerLevel: (id) => api.delete(`/society/power-levels/${id}`),
+  
+  // 力量代价
+  getPowerCosts: (worldId) => api.get('/society/power-costs', { params: { world_id: worldId } }),
+  createPowerCost: (data) => api.post('/society/power-costs', data),
+  updatePowerCost: (id, data) => api.put(`/society/power-costs/${id}`, data),
+  deletePowerCost: (id) => api.delete(`/society/power-costs/${id}`),
+  
+  // 通用技能
+  getCommonSkills: (worldId) => api.get('/energy-system/common-skills', { params: { world_id: worldId } }),
+  createCommonSkill: (data) => api.post('/energy-system/common-skills', data),
+  updateCommonSkill: (id, data) => api.put(`/energy-system/common-skills/${id}`, data),
+  deleteCommonSkill: (id) => api.delete(`/energy-system/common-skills/${id}`),
   
   // 文明管理
-  getCivilizations: (worldId) => api.get('/energy-society/civilizations', { params: { world_id: worldId } }),
-  createCivilization: (data) => api.post('/energy-society/civilizations', data),
-  updateCivilization: (id, data) => api.put(`/energy-society/civilizations/${id}`, data),
-  deleteCivilization: (id) => api.delete(`/energy-society/civilizations/${id}`),
+  getCivilizations: (worldId) => api.get('/society/civilizations', { params: { world_id: worldId } }),
+  createCivilization: (data) => api.post('/society/civilizations', data),
+  updateCivilization: (id, data) => api.put(`/society/civilizations/${id}`, data),
+  deleteCivilization: (id) => api.delete(`/society/civilizations/${id}`),
   
   // 社会阶级
   getSocialClasses: (worldId, civilizationId) => {
     const params = { world_id: worldId };
     if (civilizationId) params.civilization_id = civilizationId;
-    return api.get('/energy-society/social-classes', { params });
+    return api.get('/society/social-classes', { params });
   },
-  createSocialClass: (data) => api.post('/energy-society/social-classes', data),
-  updateSocialClass: (id, data) => api.put(`/energy-society/social-classes/${id}`, data),
-  deleteSocialClass: (id) => api.delete(`/energy-society/social-classes/${id}`),
+  createSocialClass: (data) => api.post('/society/social-classes', data),
+  updateSocialClass: (id, data) => api.put(`/society/social-classes/${id}`, data),
+  deleteSocialClass: (id) => api.delete(`/society/social-classes/${id}`),
   
   // 文化习俗
   getCulturalCustoms: (worldId, civilizationId) => {
     const params = { world_id: worldId };
     if (civilizationId) params.civilization_id = civilizationId;
-    return api.get('/energy-society/cultural-customs', { params });
+    return api.get('/society/cultural-customs', { params });
   },
-  createCulturalCustom: (data) => api.post('/energy-society/cultural-customs', data),
-  updateCulturalCustom: (id, data) => api.put(`/energy-society/cultural-customs/${id}`, data),
-  deleteCulturalCustom: (id) => api.delete(`/energy-society/cultural-customs/${id}`),
+  createCulturalCustom: (data) => api.post('/society/cultural-customs', data),
+  updateCulturalCustom: (id, data) => api.put(`/society/cultural-customs/${id}`, data),
+  deleteCulturalCustom: (id) => api.delete(`/society/cultural-customs/${id}`),
   
   // 经济体系
   getEconomicSystems: (worldId, civilizationId) => {
     const params = { world_id: worldId };
     if (civilizationId) params.civilization_id = civilizationId;
-    return api.get('/energy-society/economic-systems', { params });
+    return api.get('/society/economic-systems', { params });
   },
-  createEconomicSystem: (data) => api.post('/energy-society/economic-systems', data),
-  updateEconomicSystem: (id, data) => api.put(`/energy-society/economic-systems/${id}`, data),
-  deleteEconomicSystem: (id) => api.delete(`/energy-society/economic-systems/${id}`),
+  createEconomicSystem: (data) => api.post('/society/economic-systems', data),
+  updateEconomicSystem: (id, data) => api.put(`/society/economic-systems/${id}`, data),
+  deleteEconomicSystem: (id) => api.delete(`/society/economic-systems/${id}`),
   
   // 政治体系
   getPoliticalSystems: (worldId, civilizationId) => {
     const params = { world_id: worldId };
     if (civilizationId) params.civilization_id = civilizationId;
-    return api.get('/energy-society/political-systems', { params });
+    return api.get('/society/political-systems', { params });
   },
-  createPoliticalSystem: (data) => api.post('/energy-society/political-systems', data),
-  updatePoliticalSystem: (id, data) => api.put(`/energy-society/political-systems/${id}`, data),
-  deletePoliticalSystem: (id) => api.delete(`/energy-society/political-systems/${id}`),
+  createPoliticalSystem: (data) => api.post('/society/political-systems', data),
+  updatePoliticalSystem: (id, data) => api.put(`/society/political-systems/${id}`, data),
+  deletePoliticalSystem: (id) => api.delete(`/society/political-systems/${id}`),
 };
 
 // 历史脉络API

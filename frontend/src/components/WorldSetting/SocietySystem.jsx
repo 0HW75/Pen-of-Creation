@@ -6,7 +6,7 @@ import {
   GlobalOutlined, TeamOutlined, SmileOutlined,
   DollarOutlined, CrownOutlined
 } from '@ant-design/icons';
-import { energySocietyApi } from '../../services/api';
+import { societyApi } from '../../services/api';
 import CivilizationManagement from './SocietySystem/CivilizationManagement';
 import SocialClassManagement from './SocietySystem/SocialClassManagement';
 import CulturalCustomsManagement from './SocietySystem/CulturalCustomsManagement';
@@ -27,11 +27,11 @@ const SocietySystem = ({ worldId }) => {
   const loadStats = useCallback(() => {
     if (worldId) {
       Promise.all([
-        energySocietyApi.getCivilizations(worldId),
-        energySocietyApi.getSocialClasses(worldId),
-        energySocietyApi.getCulturalCustoms(worldId),
-        energySocietyApi.getEconomicSystems(worldId),
-        energySocietyApi.getPoliticalSystems(worldId),
+        societyApi.getCivilizations(worldId),
+        societyApi.getSocialClasses(worldId),
+        societyApi.getCulturalCustoms(worldId),
+        societyApi.getEconomicSystems(worldId),
+        societyApi.getPoliticalSystems(worldId),
       ]).then(([civs, classes, customs, economies, politics]) => {
         setStats({
           civilizations: civs.data.data?.length || 0,

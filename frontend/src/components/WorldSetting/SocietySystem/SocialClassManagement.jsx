@@ -3,7 +3,7 @@ import {
   Card, Button, Table, Modal, Form, Input, Select, Tag, message, Space
 } from 'antd';
 import { TeamOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { energySocietyApi } from '../../../services/api';
+import { societyApi } from '../../../services/api';
 
 const { TextArea } = Input;
 
@@ -18,7 +18,7 @@ const SocialClassManagement = ({ worldId, civilizations, onRefresh }) => {
   const fetchSocialClasses = async (civId = null) => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getSocialClasses(worldId, civId);
+      const response = await societyApi.getSocialClasses(worldId, civId);
       if (response.data.code === 200) {
         setSocialClasses(response.data.data);
       }
@@ -58,10 +58,10 @@ const SocialClassManagement = ({ worldId, civilizations, onRefresh }) => {
         typical_power_level: values.typical_power_level || 0,
       };
       if (editingClass) {
-        await energySocietyApi.updateSocialClass(editingClass.id, data);
+        await societyApi.updateSocialClass(editingClass.id, data);
         message.success('社会阶层更新成功');
       } else {
-        await energySocietyApi.createSocialClass(data);
+        await societyApi.createSocialClass(data);
         message.success('社会阶层创建成功');
       }
       setModalVisible(false);
@@ -75,7 +75,7 @@ const SocialClassManagement = ({ worldId, civilizations, onRefresh }) => {
 
   const handleDelete = async (id) => {
     try {
-      await energySocietyApi.deleteSocialClass(id);
+      await societyApi.deleteSocialClass(id);
       message.success('删除成功');
       fetchSocialClasses();
       if (onRefresh) onRefresh();

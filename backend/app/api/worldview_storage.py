@@ -6,9 +6,41 @@ from flask import request, jsonify
 from app.api import api_bp
 from app.services.content_extractor import ContentExtractor
 from app.services.generation.concept_merge_service import concept_merge_service
+from app.services.generation.checkpoint_service import checkpoint_service
+from app.services.generation.generators import (
+    CharacterGenerator,
+    LocationGenerator,
+    ItemGenerator,
+    FactionGenerator,
+    EnergySystemGenerator,
+    CivilizationGenerator,
+    HistoricalEventGenerator,
+    DimensionGenerator,
+    RelationGenerator,
+    SocialClassGenerator,
+    PoliticalSystemGenerator,
+    EconomicSystemGenerator,
+    CulturalCustomGenerator,
+)
 import logging
 
 logger = logging.getLogger(__name__)
+
+generators = {
+    'character': CharacterGenerator(),
+    'location': LocationGenerator(),
+    'item': ItemGenerator(),
+    'faction': FactionGenerator(),
+    'energy_system': EnergySystemGenerator(),
+    'civilization': CivilizationGenerator(),
+    'historical_event': HistoricalEventGenerator(),
+    'world_architecture': DimensionGenerator(),
+    'relation': RelationGenerator(),
+    'social_class': SocialClassGenerator(),
+    'political_system': PoliticalSystemGenerator(),
+    'economic_system': EconomicSystemGenerator(),
+    'cultural_custom': CulturalCustomGenerator(),
+}
 
 
 @api_bp.route('/worldview/save-extraction-list', methods=['POST'])
@@ -46,8 +78,104 @@ def apply_batch_results():
         data = request.get_json()
         batch_id = data.get('batch_id')
         selections = data.get('selections', [])
+        world_id = data.get('world_id')
+        project_id = data.get('project_id')
 
-        return jsonify({'code': 200, 'message': '应用成功'})
+        if not batch_id:
+            return jsonify({'code': 400, 'message': '缺少batch_id参数'}), 400
+
+        checkpoint = checkpoint_service.load_checkpoint_by_session(batch_id)
+        if not checkpoint:
+            return jsonify({'code': 404, 'message': '未找到对应的检查点'}), 404
+
+        parsed_data = checkpoint.get('parsed_data', {})
+        results = parsed_data.get('results', [])
+        batch_config = parsed_data.get('batch_config', {})
+        entity_type = batch_config.get('entity_type', 'character')
+
+        generators_map = {
+            'character': generators['character'],
+            'location': generators['location'],
+            'faction': generators['faction'],
+            'item': generators['item'],
+            'energy_system': generators['energy_system'],
+            'civilization': generators['civilization'],
+            'historical_event': generators['historical_event'],
+            'world_architecture': generators['world_architecture'],
+            'relation': generators['relation']
+        }
+
+        saved_count = 0
+        failed_count = 0
+        skipped_count = 0
+        errors = []
+
+        for result in results:
+            if not result.get('success'):
+                skipped_count += 1
+                continue
+
+            element_name = result.get('element_name', '')
+            result_data = result.get('data', {})
+
+            if selections and element_name not in selections:
+                skipped_count += 1
+                continue
+
+            if not result_data.get('name'):
+                logger.warning(f"跳过无效数据: {element_name}")
+                skipped_count += 1
+                continue
+
+            if entity_type == 'relation':
+                logger.info(f"Relation类型 '{element_name}' 暂不自动保存")
+                skipped_count += 1
+                continue
+
+            try:
+                generator = generators.get(entity_type)
+                if generator:
+                    save_result = generator.save_to_database(
+                        data=result_data,
+                        world_id=world_id,
+                        project_id=project_id,
+                        source_chapters=result.get('source_chapter')
+                    )
+                    if save_result.get('success'):
+                        saved_count += 1
+                        logger.info(f"保存成功: {entity_type} - {element_name}")
+                    else:
+                        failed_count += 1
+                        errors.append({
+                            'name': element_name,
+                            'error': save_result.get('error', '未知错误')
+                        })
+                        logger.warning(f"保存失败: {element_name} - {save_result.get('error')}")
+                else:
+                    failed_count += 1
+                    errors.append({
+                        'name': element_name,
+                        'error': f'未找到对应的生成器: {entity_type}'
+                    })
+            except Exception as save_e:
+                failed_count += 1
+                errors.append({
+                    'name': element_name,
+                    'error': str(save_e)
+                })
+                logger.error(f"保存异常: {element_name} - {save_e}", exc_info=True)
+
+        return jsonify({
+            'code': 200,
+            'message': '应用成功',
+            'data': {
+                'saved_count': saved_count,
+                'failed_count': failed_count,
+                'skipped_count': skipped_count,
+                'total': len(results),
+                'errors': errors[:10]
+            }
+        })
     except Exception as e:
         logger.error(f'应用批次结果失败: {str(e)}', exc_info=True)
         return jsonify({'code': 500, 'message': f'应用失败: {str(e)}'}), 500

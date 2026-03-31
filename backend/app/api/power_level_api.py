@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import PowerLevel, World, db
 
-power_level_bp = Blueprint('power_level', __name__, url_prefix='/power-level')
+power_level_bp = Blueprint('power_level', __name__)
 
 
 def success_response(data=None, message='操作成功', code=200):

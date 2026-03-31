@@ -3,7 +3,7 @@ import {
   Card, Button, Table, Modal, Form, Input, Select, Tag, message, Space
 } from 'antd';
 import { DollarOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { energySocietyApi } from '../../../services/api';
+import { societyApi } from '../../../services/api';
 
 const { TextArea } = Input;
 
@@ -18,7 +18,7 @@ const EconomicSystemManagement = ({ worldId, civilizations, onRefresh }) => {
   const fetchEconomicSystems = async (civId = null) => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getEconomicSystems(worldId, civId);
+      const response = await societyApi.getEconomicSystems(worldId, civId);
       if (response.data.code === 200) {
         setEconomicSystems(response.data.data);
       }
@@ -62,10 +62,10 @@ const EconomicSystemManagement = ({ worldId, civilizations, onRefresh }) => {
         economic_challenges: values.economic_challenges || '',
       };
       if (editingSystem) {
-        await energySocietyApi.updateEconomicSystem(editingSystem.id, data);
+        await societyApi.updateEconomicSystem(editingSystem.id, data);
         message.success('经济体系更新成功');
       } else {
-        await energySocietyApi.createEconomicSystem(data);
+        await societyApi.createEconomicSystem(data);
         message.success('经济体系创建成功');
       }
       setModalVisible(false);
@@ -79,7 +79,7 @@ const EconomicSystemManagement = ({ worldId, civilizations, onRefresh }) => {
 
   const handleDelete = async (id) => {
     try {
-      await energySocietyApi.deleteEconomicSystem(id);
+      await societyApi.deleteEconomicSystem(id);
       message.success('删除成功');
       fetchEconomicSystems();
       if (onRefresh) onRefresh();

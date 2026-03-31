@@ -3,7 +3,7 @@ import {
   Card, Button, Table, Modal, Form, Input, Select, Tag, message, Space
 } from 'antd';
 import { SmileOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { energySocietyApi } from '../../../services/api';
+import { societyApi } from '../../../services/api';
 
 const { TextArea } = Input;
 
@@ -18,7 +18,7 @@ const CulturalCustomsManagement = ({ worldId, civilizations, onRefresh }) => {
   const fetchCulturalCustoms = async (civId = null) => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getCulturalCustoms(worldId, civId);
+      const response = await societyApi.getCulturalCustoms(worldId, civId);
       if (response.data.code === 200) {
         setCulturalCustoms(response.data.data);
       }
@@ -59,10 +59,10 @@ const CulturalCustomsManagement = ({ worldId, civilizations, onRefresh }) => {
         importance_level: values.importance_level || 5,
       };
       if (editingCustom) {
-        await energySocietyApi.updateCulturalCustom(editingCustom.id, data);
+        await societyApi.updateCulturalCustom(editingCustom.id, data);
         message.success('文化习俗更新成功');
       } else {
-        await energySocietyApi.createCulturalCustom(data);
+        await societyApi.createCulturalCustom(data);
         message.success('文化习俗创建成功');
       }
       setModalVisible(false);
@@ -76,7 +76,7 @@ const CulturalCustomsManagement = ({ worldId, civilizations, onRefresh }) => {
 
   const handleDelete = async (id) => {
     try {
-      await energySocietyApi.deleteCulturalCustom(id);
+      await societyApi.deleteCulturalCustom(id);
       message.success('删除成功');
       fetchCulturalCustoms();
       if (onRefresh) onRefresh();

@@ -1,13 +1,14 @@
 from flask import Blueprint, jsonify
 from app import db
+from app import now_utc_plus_8
 from app.models import (
     World, Character, Location, Faction, HistoricalEvent, Item
 )
 from datetime import datetime, timedelta
 
-worlds_bp = Blueprint('worlds', __name__)
+world_stats_bp = Blueprint('world_stats', __name__)
 
-@worlds_bp.route('/<int:world_id>/stats', methods=['GET'])
+@world_stats_bp.route('/<int:world_id>/stats', methods=['GET'])
 def get_world_stats(world_id):
     """获取世界统计信息"""
     try:
@@ -18,7 +19,7 @@ def get_world_stats(world_id):
                 'message': '世界不存在'
             }), 404
 
-        today = datetime.utcnow()
+        today = now_utc_plus_8()
         week_start = today - timedelta(days=today.weekday())
         week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -78,7 +79,7 @@ def get_world_stats(world_id):
         }), 500
 
 
-@worlds_bp.route('/<int:world_id>/activities', methods=['GET'])
+@world_stats_bp.route('/<int:world_id>/activities', methods=['GET'])
 def get_world_activities(world_id):
     """获取世界最近活动"""
     try:

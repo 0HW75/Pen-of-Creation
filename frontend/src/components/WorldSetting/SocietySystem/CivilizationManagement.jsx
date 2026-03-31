@@ -3,7 +3,7 @@ import {
   Card, Button, Table, Modal, Form, Input, Select, Tag, message, Space
 } from 'antd';
 import { GlobalOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { energySocietyApi } from '../../../services/api';
+import { societyApi } from '../../../services/api';
 
 const { TextArea } = Input;
 
@@ -16,7 +16,7 @@ const CivilizationManagement = ({ worldId, civilizations, onRefresh, onCivilizat
   const fetchCivilizations = async () => {
     setLoading(true);
     try {
-      const response = await energySocietyApi.getCivilizations(worldId);
+      const response = await societyApi.getCivilizations(worldId);
       if (response.data.code === 200) {
         onCivilizationsChange(response.data.data);
       }
@@ -34,11 +34,11 @@ const CivilizationManagement = ({ worldId, civilizations, onRefresh, onCivilizat
   const handleSubmit = async (values) => {
     try {
       const data = {
-        name: values.civilization_name,
+        name: values.name,
         world_id: worldId,
         civilization_type: values.civilization_type || '魔法文明',
         description: values.description || '',
-        development_level: values.development_stage || '中世纪',
+        development_level: values.development_level || '中世纪',
         population_scale: values.population_scale || '',
         territory_size: values.territory_size || '',
         political_system: values.political_system || '',
@@ -48,14 +48,14 @@ const CivilizationManagement = ({ worldId, civilizations, onRefresh, onCivilizat
         cultural_characteristics: values.cultural_characteristics || '',
         religious_beliefs: values.religious_beliefs || '',
         taboos: values.taboos || '',
-        values: values.core_values || '',
+        values: values.values || '',
         historical_origin: values.historical_origin || '',
       };
       if (editingCiv) {
-        await energySocietyApi.updateCivilization(editingCiv.id, data);
+        await societyApi.updateCivilization(editingCiv.id, data);
         message.success('文明更新成功');
       } else {
-        await energySocietyApi.createCivilization(data);
+        await societyApi.createCivilization(data);
         message.success('文明创建成功');
       }
       setModalVisible(false);
@@ -69,7 +69,7 @@ const CivilizationManagement = ({ worldId, civilizations, onRefresh, onCivilizat
 
   const handleDelete = async (id) => {
     try {
-      await energySocietyApi.deleteCivilization(id);
+      await societyApi.deleteCivilization(id);
       if (onRefresh) onRefresh();
       message.success('删除成功');
       fetchCivilizations();
@@ -123,12 +123,12 @@ const CivilizationManagement = ({ worldId, civilizations, onRefresh, onCivilizat
             onClick={() => {
               setEditingCiv(record);
               form.setFieldsValue({
-                civilization_name: record.name,
+                name: record.name,
                 civilization_type: record.civilization_type,
-                development_stage: record.development_level,
+                development_level: record.development_level,
                 description: record.description,
-                history_summary: record.historical_origin,
-                cultural_features: record.cultural_characteristics,
+                historical_origin: record.historical_origin,
+                cultural_characteristics: record.cultural_characteristics,
               });
               setModalVisible(true);
             }}
@@ -191,7 +191,7 @@ const CivilizationManagement = ({ worldId, civilizations, onRefresh, onCivilizat
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
-            name="civilization_name"
+            name="name"
             label="文明名称"
             rules={[{ required: true, message: '请输入文明名称' }]}
           >
@@ -205,7 +205,7 @@ const CivilizationManagement = ({ worldId, civilizations, onRefresh, onCivilizat
             <Input placeholder="例如：魔法文明、科技文明、修真文明、机械文明等" />
           </Form.Item>
           <Form.Item
-            name="development_stage"
+            name="development_level"
             label="发展阶段"
             rules={[{ required: true }]}
             initialValue="原始"
@@ -226,13 +226,13 @@ const CivilizationManagement = ({ worldId, civilizations, onRefresh, onCivilizat
             <TextArea rows={3} placeholder="描述这个文明的特征..." />
           </Form.Item>
           <Form.Item
-            name="history_summary"
-            label="历史概要"
+            name="historical_origin"
+            label="历史起源"
           >
-            <TextArea rows={2} placeholder="文明的历史概要" />
+            <TextArea rows={2} placeholder="文明的历史起源" />
           </Form.Item>
           <Form.Item
-            name="cultural_features"
+            name="cultural_characteristics"
             label="文化特征"
           >
             <TextArea rows={2} placeholder="文明的文化特征" />

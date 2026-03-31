@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import Civilization, CivilizationRegion, SocialClass, World, db
 
-civilization_bp = Blueprint('civilization', __name__, url_prefix='/civilization')
+civilization_bp = Blueprint('civilization', __name__)
 
 
 def success_response(data=None, message='操作成功', code=200):
@@ -61,6 +61,7 @@ def create_civilization():
             taboos=data.get('taboos', ''),
             values=data.get('values', ''),
             historical_origin=data.get('historical_origin', ''),
+            importance_level=data.get('importance_level', 5),
             order_index=data.get('order_index', 0)
         )
 

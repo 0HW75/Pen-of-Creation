@@ -1,9 +1,13 @@
 from flask import Blueprint, request, jsonify
 from app import db
+from app import now_utc_plus_8
 from app.models import (
     World, Character, Location, Faction, HistoricalEvent, Item,
     Dimension, Region, CelestialBody, NaturalLaw, EnergySystem,
-    Ability, Skill, Talent, Race, Creature
+    Ability, Skill, Talent, Race, Creature,
+    Civilization, SocialClass, CulturalCustom, EconomicSystem, PoliticalSystem,
+    EnergyForm, PowerLevel, PowerCost, CommonSkill,
+    HistoricalEra, HistoricalFigure,
 )
 from datetime import datetime
 
@@ -110,7 +114,7 @@ def update_world(world_id):
         world.creation_origin = data.get('creation_origin', world.creation_origin)
         world.world_essence = data.get('world_essence', world.world_essence)
         world.status = data.get('status', world.status)
-        world.updated_at = datetime.utcnow()
+        world.updated_at = now_utc_plus_8()
 
         db.session.commit()
 
@@ -143,17 +147,31 @@ def delete_world(world_id):
         NaturalLaw.query.filter_by(world_id=world_id).delete()
 
         EnergySystem.query.filter_by(world_id=world_id).delete()
+        EnergyForm.query.filter_by(world_id=world_id).delete()
+        PowerLevel.query.filter_by(world_id=world_id).delete()
+        PowerCost.query.filter_by(world_id=world_id).delete()
+        CommonSkill.query.filter_by(world_id=world_id).delete()
         Ability.query.filter_by(world_id=world_id).delete()
         Skill.query.filter_by(world_id=world_id).delete()
         Talent.query.filter_by(world_id=world_id).delete()
         Race.query.filter_by(world_id=world_id).delete()
         Creature.query.filter_by(world_id=world_id).delete()
 
+        Civilization.query.filter_by(world_id=world_id).delete()
+        SocialClass.query.filter_by(world_id=world_id).delete()
+        CulturalCustom.query.filter_by(world_id=world_id).delete()
+        EconomicSystem.query.filter_by(world_id=world_id).delete()
+        PoliticalSystem.query.filter_by(world_id=world_id).delete()
+
         Character.query.filter_by(world_id=world_id).delete()
+
         Location.query.filter_by(world_id=world_id).delete()
+
         Faction.query.filter_by(world_id=world_id).delete()
-        Item.query.filter_by(world_id=world_id).delete()
+
         HistoricalEvent.query.filter_by(world_id=world_id).delete()
+        HistoricalEra.query.filter_by(world_id=world_id).delete()
+        HistoricalFigure.query.filter_by(world_id=world_id).delete()
 
         db.session.delete(world)
         db.session.commit()

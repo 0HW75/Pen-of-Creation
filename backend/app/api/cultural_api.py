@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import CulturalCustom, EconomicSystem, PoliticalSystem, World, db
 
-cultural_bp = Blueprint('cultural', __name__, url_prefix='/cultural')
+cultural_bp = Blueprint('cultural', __name__)
 
 
 def success_response(data=None, message='操作成功', code=200):

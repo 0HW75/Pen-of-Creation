@@ -50,7 +50,7 @@ const EventManagement = ({ worldId }) => {
         event_type: values.event_type,
         start_year: values.event_date,
         end_year: values.event_date,
-        importance_level: values.importance,
+        importance_level: values.importance_level,
         key_participants: values.participants,
         description: values.description,
         immediate_outcomes: values.impact,
@@ -159,7 +159,7 @@ const EventManagement = ({ worldId }) => {
                 name: record.name,
                 event_type: record.event_type,
                 event_date: record.start_year || record.end_year,
-                importance: record.importance_level,
+                importance_level: record.importance_level,
                 participants: record.key_participants,
                 description: record.description,
                 impact: record.immediate_outcomes,
@@ -193,7 +193,7 @@ const EventManagement = ({ worldId }) => {
         <div style={{ fontWeight: 'bold' }}>{event.name}</div>
         <div style={{ color: '#666', fontSize: '12px' }}>
           <Tag size="small">{event.event_type}</Tag>
-          {'⭐'.repeat(event.importance || 1)}
+          {'⭐'.repeat(event.importance_level || 1)}
         </div>
         <div style={{ marginTop: 4, color: '#888' }}>
           {event.description?.substring(0, 50)}...
@@ -305,7 +305,7 @@ const EventManagement = ({ worldId }) => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="importance"
+                name="importance_level"
                 label="重要性"
                 initialValue={3}
               >
@@ -357,7 +357,7 @@ const EventManagement = ({ worldId }) => {
               {selectedEvent.event_date}
             </Descriptions.Item>
             <Descriptions.Item label="重要性">
-              {'⭐'.repeat(selectedEvent.importance || 1)}
+              {'⭐'.repeat(selectedEvent.importance_level || 1)}
             </Descriptions.Item>
             <Descriptions.Item label="参与方">
               {selectedEvent.participants || '-'}

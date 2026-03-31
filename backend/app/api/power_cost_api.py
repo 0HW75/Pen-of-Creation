@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import PowerCost, World, db
 
-power_cost_bp = Blueprint('power_cost', __name__, url_prefix='/power-cost')
+power_cost_bp = Blueprint('power_cost', __name__)
 
 
 def success_response(data=None, message='操作成功', code=200):

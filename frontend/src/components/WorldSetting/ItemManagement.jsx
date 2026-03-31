@@ -66,7 +66,7 @@ const GeneralItemManagement = ({ worldId, projectId, quickCreateTarget, onUpdate
         historical_heritage: values.historical_heritage,
         current_owner: values.current_owner,
         acquisition_method: values.acquisition_method,
-        importance: values.importance || 5,
+        importance_level: values.importance_level || 5,
         description: values.description,
       };
       if (editingItem) {
@@ -151,9 +151,10 @@ const GeneralItemManagement = ({ worldId, projectId, quickCreateTarget, onUpdate
       },
     },
     {
-      title: '重要性',
-      dataIndex: 'importance',
-      key: 'importance',
+      title: '重要度',
+      dataIndex: 'importance_level',
+      key: 'importance_level',
+      width: 80,
       render: (importance) => (
         <Tag color={importance >= 8 ? 'red' : importance >= 5 ? 'orange' : 'default'}>
           {importance}/10
@@ -198,7 +199,7 @@ const GeneralItemManagement = ({ worldId, projectId, quickCreateTarget, onUpdate
                 historical_heritage: record.historical_heritage,
                 current_owner: record.current_owner,
                 acquisition_method: record.acquisition_method,
-                importance: record.importance || 5,
+                importance_level: record.importance_level || 5,
                 description: record.description,
               });
               setModalVisible(true);
@@ -325,7 +326,7 @@ const GeneralItemManagement = ({ worldId, projectId, quickCreateTarget, onUpdate
             <Input placeholder="主角或当前持有者如何获得此物品" />
           </Form.Item>
           <Form.Item
-            name="importance"
+            name="importance_level"
             label="重要性评级"
             initialValue={5}
           >
@@ -422,8 +423,8 @@ const GeneralItemManagement = ({ worldId, projectId, quickCreateTarget, onUpdate
                       }>{selectedItem.rarity_level}</Tag>
                     </Descriptions.Item>
                     <Descriptions.Item label="重要性">
-                      <Tag color={selectedItem.importance >= 8 ? 'red' : selectedItem.importance >= 5 ? 'orange' : 'default'}>
-                        {selectedItem.importance || 5}/10
+                      <Tag color={selectedItem.importance_level >= 8 ? 'red' : selectedItem.importance_level >= 5 ? 'orange' : 'default'}>
+                        {selectedItem.importance_level || 5}/10
                       </Tag>
                     </Descriptions.Item>
                     <Descriptions.Item label="耐久度">

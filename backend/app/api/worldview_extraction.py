@@ -10,10 +10,13 @@ from app.services.generation.session_manager import session_manager
 from app.services.generation.checkpoint_service import checkpoint_service
 from app.services.ai_service import ai_service
 from app.models import Outline, Volume, Chapter
+from logs import generation_logger
 import json
 import logging
+import re
 import uuid
 import time
+
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +85,11 @@ def extract_blueprint_elements():
                     'items': len(extracted_elements.get('items', [])),
                     'world_architecture': len(extracted_elements.get('world_architecture', [])),
                     'energy_systems': len(extracted_elements.get('energy_systems', [])),
-                    'society_systems': len(extracted_elements.get('society_systems', [])),
+                    'civilizations': len(extracted_elements.get('civilizations', [])),
+                    'social_classes': len(extracted_elements.get('social_classes', [])),
+                    'political_systems': len(extracted_elements.get('political_systems', [])),
+                    'economic_systems': len(extracted_elements.get('economic_systems', [])),
+                    'cultural_customs': len(extracted_elements.get('cultural_customs', [])),
                     'timeline_events': len(extracted_elements.get('timeline_events', [])),
                     'relations': len(extracted_elements.get('relations', []))
                 },
@@ -110,7 +117,11 @@ def _mock_extract_elements(content: str, config: dict) -> dict:
         'items': [],
         'world_architecture': [],
         'energy_systems': [],
-        'society_systems': [],
+        'civilizations': [],
+        'social_classes': [],
+        'political_systems': [],
+        'economic_systems': [],
+        'cultural_customs': [],
         'timeline_events': [],
         'relations': []
     }
@@ -187,7 +198,9 @@ def extract_blueprint_elements_stream():
             content_scope['project_id'] = project_id
             target_types = extraction_config.get('target_types', [
                 'characters', 'locations', 'factions', 'items',
-                'world_architecture', 'energy_systems', 'society_systems',
+                'world_architecture', 'energy_systems',
+                'civilizations', 'social_classes', 'political_systems',
+                'economic_systems', 'cultural_customs',
                 'timeline_events', 'relations'
             ])
             strategy = extraction_config.get('strategy', 'infer_potential')
@@ -202,7 +215,11 @@ def extract_blueprint_elements_stream():
                 'items': [],
                 'world_architecture': [],
                 'energy_systems': [],
-                'society_systems': [],
+                'civilizations': [],
+                'social_classes': [],
+                'political_systems': [],
+                'economic_systems': [],
+                'cultural_customs': [],
                 'timeline_events': [],
                 'relations': []
             }
@@ -227,7 +244,11 @@ def extract_blueprint_elements_stream():
                     'items': '物品资源（武器、法宝、道具等）',
                     'world_architecture': '世界架构（世界规则、维度、地理等）',
                     'energy_systems': '能量体系（力量等级、修炼体系等）',
-                    'society_systems': '社会体系（社会结构、文化习俗等）',
+                    'civilizations': '文明体系（文明类型、发展阶段等）',
+                    'social_classes': '社会阶层（贵族、平民、奴隶等）',
+                    'political_systems': '政治体系（政府类型、权力结构等）',
+                    'economic_systems': '经济体系（货币名称、经济模式等）',
+                    'cultural_customs': '文化习俗（节日、礼仪、禁忌等）',
                     'timeline_events': '历史脉络（历史事件、时间线等）',
                     'relations': '关系网络（角色关系、势力关系等）'
                 }
@@ -642,7 +663,11 @@ def extract_blueprint_elements_stream():
                 'items': len(integrated_elements.get('items', [])),
                 'world_architecture': len(integrated_elements.get('world_architecture', [])),
                 'energy_systems': len(integrated_elements.get('energy_systems', [])),
-                'society_systems': len(integrated_elements.get('society_systems', [])),
+                'civilizations': len(integrated_elements.get('civilizations', [])),
+                'social_classes': len(integrated_elements.get('social_classes', [])),
+                'political_systems': len(integrated_elements.get('political_systems', [])),
+                'economic_systems': len(integrated_elements.get('economic_systems', [])),
+                'cultural_customs': len(integrated_elements.get('cultural_customs', [])),
                 'timeline_events': len(integrated_elements.get('timeline_events', [])),
                 'relations': len(integrated_elements.get('relations', []))
             }
@@ -660,7 +685,28 @@ def extract_blueprint_elements_stream():
                 'chapters': story_context_chapters
             }
 
-            yield f"data: {json.dumps({'type': 'complete', 'progress': 100, 'message': '提取完成', 'elements': integrated_elements, 'original_elements': merged_result, 'statistics': statistics, 'story_context': story_context, 'integration_info': {'integrated_count': integrated_count}}, ensure_ascii=False)}\n\n"
+            checkpoint_id = None
+            if session_id:
+                checkpoint = checkpoint_service.save_checkpoint(
+                    session_id=session_id,
+                    project_id=project_id,
+                    user_id=1,
+                    stage='extraction',
+                    checkpoint_type='extraction_complete',
+                    data={
+                        'merged_result': merged_result,
+                        'content_scope': content_scope,
+                        'story_context': story_context,
+                        'statistics': statistics,
+                        'elements': integrated_elements
+                    },
+                    progress_percent=100,
+                    status='completed'
+                )
+                checkpoint_id = checkpoint.id
+                logger.info(f"[提取阶段] 最终检查点已保存: session_id={session_id}, checkpoint_id={checkpoint_id}")
+
+            yield f"data: {json.dumps({'type': 'complete', 'progress': 100, 'message': '提取完成', 'elements': integrated_elements, 'original_elements': merged_result, 'statistics': statistics, 'story_context': story_context, 'integration_info': {'integrated_count': integrated_count}, 'checkpoint_id': checkpoint_id}, ensure_ascii=False)}\n\n"
 
             if session_id:
                 session_manager.complete_session(session_id)
@@ -683,80 +729,7 @@ def extract_blueprint_elements_stream():
 
 def _extract_with_ai(text: str, target_types: list, strategy: str, include_evidence: bool, context: str) -> dict:
     """调用AI服务提取元素（同步版本）"""
-    type_descriptions = {
-        'characters': '角色（姓名、身份、性格、能力等）',
-        'locations': '地点场景（城市、建筑、自然景观等）',
-        'factions': '组织势力（门派、国家、组织、机构等）',
-        'items': '物品资源（武器、法宝、道具、信息载体等）',
-        'world_architecture': '世界架构（世界规则、维度、地理、空间通道等）',
-        'energy_systems': '能量体系（力量等级、修炼体系、超自然能力等）',
-        'society_systems': '社会体系（社会结构、文化习俗、组织运作模式等）',
-        'timeline_events': '历史脉络（历史事件、时间线、起点事件等）',
-        'relations': '关系网络（角色与组织关系、组织间关系等）'
-    }
-
-    target_list = ', '.join([type_descriptions.get(t, t) for t in target_types])
-    evidence_desc = "对于每个提取的元素，请提供原文证据" if include_evidence else ""
-
-    prompt = f"""请分析以下故事内容片段（{context}），提取其中的世界观设定元素。
-
-## 分析要求
-- 策略：{'仅提取明确提及的内容' if strategy == 'explicit_only' else '基于文本进行合理推断和补充'}
-- 需要提取：{target_list}
-- {evidence_desc}
-
-## 重要约束
-- 只返回以下 9 种类型，禁止返回其他类型：
-  1. characters - 角色：具体的人，有姓名、身份、性格
-  2. locations - 地点场景：具体的地点，如城市、建筑、房间、道路
-  3. factions - 组织势力：组织、机构、国家、政府、部门、门派、计划项目（如"零号工程"是组织不是地点）
-  4. items - 物品资源：具体的物品、武器、情报、载具、文件
-  5. world_architecture - 世界架构：抽象的世界规则、维度、空间通道、物理法则
-  6. energy_systems - 能量体系：力量等级、修炼体系、超自然能力
-  7. society_systems - 社会体系：社会结构、文化习俗、运作模式
-  8. timeline_events - 历史脉络：历史事件、时间线
-  9. relations - 关系网络：人与组织的关系、组织间的关系
-- 关键区分：
-  1. "国家/政府/部门" → factions（不是 world_architecture）
-  2. "绝密基地/秘密设施" → factions（如果是组织）或 locations（如果是具体地点）
-  3. "计划/工程/项目" → factions（如"零号工程"）
-  4. "世界/维度/空间通道" → world_architecture
-  5. "能力/超自然能力/魔法/修炼体系" → energy_systems（不是 items）
-
-## 内容片段
-```
-{text[:4000]}
-```
-
-## 输出格式
-请以 JSON 格式输出，只包含以下 9 种类型：
-注意：键名必须严格使用以下名称，禁止使用其他名称！
-- 禁止使用 "organizations"、"groups"、"teams"
-- 禁止使用 "items_resources"、"equipment"
-- 禁止使用 "social_systems"、"culture"
-- 禁止使用 "historical_context"、"events"
-- 禁止使用 "relationship_networks"
-
-正确示例：
-{{
-  "characters": [{{"id": "char_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "locations": [{{"id": "loc_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "factions": [{{"id": "fact_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "items": [{{"id": "item_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "world_architecture": [{{"id": "arch_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "energy_systems": [{{"id": "ener_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "society_systems": [{{"id": "soc_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "timeline_events": [{{"id": "hist_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "relations": [{{"id": "rel_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}]
-}}
-
-注意：
-1. 只输出 JSON，不要其他内容
-2. 必须包含全部 9 种类型的键（即使为空数组）
-3. 未找到的类型返回空数组 []
-4. id 格式为 "类型缩写_序号"
-5. 键名必须严格使用上述名称，不能使用 "organizations" 等别名
-"""
+    prompt = element_extractor._build_extraction_prompt(text, target_types, strategy, include_evidence, context)
 
     try:
         messages = [
@@ -774,7 +747,11 @@ def _extract_with_ai(text: str, target_types: list, strategy: str, include_evide
         )
 
         ai_response = ai_result.get('content', '')
-        return _parse_ai_response(ai_response)
+        generation_logger.log_step1_extraction("AI_RESPONSE", ai_response)
+        generation_logger.log_step1_extraction("INPUT_PROMPT", prompt[:2000])
+        result = _parse_ai_response(ai_response)
+        generation_logger.log_step1_extraction("PARSED_RESULT", result)
+        return result
     except Exception as e:
         logger.error(f'AI提取失败 [{context}]: {str(e)}')
         return {key: [] for key in target_types}
@@ -782,81 +759,7 @@ def _extract_with_ai(text: str, target_types: list, strategy: str, include_evide
 
 def _extract_with_ai_stream(text: str, target_types: list, strategy: str, include_evidence: bool, context: str):
     """调用AI服务提取元素（真正的流式版本）"""
-
-    type_descriptions = {
-        'characters': '角色（姓名、身份、性格、能力等）',
-        'locations': '地点场景（城市、建筑、自然景观等）',
-        'factions': '组织势力（门派、国家、组织、机构等）',
-        'items': '物品资源（武器、法宝、道具，信息载体等）',
-        'world_architecture': '世界架构（世界规则、维度、地理、空间通道等）',
-        'energy_systems': '能量体系（力量等级、修炼体系、超自然能力等）',
-        'society_systems': '社会体系（社会结构、文化习俗、组织运作模式等）',
-        'timeline_events': '历史脉络（历史事件、时间线、起点事件等）',
-        'relations': '关系网络（角色与组织关系、组织间关系等）'
-    }
-
-    target_list = ', '.join([type_descriptions.get(t, t) for t in target_types])
-    evidence_desc = "对于每个提取的元素，请提供原文证据" if include_evidence else ""
-
-    prompt = f"""请分析以下故事内容片段（{context}），提取其中的世界观设定元素。
-
-## 分析要求
-- 策略：{'仅提取明确提及的内容' if strategy == 'explicit_only' else '基于文本进行合理推断和补充'}
-- 需要提取：{target_list}
-- {evidence_desc}
-
-## 重要约束
-- 只返回以下 9 种类型，禁止返回其他类型：
-  1. characters - 角色：具体的人，有姓名、身份、性格
-  2. locations - 地点场景：具体的地点，如城市、建筑、房间、道路
-  3. factions - 组织势力：组织、机构、国家、政府、部门、门派、计划项目（如"零号工程"是组织不是地点）
-  4. items - 物品资源：具体的物品、武器、情报、载具、文件
-  5. world_architecture - 世界架构：抽象的世界规则、维度、空间通道、物理法则
-  6. energy_systems - 能量体系：力量等级、修炼体系、超自然能力
-  7. society_systems - 社会体系：社会结构、文化习俗、运作模式
-  8. timeline_events - 历史脉络：历史事件、时间线
-  9. relations - 关系网络：人与组织的关系、组织间的关系
-- 关键区分：
-  1. "国家/政府/部门" → factions（不是 world_architecture）
-  2. "绝密基地/秘密设施" → factions（如果是组织）或 locations（如果是具体地点）
-  3. "计划/工程/项目" → factions（如"零号工程"）
-  4. "世界/维度/空间通道" → world_architecture
-  5. "能力/超自然能力/魔法/修炼体系" → energy_systems（不是 items）
-
-## 内容片段
-```
-{text[:4000]}
-```
-
-## 输出格式
-请以 JSON 格式输出，只包含以下 9 种类型：
-注意：键名必须严格使用以下名称，禁止使用其他名称！
-- 禁止使用 "organizations"、"groups"、"teams"
-- 禁止使用 "items_resources"、"equipment"
-- 禁止使用 "social_systems"、"culture"
-- 禁止使用 "historical_context"、"events"
-- 禁止使用 "relationship_networks"
-
-正确示例：
-{{
-  "characters": [{{"id": "char_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "locations": [{{"id": "loc_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "factions": [{{"id": "fact_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "items": [{{"id": "item_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "world_architecture": [{{"id": "arch_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "energy_systems": [{{"id": "ener_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "society_systems": [{{"id": "soc_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "timeline_events": [{{"id": "hist_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "relations": [{{"id": "rel_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}]
-}}
-
-注意：
-1. 只输出 JSON，不要其他内容
-2. 必须包含全部 9 种类型的键（即使为空数组）
-3. 未找到的类型返回空数组 []
-4. id 格式为 "类型缩写_序号"
-5. 键名必须严格使用上述名称，不能使用 "organizations" 等别名
-"""
+    prompt = element_extractor._build_extraction_prompt(text, target_types, strategy, include_evidence, context)
 
     messages = [
         {"role": "system", "content": "你是一位专业的小说世界观设定分析师。请分析提供的故事内容片段，提取其中的世界观设定元素。必须以JSON格式返回结果。"},
@@ -879,7 +782,10 @@ def _extract_with_ai_stream(text: str, target_types: list, strategy: str, includ
                 full_response += content
                 yield {'type': 'stream_chunk', 'content': content}
 
+        generation_logger.log_step1_extraction("STREAM_AI_RESPONSE", full_response)
+        generation_logger.log_step1_extraction("STREAM_INPUT_PROMPT", prompt[:2000])
         parsed_result = _parse_ai_response(full_response)
+        generation_logger.log_step1_extraction("STREAM_PARSED_RESULT", parsed_result)
         yield {'type': 'result', 'data': parsed_result}
 
     except Exception as e:
@@ -912,7 +818,11 @@ def _parse_ai_response(ai_response: str) -> dict:
         'items': [],
         'world_architecture': [],
         'energy_systems': [],
-        'society_systems': [],
+        'civilizations': [],
+        'social_classes': [],
+        'political_systems': [],
+        'economic_systems': [],
+        'cultural_customs': [],
         'timeline_events': [],
         'relations': []
     }
@@ -941,46 +851,20 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
     """
     使用AI智能整合元素列表
     """
-    import difflib
 
-    def calculate_name_similarity(name1: str, name2: str) -> float:
-        if not name1 or not name2:
-            return 0.0
-        norm1 = name1.strip().lower()
-        norm2 = name2.strip().lower()
-        if norm1 == norm2:
-            return 1.0
-        return difflib.SequenceMatcher(None, norm1, norm2).ratio()
-
-    def group_similar_items(items: list, threshold: float = 0.6) -> list:
+    def group_similar_items(items: list, threshold: float = 0.6, element_type: str = '') -> list:
+        """
+        使用AI整合元素列表（不再使用算法预分组）
+        直接将每个元素作为单独的组，依赖AI进行真正的相似性判断
+        """
         if not items:
             return []
 
         n = len(items)
         groups = []
-        used = set()
 
         for i in range(n):
-            if i in used:
-                continue
-
-            current_group = [i]
-            used.add(i)
-
-            for j in range(i + 1, n):
-                if j in used:
-                    continue
-                name_i = items[i].get('name', '')
-                name_j = items[j].get('name', '')
-                if calculate_name_similarity(name_i, name_j) >= threshold:
-                    current_group.append(j)
-                    used.add(j)
-
-            groups.append([items[idx] for idx in current_group])
-
-        for i in range(n):
-            if i not in used:
-                groups.append([items[i]])
+            groups.append([items[i]])
 
         return groups
 
@@ -992,7 +876,11 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
             'items': '物品道具',
             'world_architecture': '世界架构',
             'energy_systems': '能量体系',
-            'society_systems': '社会体系',
+            'civilizations': '文明体系',
+            'social_classes': '社会阶层',
+            'political_systems': '政治体系',
+            'economic_systems': '经济体系',
+            'cultural_customs': '文化习俗',
             'timeline_events': '历史事件',
             'relations': '关系'
         }
@@ -1007,7 +895,7 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
                 'type': item.get('type', ''),
                 'brief': item.get('brief', ''),
                 'description': item.get('description', ''),
-                'source': item.get('source', item.get('evidence', ''))
+                'source': item.get('source', '')
             })
 
         prompt = f"""你是一位专业的小说世界观设定分析师。现在需要整合从故事中提取的重复或相似的{type_name}设定。
@@ -1020,13 +908,17 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
    - 各条目的独特差异点（并注明来源）
 
 ## 相似判断标准（非常重要）
-以下情况应该被判定为相似/重复：
-1. **名称相同或包含同一关键词**：如"玛娜"和"魔法能量'玛娜'"、"玛娜能量"
+以下情况应该被判定为**相似/重复**：
+1. **名称完全相同**：如"玛娜能量"和"玛娜能量"
 2. **描述同一事物**：如"门的能量特性"和"打开'门'的能力"
-3. **同一实体的不同方面**：如"陈启的开启能力"和"陈启拥有的能打开门的超自然能力"
-4. **基于同一来源的不同描述**
 
-请仔细比较名称和描述，将描述同一概念的条目归为一组。
+以下情况应该被判定为**不同实体**：
+1. **不同人名**：如"陈启"和"林卫国"、"王铁"是完全不同的两个人，绝不能合并！
+2. **名称有明显区分词**：如"陈启的能力"和"林卫国"不是同一人
+3. **同一章节中提到的不同角色**：即使描述简短，只要名称不同就是不同角色
+4. **来自不同章节的不同角色**：即使名称略有相似，只要是不同人就不能合并
+
+**重要提醒**：你的任务是识别**真正的重复**，而不是**错误地将不同角色合并**。宁可保留重复，也不要错误合并不同实体。
 
 ## 输出格式（必须严格遵守）
 请以JSON格式返回，结构如下：
@@ -1036,8 +928,8 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
             "is_duplicate": true/false,
             "items": [原始条目索引列表],
             "merged": {{
-                "name": "合并后的名称（选择最准确、最完整的名称）",
-                "brief": "合并后的简介/共同特征",
+                "name": "合并后的名称（如果is_duplicate为true，选择最准确、最完整的名称；如果为false，填写主要实体的名称）",
+                "brief": "简介/共同特征",
                 "common_points": ["共同点1", "共同点2"],
                 "diff_points": [
                     {{"description": "差异描述", "source": "来源"}}
@@ -1100,13 +992,15 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
                 'description': item.get('description', ''),
                 'is_integrated': False,
                 'integrated_count': 1,
-                'sources': [item.get('source', item.get('evidence', ''))],
+                'sources': [item.get('source', '')],
                 'common_description': item.get('brief', ''),
                 'diff_points': []
             }
 
         prompt = build_ai_prompt(group, element_type)
+        generation_logger.log_step2_merge(f"{element_type}_MERGE_PROMPT", prompt[:2000])
         ai_result = call_ai_integrate(prompt)
+        generation_logger.log_step2_merge(f"{element_type}_MERGE_RESULT", ai_result)
 
         if not ai_result or 'groups' not in ai_result:
             names = [item.get('name', '') for item in group]
@@ -1118,7 +1012,7 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
                 'brief': briefs[0] if briefs else '',
                 'is_integrated': len(group) > 1,
                 'integrated_count': len(group),
-                'sources': [item.get('source', item.get('evidence', '')) for item in group],
+                'sources': [item.get('source', '') for item in group],
                 'common_description': '; '.join(set(briefs)),
                 'diff_points': [{'description': f"条目{i+1}: {n}", 'source': group[i].get('source', '')} for i, n in enumerate(names) if n]
             }
@@ -1131,20 +1025,22 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
                 'type': group[0].get('type', ''),
                 'is_integrated': False,
                 'integrated_count': 1,
-                'sources': [item.get('source', item.get('evidence', '')) for item in group]
+                'sources': [item.get('source', '') for item in group]
             }
 
         result_item = merged_group[0].get('merged', {})
         result_item['is_integrated'] = True
         result_item['integrated_count'] = len(group)
-        result_item['sources'] = [item.get('source', item.get('evidence', '')) for item in group]
+        result_item['sources'] = [item.get('source', '') for item in group]
         result_item['id'] = group[0].get('id', '')
         result_item['type'] = group[0].get('type', '')
         return result_item
 
     result = {}
     element_types = ['characters', 'locations', 'factions', 'items',
-                     'world_architecture', 'energy_systems', 'society_systems',
+                     'world_architecture', 'energy_systems',
+                     'civilizations', 'social_classes', 'political_systems',
+                     'economic_systems', 'cultural_customs',
                      'timeline_events', 'relations']
 
     for elem_type in element_types:
@@ -1154,17 +1050,41 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
             continue
 
         groups = group_similar_items(items, threshold=0.6)
+        generation_logger.log_step2_merge(f"{elem_type}_GROUPS", {
+            'original_count': len(items),
+            'group_count': len(groups),
+            'groups': [{'name': g[0].get('name', ''), 'size': len(g)} for g in groups]
+        })
+
+        id_prefix_map = {
+            'characters': 'char',
+            'locations': 'loc',
+            'factions': 'faction',
+            'items': 'item',
+            'world_architecture': 'world_arch',
+            'energy_systems': 'energy',
+            'civilizations': 'civ',
+            'social_classes': 'sclass',
+            'political_systems': 'polsys',
+            'economic_systems': 'ecosis',
+            'cultural_customs': 'cult',
+            'timeline_events': 'event',
+            'relations': 'relation'
+        }
+        id_prefix = id_prefix_map.get(elem_type, 'elem')
 
         integrated_items = []
-        for group in groups:
+        for idx, group in enumerate(groups):
             if len(group) > 1:
                 merged = merge_group_with_ai(group, elem_type)
+                merged['id'] = f"{id_prefix}_{str(idx + 1).zfill(3)}"
                 integrated_items.append(merged)
             else:
-                item = group[0]
+                item = group[0].copy()
                 item['is_integrated'] = False
                 item['integrated_count'] = 1
-                item['sources'] = [item.get('source', item.get('evidence', ''))]
+                item['sources'] = [item.get('source', '')]
+                item['id'] = f"{id_prefix}_{str(idx + 1).zfill(3)}"
                 integrated_items.append(item)
 
         result[elem_type] = integrated_items
