@@ -3,20 +3,31 @@ import { List, Card, Row, Col, Space, Typography, Progress, Button, Tag } from '
 import {
   PlayCircleOutlined, CheckCircleOutlined, LoadingOutlined,
   ThunderboltOutlined, UserOutlined, EnvironmentOutlined, TeamOutlined,
-  GlobalOutlined, BankOutlined, ShoppingOutlined, HistoryOutlined, LinkOutlined
+  GlobalOutlined, BankOutlined, ShoppingOutlined, HistoryOutlined, LinkOutlined,
+  CloudOutlined, RocketOutlined, ExperimentOutlined, ClockCircleOutlined,
+  UsergroupAddOutlined, CalendarOutlined, CrownOutlined
 } from '@ant-design/icons';
 
 const { Text } = Typography;
 
 const batchTypeConfig = {
-  energy_system: { title: '能量体系', icon: <ThunderboltOutlined />, color: '#f5222d', priority: 'P0' },
-  character: { title: '角色设定', icon: <UserOutlined />, color: '#1890ff', priority: 'P0' },
+  character: { title: '主要角色', icon: <UserOutlined />, color: '#1890ff', priority: 'P0' },
   location: { title: '地点场景', icon: <EnvironmentOutlined />, color: '#52c41a', priority: 'P0' },
   faction: { title: '组织势力', icon: <TeamOutlined />, color: '#fa8c16', priority: 'P1' },
-  world_architecture: { title: '世界架构', icon: <GlobalOutlined />, color: '#722ed1', priority: 'P1' },
+  dimension: { title: '维度/位面', icon: <GlobalOutlined />, color: '#722ed1', priority: 'P1' },
+  region: { title: '地理区域', icon: <CloudOutlined />, color: '#13c2c2', priority: 'P1' },
+  celestial_body: { title: '天体', icon: <RocketOutlined />, color: '#fa8c16', priority: 'P1' },
+  natural_law: { title: '自然法则', icon: <ExperimentOutlined />, color: '#f5222d', priority: 'P1' },
+  energy_system: { title: '能量体系', icon: <ThunderboltOutlined />, color: '#f5222d', priority: 'P0' },
   civilization: { title: '文明体系', icon: <BankOutlined />, color: '#13c2c2', priority: 'P1' },
+  social_class: { title: '社会阶层', icon: <CrownOutlined />, color: '#fa541c', priority: 'P1' },
+  political_system: { title: '政治体系', icon: <TeamOutlined />, color: '#722ed1', priority: 'P2' },
+  economic_system: { title: '经济体系', icon: <BankOutlined />, color: '#52c41a', priority: 'P2' },
+  cultural_custom: { title: '文化习俗', icon: <HistoryOutlined />, color: '#eb2f96', priority: 'P2' },
+  historical_era: { title: '历史纪元', icon: <ClockCircleOutlined />, color: '#fa541c', priority: 'P2' },
+  historical_event: { title: '历史事件', icon: <CalendarOutlined />, color: '#fa8c16', priority: 'P2' },
+  historical_figure: { title: '历史人物', icon: <UsergroupAddOutlined />, color: '#1890ff', priority: 'P2' },
   item: { title: '物品资源', icon: <ShoppingOutlined />, color: '#eb2f96', priority: 'P2' },
-  historical_event: { title: '历史脉络', icon: <HistoryOutlined />, color: '#fa541c', priority: 'P2' },
   relation: { title: '关系网络', icon: <LinkOutlined />, color: '#2f54eb', priority: 'P3' },
 };
 

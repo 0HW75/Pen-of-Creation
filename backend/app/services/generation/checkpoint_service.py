@@ -6,6 +6,7 @@ import logging
 from typing import Dict, Optional, List, Any
 from datetime import datetime, timedelta
 from app import db
+from app import now_utc_plus_8
 from app.models import AIGenerationCheckpoint
 
 logger = logging.getLogger(__name__)
@@ -71,8 +72,8 @@ class CheckpointService:
                 existing.checkpoint_data = json.dumps(data, ensure_ascii=False) if data else None
                 existing.progress_percent = progress_percent
                 existing.status = status
-                existing.updated_at = datetime.utcnow()
-                existing.expires_at = datetime.utcnow() + timedelta(days=self.DEFAULT_EXPIRY_DAYS)
+                existing.updated_at = now_utc_plus_8()
+                existing.expires_at = now_utc_plus_8() + timedelta(days=self.DEFAULT_EXPIRY_DAYS)
                 if parent_checkpoint_id is not None:
                     existing.parent_checkpoint_id = parent_checkpoint_id
                 if name:
@@ -90,7 +91,7 @@ class CheckpointService:
                     checkpoint_data=json.dumps(data, ensure_ascii=False) if data else None,
                     progress_percent=progress_percent,
                     status=status,
-                    expires_at=datetime.utcnow() + timedelta(days=self.DEFAULT_EXPIRY_DAYS),
+                    expires_at=now_utc_plus_8() + timedelta(days=self.DEFAULT_EXPIRY_DAYS),
                     parent_checkpoint_id=parent_checkpoint_id,
                     name=name
                 )
@@ -382,7 +383,7 @@ class CheckpointService:
             int: 清理的检查点数量
         """
         try:
-            now = datetime.utcnow()
+            now = now_utc_plus_8()
             expired = AIGenerationCheckpoint.query.filter(
                 AIGenerationCheckpoint.expires_at < now
             ).all()
@@ -419,7 +420,7 @@ class CheckpointService:
                 return False
             
             checkpoint.status = status
-            checkpoint.updated_at = datetime.utcnow()
+            checkpoint.updated_at = now_utc_plus_8()
             db.session.commit()
             
             logger.info(f"更新检查点状态: {checkpoint_id} -> {status}")
@@ -467,7 +468,7 @@ class CheckpointService:
             'results': results,
             'story_context': story_context,
             'batch_config': batch_config,
-            'saved_at': datetime.utcnow().isoformat()
+            'saved_at': now_utc_plus_8().isoformat()
         }
 
         progress_percent = int((current_index / len(elements)) * 100) if elements else 0

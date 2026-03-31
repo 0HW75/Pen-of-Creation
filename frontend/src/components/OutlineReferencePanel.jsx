@@ -11,7 +11,6 @@ import {
 } from '@ant-design/icons';
 
 const { Text, Title, Paragraph } = Typography;
-const { Panel } = Collapse;
 
 /**
  * 大纲参考面板组件
@@ -154,51 +153,52 @@ const OutlineReferencePanel = ({
           )}
           
           {/* 伏笔与照应 */}
-          <Collapse ghost style={{ marginBottom: '12px' }}>
-            {outlineData.foreshadowing.length > 0 && (
-              <Panel 
-                header={
+          <Collapse 
+            ghost 
+            style={{ marginBottom: '12px' }}
+            items={[
+              outlineData.foreshadowing.length > 0 && {
+                key: 'foreshadowing',
+                label: (
                   <Space>
                     <Tag color="orange">伏笔</Tag>
                     <Text type="secondary" style={{ fontSize: '12px' }}>
                       {outlineData.foreshadowing.length}个
                     </Text>
                   </Space>
-                } 
-                key="foreshadowing"
-              >
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  {outlineData.foreshadowing.map((item, index) => (
-                    <Text key={index} style={{ fontSize: '12px' }}>
-                      • {item}
-                    </Text>
-                  ))}
-                </Space>
-              </Panel>
-            )}
-            
-            {outlineData.callbacks.length > 0 && (
-              <Panel 
-                header={
+                ),
+                children: (
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    {outlineData.foreshadowing.map((item, index) => (
+                      <Text key={index} style={{ fontSize: '12px' }}>
+                        • {item}
+                      </Text>
+                    ))}
+                  </Space>
+                )
+              },
+              outlineData.callbacks.length > 0 && {
+                key: 'callbacks',
+                label: (
                   <Space>
                     <Tag color="green">照应</Tag>
                     <Text type="secondary" style={{ fontSize: '12px' }}>
                       {outlineData.callbacks.length}个
                     </Text>
                   </Space>
-                } 
-                key="callbacks"
-              >
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  {outlineData.callbacks.map((item, index) => (
-                    <Text key={index} style={{ fontSize: '12px' }}>
-                      • {item}
-                    </Text>
-                  ))}
-                </Space>
-              </Panel>
-            )}
-          </Collapse>
+                ),
+                children: (
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    {outlineData.callbacks.map((item, index) => (
+                      <Text key={index} style={{ fontSize: '12px' }}>
+                        • {item}
+                      </Text>
+                    ))}
+                  </Space>
+                )
+              }
+            ].filter(Boolean)}
+          />
           
           {/* 备注 */}
           {outlineData.notes && (

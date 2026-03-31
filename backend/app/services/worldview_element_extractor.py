@@ -64,8 +64,11 @@ class WorldviewElementExtractor:
         config = extraction_config or {}
         target_types = config.get('target_types', [
             'characters', 'locations', 'factions', 'items',
-            'world_architecture', 'energy_systems', 'society_systems',
-            'timeline_events', 'relations'
+            'dimensions', 'regions', 'celestial_bodies', 'natural_laws',
+            'energy_systems', 'civilizations', 'social_classes',
+            'political_systems', 'economic_systems', 'cultural_customs',
+            'historical_eras', 'historical_events', 'historical_figures',
+            'relations'
         ])
         strategy = config.get('strategy', 'infer_potential')
         include_evidence = config.get('include_evidence', True)
@@ -79,10 +82,19 @@ class WorldviewElementExtractor:
             'locations': [],
             'factions': [],
             'items': [],
-            'world_architecture': [],
+            'dimensions': [],
+            'regions': [],
+            'celestial_bodies': [],
+            'natural_laws': [],
             'energy_systems': [],
-            'society_systems': [],
-            'timeline_events': [],
+            'civilizations': [],
+            'social_classes': [],
+            'political_systems': [],
+            'economic_systems': [],
+            'cultural_customs': [],
+            'historical_eras': [],
+            'historical_events': [],
+            'historical_figures': [],
             'relations': []
         }
 
@@ -550,49 +562,74 @@ class WorldviewElementExtractor:
     ) -> str:
         """构建提取提示词"""
 
-        # 数据库 9 种标准类型
+        # 数据库标准类型（拆分后共19种）
+        # world_architecture 拆分为: dimensions, regions, celestial_bodies, natural_laws
+        # timeline_events 拆分为: historical_eras, historical_events, historical_figures
         type_descriptions = {
             'characters': '角色（姓名、身份、性格、能力等）',
             'locations': '地点场景（城市、建筑、自然景观等）',
             'factions': '组织势力（门派、国家、组织、机构等）',
             'items': '物品资源（武器、法宝、道具、信息载体等）',
-            'world_architecture': '世界架构（世界规则、维度、地理、空间通道等）',
+            'dimensions': '维度/位面（独立的世界、位面、空间维度、平行世界等）',
+            'regions': '地理区域（大陆、国家、地区、领地、地理分区等）',
+            'celestial_bodies': '天体（星球、恒星、卫星、星系等天体及其属性）',
+            'natural_laws': '自然法则（物理法则、魔法规则、世界规则等）',
             'energy_systems': '能量体系（力量等级、修炼体系、超自然能力等）',
-            'society_systems': '社会体系（社会结构、文化习俗、组织运作模式等）',
-            'timeline_events': '历史脉络（历史事件、时间线、起点事件等）',
+            'civilizations': '文明体系（文明类型、发展阶段、人口规模、政治体制等）',
+            'social_classes': '社会阶层（贵族、平民、奴隶等不同阶层及其特权和义务）',
+            'political_systems': '政治体系（政府类型、权力结构、决策流程等）',
+            'economic_systems': '经济体系（货币名称、经济模式、贸易体系等）',
+            'cultural_customs': '文化习俗（节日、礼仪、禁忌、传统等）',
+            'historical_eras': '历史纪元（时代、纪年、重要历史时期等）',
+            'historical_events': '历史事件（战争、革命、发明、灾难等具体事件）',
+            'historical_figures': '历史人物（重要的历史人物、领袖、英雄等）',
             'relations': '关系网络（角色与组织关系、组织间关系等）'
         }
 
         target_list = ', '.join([type_descriptions.get(t, t) for t in target_types])
 
-        evidence_desc = "对于每个提取的元素，请提供原文证据" if include_evidence else ""
-
-        # 明确列出 9 种类型，禁止返回其他类型
+        # 明确列出 13 种类型，禁止返回其他类型
         prompt = f"""请分析以下故事内容片段（{context}），提取其中的世界观设定元素。
 
 ## 分析要求
 - 策略：{'仅提取明确提及的内容' if strategy == 'explicit_only' else '基于文本进行合理推断和补充'}
 - 需要提取：{target_list}
-- {evidence_desc}
 
-## 重要约束
-- 只返回以下 9 种类型，禁止返回其他类型：
+## 只返回以下类型，禁止返回其他类型（共18种）：
   1. characters - 角色：具体的人，有姓名、身份、性格
-  2. locations - 地点场景：具体的地点，如城市、建筑、房间、道路
+  2. locations - 地点场景：具体的地点，如城市、建筑、房间，道路
   3. factions - 组织势力：组织、机构、国家、政府、部门、门派、计划项目（如"零号工程"、"昆仑基地"是组织不是地点）
   4. items - 物品资源：具体的物品、武器、情报、载具、文件
-  5. world_architecture - 世界架构：抽象的世界规则、维度、空间通道、物理法则
-  6. energy_systems - 能量体系：力量等级、修炼体系、超自然能力
-  7. society_systems - 社会体系：社会结构、文化习俗、运作模式
-  8. timeline_events - 历史脉络：历史事件、时间线
-  9. relations - 关系网络：人与组织的关系、组织间的关系
+  5. dimensions - 维度/位面：独立的世界、位面、空间维度、平行世界
+  6. regions - 地理区域：大陆、国家、地区、领地、地理分区
+  7. celestial_bodies - 天体：星球、恒星、卫星、星系等天体及其属性
+  8. natural_laws - 自然法则：物理法则、魔法规则、世界规则
+  9. energy_systems - 能量体系：力量等级、修炼体系、超自然能力
+  10. civilizations - 文明体系：文明类型、发展阶段、人口规模、政治体制、经济体制等
+  11. social_classes - 社会阶层：贵族、平民、奴隶等不同阶层及其特权和义务
+  12. political_systems - 政治体系：政府类型、权力结构、决策流程、继承制度等
+  13. economic_systems - 经济体系：货币名称、经济模式、贸易体系、税收系统等
+  14. cultural_customs - 文化习俗：节日、礼仪、禁忌、传统、宗教等
+  15. historical_eras - 历史纪元：时代、纪年、重要历史时期
+  16. historical_events - 历史事件：战争、革命、发明、灾难等具体事件
+  17. historical_figures - 历史人物：重要的历史人物、领袖、英雄等
+  18. relations - 关系网络：人与组织的关系、组织间的关系
 - 关键区分：
-  1. "国家/政府/部门" → factions（不是 world_architecture）
+  1. "国家/政府/部门" → factions（不是 locations）
   2. "绝密基地/秘密设施" → factions（如果是组织）或 locations（如果是具体地点）
   3. "计划/工程/项目" → factions（如"零号工程"）
-  4. "世界/维度/空间通道" → world_architecture
-  5. "能力/超自然能力/魔法/修炼体系" → energy_systems（不是 items）
-  6. "门/传送门/空间门" → world_architecture（如果是空间通道）或 energy_systems（如果是能力）
+  4. "世界/维度/空间通道" → dimensions（不是 world_architecture）
+  5. "大陆/地区/领地/国家" → regions
+  6. "星球/恒星/卫星/星系" → celestial_bodies
+  7. "物理法则/魔法规则/世界规则" → natural_laws
+  8. "能力/超自然能力/魔法/修炼体系" → energy_systems（不是 items）
+  9. "门/传送门/空间门" → dimensions（如果是空间通道）或 energy_systems（如果是能力）
+  10. "贵族/平民/奴隶/阶层" → social_classes（不是 civilizations）
+  11. "节日/婚礼/葬礼/礼仪" → cultural_customs
+  12. "货币/工资/税收/贸易" → economic_systems
+  13. "时代/纪年/历史时期" → historical_eras
+  14. "战争/革命/发明/灾难" → historical_events
+  15. "历史人物/领袖/英雄" → historical_figures
 
 ## 内容片段
 ```
@@ -600,33 +637,50 @@ class WorldviewElementExtractor:
 ```
 
 ## 输出格式
-请以 JSON 格式输出，只包含以下 9 种类型：
+请以 JSON 格式输出，只包含以下类型：
 注意：键名必须严格使用以下名称，禁止使用其他名称！
 - 禁止使用 "organizations"、"groups"、"teams"
 - 禁止使用 "items_resources"、"equipment"
-- 禁止使用 "social_systems"、"culture"
-- 禁止使用 "historical_context"、"events"
+- 禁止使用 "world_architecture"（请使用 dimensions, regions, celestial_bodies, natural_laws）
+- 禁止使用 "timeline_events"（请使用 historical_eras, historical_events, historical_figures）
 - 禁止使用 "relationship_networks"
 
 正确示例：
 {{
-  "characters": [{{"id": "char_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "locations": [{{"id": "loc_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "factions": [{{"id": "fact_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "items": [{{"id": "item_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "world_architecture": [{{"id": "arch_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "energy_systems": [{{"id": "ener_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "society_systems": [{{"id": "soc_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "timeline_events": [{{"id": "hist_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}],
-  "relations": [{{"id": "rel_001", "name": "名称", "type": "类型", "brief": "简介", "evidence": "证据"}}]
+  "characters": [{{"id": "char_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 8}}],
+  "locations": [{{"id": "loc_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 5}}],
+  "factions": [{{"id": "fact_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 7}}],
+  "items": [{{"id": "item_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 4}}],
+  "dimensions": [{{"id": "dim_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 6}}],
+  "regions": [{{"id": "reg_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 5}}],
+  "celestial_bodies": [{{"id": "cel_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 5}}],
+  "natural_laws": [{{"id": "law_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 6}}],
+  "energy_systems": [{{"id": "ener_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 5}}],
+  "civilizations": [{{"id": "civ_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 8}}],
+  "social_classes": [{{"id": "sclass_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 5}}],
+  "political_systems": [{{"id": "polsys_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 6}}],
+  "economic_systems": [{{"id": "ecosis_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 5}}],
+  "cultural_customs": [{{"id": "cult_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 4}}],
+  "historical_eras": [{{"id": "era_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 6}}],
+  "historical_events": [{{"id": "event_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 6}}],
+  "historical_figures": [{{"id": "fig_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 7}}],
+  "relations": [{{"id": "rel_001", "name": "名称", "type": "类型", "brief": "简介", "importance_level": 5}}]
 }}
+
+字段说明：
+- importance_level: 重要性等级（1-10），分数越高越重要
+  - 8-10分（核心元素）：详细描述，至少100字，涵盖全部关键信息
+  - 5-7分（重要元素）：中等描述，50-100字，包含核心信息
+  - 3-4分（次要元素）：简短描述，20-50字
+  - 1-2分（边缘元素）：极简描述，10-20字或直接跳过
 
 注意：
 1. 只输出 JSON，不要其他内容
-2. 必须包含全部 9 种类型的键（即使为空数组）
-3. 未找到的类型返回空数组 []
+2. 必须包含全部类型的键（即使为空数组）
+3. 只返回 importance_level >= 2 的元素，低于此值的元素应被忽略
 4. id 格式为 "类型缩写_序号"
 5. 键名必须严格使用上述名称，不能使用 "organizations" 等别名
+6. **禁止在输出中使用 \\uXXXX Unicode转义序列，所有文字必须直接使用UTF-8中文字符**
 """
 
         return prompt
@@ -659,10 +713,19 @@ class WorldviewElementExtractor:
             'locations': [],
             'factions': [],
             'items': [],
-            'world_architecture': [],
+            'dimensions': [],
+            'regions': [],
+            'celestial_bodies': [],
+            'natural_laws': [],
             'energy_systems': [],
-            'society_systems': [],
-            'timeline_events': [],
+            'civilizations': [],
+            'social_classes': [],
+            'political_systems': [],
+            'economic_systems': [],
+            'cultural_customs': [],
+            'historical_eras': [],
+            'historical_events': [],
+            'historical_figures': [],
             'relations': []
         }
 

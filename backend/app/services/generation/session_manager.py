@@ -24,7 +24,7 @@ class AbortController:
         with self._lock:
             self._aborted = True
             self._abort_reason = reason
-            self._abort_time = datetime.utcnow()
+            self._abort_time = now_utc_plus_8()
             logger.info(f"会话已中止，原因: {reason}")
     
     def is_aborted(self) -> bool:
@@ -53,8 +53,8 @@ class GenerationSession:
         self.session_type = session_type  # extraction/generation
         self.status = "running"  # running/paused/completed/aborted
         self.abort_controller = AbortController()
-        self.created_at = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
+        self.created_at = now_utc_plus_8()
+        self.updated_at = now_utc_plus_8()
         self.completed_at: Optional[datetime] = None
         self.current_stage: Optional[str] = None
         self.current_element: Optional[str] = None
@@ -67,19 +67,19 @@ class GenerationSession:
         self.current_stage = stage
         self.current_element = element
         self.progress_percent = progress
-        self.updated_at = datetime.utcnow()
+        self.updated_at = now_utc_plus_8()
     
     def complete(self):
         """标记会话完成"""
         self.status = "completed"
-        self.completed_at = datetime.utcnow()
+        self.completed_at = now_utc_plus_8()
         self.progress_percent = 100
     
     def abort(self, reason: str = "user_requested"):
         """中止会话"""
         self.status = "aborted"
         self.abort_controller.abort(reason)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = now_utc_plus_8()
     
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
@@ -311,7 +311,7 @@ class GenerationSessionManager:
             int: 清理的会话数量
         """
         with self._lock:
-            now = datetime.utcnow()
+            now = now_utc_plus_8()
             expired_sessions = []
             
             for session_id, session in self._sessions.items():

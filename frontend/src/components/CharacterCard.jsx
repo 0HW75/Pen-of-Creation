@@ -63,6 +63,18 @@ const CharacterCard = ({
     return colors[role] || 'default';
   };
 
+  const getRoleType = (character) => {
+    if (character.role_type) return character.role_type;
+    if (character.character_type) return character.character_type;
+    return '配角';
+  };
+
+  const getOccupation = (character) => {
+    if (character.occupation) return character.occupation;
+    if (character.character_class) return character.character_class;
+    return '';
+  };
+
   // 获取阵营颜色
   const getAlignmentColor = (alignment) => {
     if (!alignment) return 'default';
@@ -90,14 +102,15 @@ const CharacterCard = ({
   // 渲染标签
   const renderTags = () => {
     const tags = [];
-    if (character.role) {
-      tags.push(<Tag key="role" color={getRoleColor(character.role)}>{character.role}</Tag>);
+    const roleType = getRoleType(character);
+    if (roleType) {
+      tags.push(<Tag key="role" color={getRoleColor(roleType)}>{roleType}</Tag>);
     }
     if (character.alignment) {
       tags.push(<Tag key="alignment" color={getAlignmentColor(character.alignment)}>{character.alignment}</Tag>);
     }
-    if (character.faction_name) {
-      tags.push(<Tag key="faction">{character.faction_name}</Tag>);
+    if (character.faction) {
+      tags.push(<Tag key="faction">{character.faction}</Tag>);
     }
     return tags;
   };
@@ -119,12 +132,12 @@ const CharacterCard = ({
                     : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                 }}
               >
-                {!character.avatar && getClassIcon(character.character_class)}
+                {!character.avatar && getClassIcon(getOccupation(character))}
               </div>
               <div className="character-level-badge">
-                Lv.{character.level || 1}
+                Lv.{character.current_level || character.level || 1}
               </div>
-              {character.is_important && (
+              {character.importance_level >= 8 && (
                 <div className="character-important-badge">
                   <StarOutlined />
                 </div>
@@ -198,8 +211,8 @@ const CharacterCard = ({
             
             <div className="character-info-row">
               <span className="character-class">
-                {getClassIcon(character.character_class)}
-                <span>{character.character_class || '未知职业'}</span>
+                {getClassIcon(getOccupation(character))}
+                <span>{getOccupation(character) || '未知职业'}</span>
               </span>
               <span className="character-race">
                 {character.race || '未知种族'}
@@ -210,10 +223,10 @@ const CharacterCard = ({
               {renderTags()}
             </div>
 
-            {character.location_name && (
+            {character.current_location && (
               <div className="character-location">
                 <EnvironmentOutlined />
-                <span>{character.location_name}</span>
+                <span>{character.current_location}</span>
               </div>
             )}
 
@@ -249,14 +262,14 @@ const CharacterCard = ({
             <Avatar
               size={64}
               src={character.avatar}
-              icon={getClassIcon(character.character_class)}
+              icon={getClassIcon(getOccupation(character))}
               style={{
-                background: !character.avatar 
-                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                background: !character.avatar
+                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                   : undefined
               }}
             />
-            {character.is_important && (
+            {character.importance_level >= 8 && (
               <div className="character-list-important">
                 <StarOutlined />
               </div>
@@ -266,7 +279,7 @@ const CharacterCard = ({
           <div className="character-list-info">
             <div className="character-list-header">
               <h4 className="character-list-name">{character.name}</h4>
-              <span className="character-list-level">Lv.{character.level || 1}</span>
+              <span className="character-list-level">Lv.{character.current_level || character.level || 1}</span>
               {chapterCount > 0 && (
                 <Tooltip title={`在 ${chapterCount} 个章节中出现`}>
                   <Badge count={chapterCount} size="small" style={{ marginLeft: 8, backgroundColor: '#1890ff' }}>
@@ -280,9 +293,9 @@ const CharacterCard = ({
             
             <div className="character-list-details">
               <span><UserOutlined /> {character.race || '未知种族'}</span>
-              <span>{getClassIcon(character.character_class)} {character.character_class || '未知职业'}</span>
-              {character.location_name && (
-                <span><EnvironmentOutlined /> {character.location_name}</span>
+              <span>{getClassIcon(getOccupation(character))} {getOccupation(character) || '未知职业'}</span>
+              {character.current_location && (
+                <span><EnvironmentOutlined /> {character.current_location}</span>
               )}
             </div>
 

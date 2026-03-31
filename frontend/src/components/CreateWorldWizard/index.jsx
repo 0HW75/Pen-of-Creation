@@ -65,6 +65,9 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
           extractionId: `ext_${data.projectId}_${Date.now()}`,
           elements,
           selectedElements,
+          storyContext: data.storyContext,
+          contentScope: data.contentScope,
+          checkpointId: data.checkpointId,
         });
         
         setCurrentStep(1);
@@ -76,7 +79,7 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
           project_id: data.projectId,
           content_scope: data.contentScope,
           extraction_config: {
-            target_types: ['characters', 'locations', 'factions', 'items', 'world_architecture', 'energy_systems', 'society_systems', 'timeline_events', 'relations'],
+            target_types: ['characters', 'locations', 'factions', 'items', 'world_architecture', 'energy_systems', 'civilizations', 'social_classes', 'political_systems', 'economic_systems', 'cultural_customs', 'timeline_events', 'relations'],
             strategy: 'infer_potential',
             include_evidence: true,
           },
@@ -94,6 +97,9 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
             extractionId: extraction_id,
             elements,
             selectedElements,
+            storyContext: response.data.data.story_context,
+            contentScope: data.contentScope,
+            checkpointId: response.data.data.checkpoint_id,
           });
           
           setCurrentStep(1);
@@ -125,9 +131,10 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
         extraction_id: step2Data.extractionId,
         elements: step2Data.elements,  // 所有提取的元素
         selected_elements: selectedElements,  // 用户选择的元素ID
+        parent_checkpoint_id: step1Data.checkpointId,  // Step1检查点ID，用于关联
         batch_config: {
           batch_size: 5,
-          priority_order: ['energy_systems', 'characters', 'locations', 'factions', 'world_architecture', 'society_systems', 'items', 'timeline_events', 'relations'],
+          priority_order: ['energy_systems', 'characters', 'locations', 'factions', 'dimensions', 'regions', 'celestial_bodies', 'natural_laws', 'civilizations', 'social_classes', 'political_systems', 'economic_systems', 'cultural_customs', 'historical_eras', 'historical_events', 'historical_figures', 'items', 'relations'],
           generation_strategy: 'moderate',
           conflict_resolution: 'prompt',
         },
@@ -138,7 +145,8 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
           generationSessionId: response.data.data.generation_session_id,
           batches: response.data.data.batches,
           generatedWorldId: null,
-          parentCheckpointId: step1Data.checkpointId, // 保存Step1的检查点ID
+          parentCheckpointId: step1Data.checkpointId,
+          storyContext: step2Data.storyContext || step1Data.storyContext,
         });
 
         setCurrentStep(2);
@@ -203,7 +211,7 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
           onPrev={handlePrev}
           projectId={step1Data.projectId}
           worldId={step3Data.generatedWorldId}
-          storyContext={step1Data.storyContext}
+          storyContext={step3Data.storyContext || step1Data.storyContext}
           parentCheckpointId={step3Data.parentCheckpointId}
         />
       ),

@@ -1,4 +1,5 @@
 from app import db
+from app import now_utc_plus_8
 from datetime import datetime
 
 class World(db.Model):
@@ -12,8 +13,8 @@ class World(db.Model):
     creation_origin = db.Column(db.Text, default='')
     world_essence = db.Column(db.Text, default='')
     status = db.Column(db.String(50), default='active')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
 
     def to_dict(self):
         return {
@@ -46,8 +47,8 @@ class Project(db.Model):
     estimated_completion_date = db.Column(db.Date)
     word_count = db.Column(db.Integer, default=0)
     world_id = db.Column(db.Integer, db.ForeignKey('worlds.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -76,8 +77,8 @@ class Outline(db.Model):
     content = db.Column(db.Text, default='')
     story_model = db.Column(db.String(100), default='')
     version = db.Column(db.Integer, default=1)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -103,8 +104,8 @@ class Volume(db.Model):
     chapter_count = db.Column(db.Integer, default=0)
     order_index = db.Column(db.Integer, nullable=False)
     version = db.Column(db.Integer, default=1)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         import json
@@ -158,8 +159,8 @@ class Chapter(db.Model):
     word_count = db.Column(db.Integer, default=0)
     order_index = db.Column(db.Integer, nullable=False)
     version = db.Column(db.Integer, default=1)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
 
     def to_dict(self):
         return {
@@ -242,8 +243,8 @@ class Character(db.Model):
     complex_emotions = db.Column(db.Text, default='')
     unrequited_love = db.Column(db.Text, default='')
     emotional_changes = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -320,8 +321,8 @@ class CharacterBackground(db.Model):
     turning_points = db.Column(db.Text, default='')
     core_memory = db.Column(db.Text, default='')
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -352,8 +353,8 @@ class CharacterAbilityDetail(db.Model):
     usage_restrictions = db.Column(db.Text, default='')
     is_signature = db.Column(db.Boolean, default=False)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -401,8 +402,8 @@ class Location(db.Model):
     access_restrictions = db.Column(db.Text, default='')
     survival_conditions = db.Column(db.Text, default='')
     importance = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -457,8 +458,8 @@ class Item(db.Model):
     current_owner = db.Column(db.String(255), default='')
     acquisition_method = db.Column(db.Text, default='')
     importance = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -525,8 +526,8 @@ class Faction(db.Model):
     subordinate_relationships = db.Column(db.Text, default='')
     neutral_relationships = db.Column(db.Text, default='')
     importance = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -587,8 +588,8 @@ class Relationship(db.Model):
     relationship_type = db.Column(db.String(100), nullable=False)
     strength = db.Column(db.Integer, default=5)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -614,7 +615,7 @@ class Version(db.Model):
     description = db.Column(db.Text, default='')
     tags = db.Column(db.Text, default='')
     content_hash = db.Column(db.String(255), default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -634,8 +635,8 @@ class Note(db.Model):
     title = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text, default='')
     type = db.Column(db.String(50), default='普通')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -658,7 +659,7 @@ class NavigationFlow(db.Model):
     current_stage = db.Column(db.String(50), default='project_creation')
     overall_progress = db.Column(db.Float, default=0)
     stage_progress = db.Column(db.Text, default='[]')
-    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_updated = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -686,7 +687,7 @@ class Task(db.Model):
     priority = db.Column(db.Integer, default=3)
     status = db.Column(db.String(50), default='pending')
     due_date = db.Column(db.Date)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
     completed_at = db.Column(db.DateTime)
     
     def to_dict(self):
@@ -718,7 +719,7 @@ class Inspiration(db.Model):
     context = db.Column(db.Text)
     rating = db.Column(db.Integer, default=0)
     status = db.Column(db.String(50), default='未使用')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
     used_at = db.Column(db.DateTime)
     
     def to_dict(self):
@@ -748,7 +749,7 @@ class EmotionBoard(db.Model):
     description = db.Column(db.Text, default='')
     tags = db.Column(db.Text, default='')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -781,7 +782,7 @@ class AIGenerationVersion(db.Model):
     parent_version_id = db.Column(db.Integer, db.ForeignKey('ai_generation_versions.id'), nullable=True)  # 父版本ID（用于追踪版本链）
     generation_params = db.Column(db.Text, default='{}')  # JSON格式的生成参数
     word_count = db.Column(db.Integer, default=0)  # 字数统计
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -811,8 +812,8 @@ class StoryModel(db.Model):
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
     is_default = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -841,8 +842,8 @@ class WorldSetting(db.Model):
     spatial_properties = db.Column(db.Text, default='')
     physical_laws = db.Column(db.Text, default='')
     special_rules = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -881,8 +882,8 @@ class SocietyCulture(db.Model):
     customs = db.Column(db.Text, default='')
     art_forms = db.Column(db.Text, default='')
     etiquette = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -920,8 +921,8 @@ class History(db.Model):
     important_figures = db.Column(db.Text, default='')
     historical_evaluations = db.Column(db.Text, default='')
     influence_heritage = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -959,8 +960,8 @@ class Ability(db.Model):
     specialization_directions = db.Column(db.Text, default='')
     fusion_possibilities = db.Column(db.Text, default='')
     ultimate_forms = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1002,8 +1003,8 @@ class Skill(db.Model):
     combination_skills = db.Column(db.Text, default='')
     counter_relationship = db.Column(db.Text, default='')
     skill_tree = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
 
     def to_dict(self):
         return {
@@ -1049,8 +1050,8 @@ class Talent(db.Model):
     ability_limits = db.Column(db.Text, default='')
     evolution_possibilities = db.Column(db.Text, default='')
     cost_risks = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1096,8 +1097,8 @@ class Race(db.Model):
     hybrids = db.Column(db.Text, default='')
     mutants = db.Column(db.Text, default='')
     legendary_species = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1140,8 +1141,8 @@ class Creature(db.Model):
     use_value = db.Column(db.Text, default='')
     material_sources = db.Column(db.Text, default='')
     legendary_stories = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1182,8 +1183,8 @@ class SpecialCreature(db.Model):
     ability_characteristics = db.Column(db.Text, default='')
     control_difficulty = db.Column(db.String(50), default='低')
     concept_type = db.Column(db.String(100), default='精神空间')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1230,8 +1231,8 @@ class Timeline(db.Model):
     major_changes = db.Column(db.Text, default='')
     current_era = db.Column(db.Text, default='')
     future_possibilities = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1271,8 +1272,8 @@ class DataAssociation(db.Model):
     target_type = db.Column(db.String(50), default='')
     target_id = db.Column(db.Integer, default=0)
     association_details = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1294,8 +1295,8 @@ class CharacterTrait(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1330,8 +1331,8 @@ class EnergySystem(db.Model):
     typical_manifestations = db.Column(db.Text, default='')  # 典型表现形式
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1376,8 +1377,8 @@ class PowerLevel(db.Model):
     energy_system_id = db.Column(db.Integer, default=None)  # 关联能量体系
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1422,8 +1423,8 @@ class CommonSkill(db.Model):
     energy_system_id = db.Column(db.Integer, default=None)  # 关联能量体系
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1471,8 +1472,8 @@ class Civilization(db.Model):
     historical_origin = db.Column(db.Text, default='')  # 历史起源
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1509,8 +1510,8 @@ class CivilizationRegion(db.Model):
     relationship_type = db.Column(db.String(100), default='统治')  # 统治/影响/贸易/敌对
     influence_level = db.Column(db.Integer, default=5)  # 影响力等级1-10
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1544,8 +1545,8 @@ class SocialClass(db.Model):
     typical_power_level = db.Column(db.Integer, default=0)  # 典型力量等级
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1590,8 +1591,8 @@ class CulturalCustom(db.Model):
     importance_level = db.Column(db.Integer, default=5)  # 重要性1-10
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1637,8 +1638,8 @@ class Dimension(db.Model):
     gravity = db.Column(db.String(50), default='1.0G')  # 重力
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1682,8 +1683,8 @@ class Region(db.Model):
     danger_level = db.Column(db.String(50), default='安全')  # 安全/低危/中危/高危/禁地
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     # 自关联关系
     parent = db.relationship('Region', remote_side=[id], backref='children')
@@ -1732,8 +1733,8 @@ class CelestialBody(db.Model):
     cultural_significance = db.Column(db.Text, default='')  # 文化意义
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1777,8 +1778,8 @@ class NaturalLaw(db.Model):
     importance_level = db.Column(db.Integer, default=5)  # 重要性1-10
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1807,8 +1808,8 @@ class CharacterAbility(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1826,8 +1827,8 @@ class CharacterRelationship(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1845,8 +1846,8 @@ class FactionStructure(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1864,8 +1865,8 @@ class FactionGoal(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1883,8 +1884,8 @@ class LocationStructure(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1902,8 +1903,8 @@ class SpecialLocation(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1921,8 +1922,8 @@ class EquipmentSystem(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1940,8 +1941,8 @@ class SpecialItem(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -1973,8 +1974,8 @@ class EnergyForm(db.Model):
     sensory_perception = db.Column(db.Text, default='')  # 感官感知
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2012,8 +2013,8 @@ class PowerCost(db.Model):
     accumulation_effect = db.Column(db.Text, default='')  # 累积效应
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2057,8 +2058,8 @@ class EconomicSystem(db.Model):
     economic_challenges = db.Column(db.Text, default='')  # 经济挑战
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2108,8 +2109,8 @@ class PoliticalSystem(db.Model):
     political_stability = db.Column(db.String(50), default='稳定')  # 政治稳定性
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2155,8 +2156,8 @@ class HistoricalEra(db.Model):
     description = db.Column(db.Text, default='')
     order_index = db.Column(db.Integer, default=0)
     status = db.Column(db.String(50), default='active')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2201,8 +2202,8 @@ class HistoricalEvent(db.Model):
     importance_level = db.Column(db.Integer, default=5)  # 重要性1-10
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2251,8 +2252,8 @@ class HistoricalFigure(db.Model):
     importance_level = db.Column(db.Integer, default=5)  # 重要性1-10
     status = db.Column(db.String(50), default='active')
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2290,8 +2291,8 @@ class EventParticipant(db.Model):
     motivation = db.Column(db.Text, default='')  # 动机
     outcome_for_participant = db.Column(db.Text, default='')  # 对参与者的结果
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2321,8 +2322,8 @@ class Tag(db.Model):
     color = db.Column(db.String(50), default='#1890ff')  # 标签颜色
     usage_count = db.Column(db.Integer, default=0)  # 使用次数
     status = db.Column(db.String(50), default='active')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2346,7 +2347,7 @@ class EntityTag(db.Model):
     tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=False)
     entity_type = db.Column(db.String(50), nullable=False)  # character/location/item/event等
     entity_id = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2372,8 +2373,8 @@ class EntityRelation(db.Model):
     description = db.Column(db.Text, default='')
     is_bidirectional = db.Column(db.Boolean, default=True)  # 是否双向关系
     status = db.Column(db.String(50), default='active')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2408,8 +2409,8 @@ class AIGenerationCheckpoint(db.Model):
     checkpoint_data = db.Column(db.Text, nullable=True)  # JSON格式
     progress_percent = db.Column(db.Integer, default=0)
     status = db.Column(db.String(20), default='in_progress')  # in_progress/completed/aborted
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     expires_at = db.Column(db.DateTime, nullable=True)  # 过期时间
     parent_checkpoint_id = db.Column(db.Integer, nullable=True)  # 关联的Step1检查点ID
     name = db.Column(db.String(255), nullable=True)  # 检查点名称
@@ -2445,7 +2446,7 @@ class ConceptMergeRecord(db.Model):
     attribute_changes = db.Column(db.Text, nullable=True)  # JSON，属性变化轨迹
     similarity_score = db.Column(db.Float, nullable=True)
     merge_strategy = db.Column(db.String(20), nullable=True)  # name_match/semantic_similarity/manual
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
     
     def to_dict(self):
         return {
@@ -2471,8 +2472,8 @@ class EntityChapterAppearance(db.Model):
     entity_id = db.Column(db.Integer, nullable=False)
     appearance_type = db.Column(db.String(50), default='提及')
     description = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_plus_8)
+    updated_at = db.Column(db.DateTime, default=now_utc_plus_8, onupdate=now_utc_plus_8)
     
     __table_args__ = (
         db.Index('idx_entity_chapter', 'entity_type', 'entity_id', 'chapter_id'),

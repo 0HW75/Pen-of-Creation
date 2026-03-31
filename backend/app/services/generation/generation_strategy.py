@@ -67,7 +67,7 @@ class GenerationStrategySelector:
         },
         GenerationStrategy.DETAILED: {
             'temperature': 0.7,
-            'max_tokens': 3000,
+            'max_tokens': 12000,
             'top_p': 0.9,
             'frequency_penalty': 0.0,
             'presence_penalty': 0.0

@@ -6,6 +6,7 @@ import json
 import os
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from app import now_utc_plus_8
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,8 +25,8 @@ class PromptTemplate:
         self.version = template_data.get('version', 1)
         self.is_default = template_data.get('is_default', False)
         self.description = template_data.get('description', '')
-        self.created_at = template_data.get('created_at', datetime.utcnow())
-        self.updated_at = template_data.get('updated_at', datetime.utcnow())
+        self.created_at = template_data.get('created_at', now_utc_plus_8())
+        self.updated_at = template_data.get('updated_at', now_utc_plus_8())
     
     def to_dict(self) -> Dict[str, Any]:
         return {

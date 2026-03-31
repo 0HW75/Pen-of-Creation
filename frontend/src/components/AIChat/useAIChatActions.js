@@ -9,6 +9,7 @@ export const useAIChatActions = ({
   setPendingChanges,
   selectedTarget,
   selectedItems,
+  setSelectedItems,
   isBatchMode,
   batchState,
   setBatchState,

@@ -2,19 +2,20 @@ from flask import Flask, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_compress import Compress
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
+from pytz import timezone
 import os
 import time
 
 # 创建数据库实例
 db = SQLAlchemy()
+_utc_plus_8 = timezone('Asia/Shanghai')
+
+def now_utc_plus_8():
+    return _utc_plus_8.localize(datetime.utcnow())
 
 # 创建压缩实例
 compress = Compress()
-
-# 获取东八区时间的函数
-def now_utc_plus_8():
-    return datetime.now(timezone(timedelta(hours=8)))
 
 def create_app():
     # 创建Flask应用

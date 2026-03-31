@@ -1,7 +1,8 @@
 # AI小说编辑器 - 数据库表结构文档
 
-> 生成时间: 2026-02-09
+> 生成时间: 2026-03-24
 > 数据库: SQLite (SQLAlchemy ORM)
+> 模型数量: 60+
 
 ---
 
@@ -15,7 +16,10 @@
 6. [能量与力量体系表](#6-能量与力量体系表)
 7. [社会文化体系表](#7-社会文化体系表)
 8. [历史脉络表](#8-历史脉络表)
-9. [辅助功能表](#9-辅助功能表)
+9. [能力与种族表](#9-能力与种族表)
+10. [结构扩展表](#10-结构扩展表)
+11. [AI生成表](#11-ai生成表)
+12. [辅助功能表](#12-辅助功能表)
 
 ---
 
@@ -39,6 +43,7 @@
 | total_word_goal | Integer | 总字数目标 | 0 |
 | estimated_completion_date | Date | 预计完成日期 | - |
 | word_count | Integer | 当前字数 | 0 |
+| world_id | Integer | 关联世界ID(外键) | nullable |
 | created_at | DateTime | 创建时间 | utcnow |
 | updated_at | DateTime | 更新时间 | utcnow |
 
@@ -48,7 +53,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
+| project_id | Integer | 关联项目ID(外键) | nullable |
 | name | String(255) | 世界名称 | - |
 | core_concept | Text | 核心概念 | '' |
 | world_type | String(100) | 世界类型 | '单一世界' |
@@ -65,7 +70,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
+| project_id | Integer | 关联项目ID(外键) | nullable |
 | title | String(255) | 大纲标题 | - |
 | content | Text | 大纲内容 | '' |
 | story_model | String(100) | 故事模型 | '' |
@@ -79,11 +84,14 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| outline_id | Integer | 关联大纲ID | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| outline_id | Integer | 关联大纲ID(外键) | nullable |
 | title | String(255) | 卷标题 | - |
 | content | Text | 内容 | '' |
 | core_conflict | Text | 核心冲突 | '' |
+| character_development | Text | 角色发展 | '' |
+| key_events | Text | 关键事件(JSON) | '[]' |
+| chapter_count | Integer | 章节数量 | 0 |
 | order_index | Integer | 排序索引 | - |
 | version | Integer | 版本号 | 1 |
 | created_at | DateTime | 创建时间 | utcnow |
@@ -95,8 +103,9 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| volume_id | Integer | 关联卷ID | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| volume_id | Integer | 关联卷ID(外键) | nullable |
+| volume | String(255) | 卷/分组名称 | '' |
 | title | String(255) | 章节标题 | - |
 | content | Text | 章节内容 | '' |
 | scenes | Text | 场景列表(JSON) | '[]' |
@@ -122,7 +131,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
+| project_id | Integer | 关联项目ID(外键) | - |
 | name | String(255) | 设定名称 | - |
 | description | Text | 描述 | '' |
 | world_type | String(100) | 世界类型 | '单一世界' |
@@ -143,7 +152,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
+| project_id | Integer | 关联项目ID(外键) | - |
 | political_system | Text | 政治体制 | '' |
 | class_hierarchy | Text | 阶级体系 | '' |
 | power_institutions | Text | 权力机构 | '' |
@@ -165,7 +174,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
+| project_id | Integer | 关联项目ID(外键) | - |
 | era_division | Text | 时代划分 | '' |
 | historical_events | Text | 历史事件 | '' |
 | civilization_development | Text | 文明发展 | '' |
@@ -190,8 +199,8 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| world_id | Integer | 关联世界ID | - |
+| project_id | Integer | 关联项目ID(外键) | nullable |
+| world_id | Integer | 关联世界ID(外键) | nullable |
 | name | String(255) | 角色名 | - |
 | alternative_names | Text | 别名(JSON) | '' |
 | description | Text | 描述 | '' |
@@ -254,7 +263,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| character_id | Integer | 关联角色ID | - |
+| character_id | Integer | 关联角色ID(外键) | - |
 | period_name | String(100) | 时期名称 | '' |
 | start_age | Integer | 开始年龄 | 0 |
 | end_age | Integer | 结束年龄 | 0 |
@@ -273,7 +282,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| character_id | Integer | 关联角色ID | - |
+| character_id | Integer | 关联角色ID(外键) | - |
 | ability_type | String(50) | 能力类型 | '' |
 | ability_name | String(255) | 能力名称 | '' |
 | proficiency_level | String(50) | 熟练度 | '入门' |
@@ -290,8 +299,30 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
+| project_id | Integer | 关联项目ID(外键) | - |
 | name | String(255) | 特质名称 | - |
+| description | Text | 描述 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 3.5 CharacterAbility (角色能力表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| name | String(255) | 能力名称 | - |
+| description | Text | 描述 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 3.6 CharacterRelationship (角色关系结构表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| name | String(255) | 关系名称 | - |
 | description | Text | 描述 | '' |
 | created_at | DateTime | 创建时间 | utcnow |
 | updated_at | DateTime | 更新时间 | utcnow |
@@ -306,8 +337,8 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| world_id | Integer | 关联世界ID | - |
+| project_id | Integer | 关联项目ID(外键) | nullable |
+| world_id | Integer | 关联世界ID(外键) | nullable |
 | name | String(255) | 地点名称 | - |
 | description | Text | 描述 | '' |
 | location_type | String(100) | 地点类型 | '城市' |
@@ -342,8 +373,8 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| world_id | Integer | 关联世界ID | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| world_id | Integer | 关联世界ID(外键) | nullable |
 | name | String(255) | 物品名称 | - |
 | description | Text | 描述 | '' |
 | item_type | String(100) | 物品类型 | '普通' |
@@ -361,6 +392,28 @@
 | created_at | DateTime | 创建时间 | utcnow |
 | updated_at | DateTime | 更新时间 | utcnow |
 
+### 4.3 LocationStructure (地点结构表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| name | String(255) | 结构名称 | - |
+| description | Text | 描述 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 4.4 SpecialLocation (特殊地点表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| name | String(255) | 地点名称 | - |
+| description | Text | 描述 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
 ---
 
 ## 5. 势力与关系表
@@ -371,8 +424,8 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| world_id | Integer | 关联世界ID | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| world_id | Integer | 关联世界ID(外键) | nullable |
 | name | String(255) | 势力名称 | - |
 | description | Text | 描述 | '' |
 | faction_type | String(100) | 势力类型 | '国家' |
@@ -382,7 +435,7 @@
 | sphere_of_influence | Text | 势力范围 | '' |
 | influence_level | String(50) | 影响力等级 | '区域' |
 | establishment_time | String(255) | 建立时间 | '' |
-| member_size | Integer | 成员规模 | 0 |
+| member_size | String(255) | 成员规模 | '' |
 | headquarters_location | String(255) | 总部位置 | '' |
 | economic_strength | Text | 经济实力 | '' |
 | leadership_system | Text | 领导体制 | '' |
@@ -419,8 +472,8 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| world_id | Integer | 关联世界ID | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| world_id | Integer | 关联世界ID(外键) | nullable |
 | name | String(255) | 关系名称 | - |
 | source_type | String(50) | 源实体类型 | - |
 | source_id | Integer | 源实体ID | - |
@@ -428,6 +481,47 @@
 | target_id | Integer | 目标实体ID | - |
 | relationship_type | String(100) | 关系类型 | - |
 | strength | Integer | 关系强度 | 5 |
+| description | Text | 描述 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 5.3 EntityRelation (实体关系网络表)
+通用关系网络表。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| world_id | Integer | 关联世界ID(外键) | - |
+| source_type | String(50) | 源实体类型 | - |
+| source_id | Integer | 源实体ID | - |
+| target_type | String(50) | 目标实体类型 | - |
+| target_id | Integer | 目标实体ID | - |
+| relation_type | String(100) | 关系类型 | - |
+| strength | Integer | 关系强度(1-10) | 5 |
+| description | Text | 描述 | '' |
+| is_bidirectional | Boolean | 是否双向关系 | True |
+| status | String(50) | 状态 | 'active' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 5.4 FactionStructure (势力结构表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| name | String(255) | 结构名称 | - |
+| description | Text | 描述 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 5.5 FactionGoal (势力目标表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| name | String(255) | 目标名称 | - |
 | description | Text | 描述 | '' |
 | created_at | DateTime | 创建时间 | utcnow |
 | updated_at | DateTime | 更新时间 | utcnow |
@@ -442,7 +536,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
 | name | String(255) | 体系名称 | - |
 | energy_type | String(100) | 能量类型 | '魔法' |
 | description | Text | 描述 | '' |
@@ -467,8 +561,8 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
-| energy_system_id | Integer | 关联能量体系ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
+| energy_system_id | Integer | 关联能量体系ID(外键) | nullable |
 | name | String(255) | 形态名称 | - |
 | form_type | String(100) | 形态类型 | '元素' |
 | description | Text | 描述 | '' |
@@ -489,7 +583,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
 | name | String(255) | 等级名称 | - |
 | level | Integer | 等级数值 | - |
 | level_name | String(255) | 等级称号 | - |
@@ -501,7 +595,7 @@
 | typical_combat_power | Text | 典型战斗力 | '' |
 | rarity | String(50) | 稀有度 | '常见' |
 | social_status | String(100) | 社会地位 | '' |
-| energy_system_id | Integer | 关联能量体系ID | - |
+| energy_system_id | Integer | 关联能量体系ID | nullable |
 | status | String(50) | 状态 | 'active' |
 | order_index | Integer | 排序索引 | 0 |
 | created_at | DateTime | 创建时间 | utcnow |
@@ -513,7 +607,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
 | cost_type | String(100) | 代价类型 | '寿命' |
 | description | Text | 描述 | '' |
 | trigger_conditions | Text | 触发条件 | '' |
@@ -533,7 +627,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
 | name | String(255) | 技能名称 | - |
 | skill_type | String(100) | 技能类型 | '战斗' |
 | description | Text | 描述 | '' |
@@ -546,7 +640,7 @@
 | effects | Text | 技能效果 | '' |
 | limitations | Text | 使用限制 | '' |
 | typical_users | Text | 典型使用者 | '' |
-| energy_system_id | Integer | 关联能量体系ID | - |
+| energy_system_id | Integer | 关联能量体系ID | nullable |
 | status | String(50) | 状态 | 'active' |
 | order_index | Integer | 排序索引 | 0 |
 | created_at | DateTime | 创建时间 | utcnow |
@@ -562,7 +656,7 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
 | name | String(255) | 文明名称 | - |
 | civilization_type | String(100) | 文明类型 | '魔法文明' |
 | description | Text | 描述 | '' |
@@ -583,14 +677,28 @@
 | created_at | DateTime | 创建时间 | utcnow |
 | updated_at | DateTime | 更新时间 | utcnow |
 
-### 7.2 SocialClass (社会阶级表)
+### 7.2 CivilizationRegion (文明区域关联表)
+多对多关联表。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| civilization_id | Integer | 关联文明ID(外键) | - |
+| region_id | Integer | 关联区域ID(外键) | - |
+| relationship_type | String(100) | 关系类型 | '统治' |
+| influence_level | Integer | 影响力等级(1-10) | 5 |
+| description | Text | 描述 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 7.3 SocialClass (社会阶级表)
 存储社会阶层结构。
 
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
-| civilization_id | Integer | 关联文明ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
+| civilization_id | Integer | 关联文明ID(外键) | nullable |
 | name | String(255) | 阶级名称 | - |
 | class_level | Integer | 阶级层级 | 1 |
 | description | Text | 描述 | '' |
@@ -607,14 +715,14 @@
 | created_at | DateTime | 创建时间 | utcnow |
 | updated_at | DateTime | 更新时间 | utcnow |
 
-### 7.3 CulturalCustom (文化习俗表)
+### 7.4 CulturalCustom (文化习俗表)
 存储文化传统和习俗。
 
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
-| civilization_id | Integer | 关联文明ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
+| civilization_id | Integer | 关联文明ID(外键) | nullable |
 | name | String(255) | 习俗名称 | - |
 | custom_type | String(100) | 习俗类型 | '节日' |
 | description | Text | 描述 | '' |
@@ -632,14 +740,14 @@
 | created_at | DateTime | 创建时间 | utcnow |
 | updated_at | DateTime | 更新时间 | utcnow |
 
-### 7.4 EconomicSystem (经济体系表)
+### 7.5 EconomicSystem (经济体系表)
 存储文明的经济运行方式。
 
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
-| civilization_id | Integer | 关联文明ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
+| civilization_id | Integer | 关联文明ID(外键) | nullable |
 | name | String(255) | 体系名称 | - |
 | economic_model | String(100) | 经济模式 | '市场经济' |
 | description | Text | 描述 | '' |
@@ -660,14 +768,14 @@
 | created_at | DateTime | 创建时间 | utcnow |
 | updated_at | DateTime | 更新时间 | utcnow |
 
-### 7.5 PoliticalSystem (政治体系表)
+### 7.6 PoliticalSystem (政治体系表)
 存储文明的政治结构。
 
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
-| civilization_id | Integer | 关联文明ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
+| civilization_id | Integer | 关联文明ID(外键) | nullable |
 | name | String(255) | 体系名称 | - |
 | government_type | String(100) | 政体类型 | '君主制' |
 | description | Text | 描述 | '' |
@@ -690,13 +798,13 @@
 
 ## 8. 历史脉络表
 
-### 8.1 HistoricalEra (历史纪元宝)
+### 8.1 HistoricalEra (历史纪元表)
 划分大的历史时期。
 
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
 | name | String(255) | 纪元名称 | - |
 | start_year | String(100) | 开始年份 | '' |
 | end_year | String(100) | 结束年份 | '' |
@@ -718,8 +826,8 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
-| era_id | Integer | 关联纪元ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
+| era_id | Integer | 关联纪元ID(外键) | nullable |
 | name | String(255) | 事件名称 | - |
 | event_type | String(100) | 事件类型 | '战争' |
 | description | Text | 描述 | '' |
@@ -745,14 +853,14 @@
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| world_id | Integer | 关联世界ID | - |
-| civilization_id | Integer | 关联文明ID | - |
-| character_id | Integer | 关联角色ID | - |
+| world_id | Integer | 关联世界ID(外键) | - |
+| civilization_id | Integer | 关联文明ID(外键) | nullable |
+| character_id | Integer | 关联角色ID(外键) | nullable |
 | name | String(255) | 人物名称 | - |
 | birth_year | String(100) | 出生年份 | '' |
 | death_year | String(100) | 死亡年份 | '' |
-| birth_place_id | Integer | 出生地ID | - |
-| death_place_id | Integer | 死亡地ID | - |
+| birth_place_id | Integer | 出生地ID | nullable |
+| death_place_id | Integer | 死亡地ID | nullable |
 | primary_role | String(100) | 主要身份 | '' |
 | social_class | String(100) | 社会阶级 | '' |
 | key_achievements | Text | 主要成就 | '' |
@@ -765,100 +873,278 @@
 | created_at | DateTime | 创建时间 | utcnow |
 | updated_at | DateTime | 更新时间 | utcnow |
 
----
-
-## 9. 辅助功能表
-
-### 9.1 Version (版本表)
-存储项目版本信息。
+### 8.4 EventParticipant (事件参与者表)
+多对多关联，记录人物在事件中的角色。
 
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| version_name | String(255) | 版本名称 | - |
+| event_id | Integer | 关联事件ID(外键) | - |
+| figure_id | Integer | 关联人物ID(外键) | - |
+| role_type | String(100) | 角色类型 | '参与者' |
+| contribution_level | Integer | 贡献程度(1-10) | 5 |
+| motivation | Text | 动机 | '' |
+| outcome_for_participant | Text | 对参与者的结果 | '' |
 | description | Text | 描述 | '' |
-| tags | Text | 标签 | '' |
-| content_hash | String(255) | 内容哈希 | '' |
-| created_at | DateTime | 创建时间 | utcnow |
-
-### 9.2 Note (笔记表)
-存储笔记信息。
-
-| 字段名 | 类型 | 说明 | 默认值 |
-|--------|------|------|--------|
-| id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| chapter_id | Integer | 关联章节ID | - |
-| title | String(255) | 笔记标题 | - |
-| content | Text | 内容 | '' |
-| type | String(50) | 类型 | '普通' |
 | created_at | DateTime | 创建时间 | utcnow |
 | updated_at | DateTime | 更新时间 | utcnow |
 
-### 9.3 NavigationFlow (导航流程表)
-存储创作导航流程。
+---
+
+## 9. 能力与种族表
+
+### 9.1 Ability (能力定义表)
 
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| current_stage | String(50) | 当前阶段 | 'project_creation' |
-| overall_progress | Float | 整体进度 | 0 |
-| stage_progress | Text | 阶段进度(JSON) | '[]' |
-| last_updated | DateTime | 最后更新 | utcnow |
-
-### 9.4 Task (任务表)
-存储创作任务。
-
-| 字段名 | 类型 | 说明 | 默认值 |
-|--------|------|------|--------|
-| id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| title | String(255) | 任务标题 | - |
-| description | Text | 描述 | - |
-| type | String(50) | 类型 | 'chapter' |
-| priority | Integer | 优先级 | 3 |
-| status | String(50) | 状态 | 'pending' |
-| due_date | Date | 截止日期 | - |
-| created_at | DateTime | 创建时间 | utcnow |
-| completed_at | DateTime | 完成时间 | - |
-
-### 9.5 Inspiration (灵感表)
-存储创作灵感。
-
-| 字段名 | 类型 | 说明 | 默认值 |
-|--------|------|------|--------|
-| id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| type | String(50) | 类型 | 'plot' |
-| content | Text | 内容 | - |
-| context | Text | 上下文 | - |
-| rating | Integer | 评分 | 0 |
-| status | String(50) | 状态 | '未使用' |
-| created_at | DateTime | 创建时间 | utcnow |
-| used_at | DateTime | 使用时间 | - |
-
-### 9.6 EmotionBoard (情绪板表)
-存储情绪板图片。
-
-| 字段名 | 类型 | 说明 | 默认值 |
-|--------|------|------|--------|
-| id | Integer | 主键 | - |
-| project_id | Integer | 关联项目ID | - |
-| image_url | Text | 图片URL | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| world_id | Integer | 关联世界ID(外键) | nullable |
+| name | String(255) | 能力名称 | - |
 | description | Text | 描述 | '' |
-| tags | Text | 标签 | '' |
-| order_index | Integer | 排序索引 | 0 |
+| ability_type | String(100) | 能力类型 | '' |
+| level_system | Text | 等级系统 | '' |
+| cultivation_methods | Text | 修炼方法 | '' |
+| resource_requirements | Text | 资源需求 | '' |
+| growth_limits | Text | 成长极限 | '' |
+| bottleneck_breakthrough | Text | 瓶颈突破 | '' |
+| career_branches | Text | 职业分支 | '' |
+| specialization_directions | Text | 专业方向 | '' |
+| fusion_possibilities | Text | 融合可能性 | '' |
+| ultimate_forms | Text | 最终形态 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 9.2 Skill (技能定义表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| world_id | Integer | 关联世界ID(外键) | nullable |
+| name | String(255) | 技能名称 | - |
+| description | Text | 描述 | '' |
+| skill_type | String(100) | 技能类型 | '' |
+| skill_level | String(50) | 技能等级 | '初级' |
+| casting_conditions | Text | 施法条件 | '' |
+| resource_consumption | Text | 资源消耗 | '' |
+| cooldown_time | String(50) | 冷却时间 | '' |
+| effect_range | Text | 效果范围 | '' |
+| duration | String(50) | 持续时间 | '' |
+| prerequisite_skills | Text | 前置技能 | '' |
+| advanced_skills | Text | 进阶技能 | '' |
+| combination_skills | Text | 组合技能 | '' |
+| counter_relationship | Text | 克制关系 | '' |
+| skill_tree | Text | 技能树 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 9.3 Talent (天赋定义表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| world_id | Integer | 关联世界ID(外键) | nullable |
+| name | String(255) | 天赋名称 | - |
+| description | Text | 描述 | '' |
+| talent_type | String(100) | 天赋类型 | '先天' |
+| bloodline_talent | Text | 血脉天赋 | '' |
+| special_physique | Text | 特殊体质 | '' |
+| innate_abilities | Text | 天生能力 | '' |
+| genetic_characteristics | Text | 遗传特征 | '' |
+| awakened_abilities | Text | 觉醒能力 | '' |
+| modified_enhancements | Text | 改造强化 | '' |
+| contract_abilities | Text | 契约能力 | '' |
+| learning_abilities | Text | 学习能力 | '' |
+| awakening_conditions | Text | 觉醒条件 | '' |
+| development_methods | Text | 培养方法 | '' |
+| ability_limits | Text | 能力极限 | '' |
+| evolution_possibilities | Text | 进化可能性 | '' |
+| cost_risks | Text | 代价风险 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 9.4 Race (种族表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| world_id | Integer | 关联世界ID(外键) | nullable |
+| name | String(255) | 种族名称 | - |
+| description | Text | 描述 | '' |
+| origin_legend | Text | 起源传说 | '' |
+| distribution_area | Text | 分布区域 | '' |
+| social_form | Text | 社会形态 | '' |
+| appearance_features | Text | 外貌特征 | '' |
+| physiological_characteristics | Text | 生理特征 | '' |
+| lifespan_cycle | Text | 寿命周期 | '' |
+| special_abilities | Text | 特殊能力 | '' |
+| weaknesses_limits | Text | 弱点限制 | '' |
+| subspecies | Text | 亚种 | '' |
+| hybrids | Text | 混血 | '' |
+| mutants | Text | 突变体 | '' |
+| legendary_species | Text | 传说物种 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 9.5 Creature (生物表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| world_id | Integer | 关联世界ID(外键) | nullable |
+| name | String(255) | 生物名称 | - |
+| description | Text | 描述 | '' |
+| creature_type | String(100) | 生物类型 | '野兽' |
+| threat_level | String(50) | 威胁等级 | '低' |
+| habitat | Text | 栖息地 | '' |
+| behavior_habits | Text | 行为习惯 | '' |
+| special_abilities | Text | 特殊能力 | '' |
+| weaknesses_predators | Text | 弱点/天敌 | '' |
+| domestication_possibility | Text | 驯化可能性 | '' |
+| contract_methods | Text | 契约方式 | '' |
+| use_value | Text | 使用价值 | '' |
+| material_sources | Text | 材料来源 | '' |
+| legendary_stories | Text | 传说故事 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 9.6 SpecialCreature (特殊生物表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| world_id | Integer | 关联世界ID(外键) | nullable |
+| name | String(255) | 生物名称 | - |
+| description | Text | 描述 | '' |
+| creature_type | String(100) | 生物类型 | '异界生物' |
+| spatial_properties | Text | 空间属性 | '' |
+| entry_conditions | Text | 进入条件 | '' |
+| internal_laws | Text | 内部法则 | '' |
+| existence_limits | Text | 存在限制 | '' |
+| summoning_type | Text | 召唤类型 | '' |
+| summoning_contract | Text | 召唤契约 | '' |
+| ability_characteristics | Text | 能力特点 | '' |
+| control_difficulty | String(50) | 控制难度 | '低' |
+| concept_type | String(100) | 概念类型 | '精神空间' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+---
+
+## 10. 结构扩展表
+
+### 10.1 EquipmentSystem (装备系统表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| name | String(255) | 系统名称 | - |
+| description | Text | 描述 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 10.2 SpecialItem (特殊物品表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| name | String(255) | 物品名称 | - |
+| description | Text | 描述 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+---
+
+## 11. AI生成表
+
+### 11.1 AIGenerationVersion (AI生成版本表)
+存储AI生成的各个版本内容。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| entity_type | String(50) | 实体类型 | - |
+| entity_id | Integer | 关联实体ID | - |
+| version_number | Integer | 版本号 | 1 |
+| version_name | String(255) | 版本名称 | '' |
+| content | Text | 生成的内容 | '' |
+| prompt | Text | 使用的提示词 | '' |
+| provider | String(50) | AI服务提供商 | '' |
+| temperature | Float | 温度参数 | 0.7 |
+| is_current | Boolean | 是否为当前版本 | False |
+| is_favorite | Boolean | 是否收藏 | False |
+| parent_version_id | Integer | 父版本ID(外键) | nullable |
+| generation_params | Text | 生成参数(JSON) | '{}' |
+| word_count | Integer | 字数统计 | 0 |
 | created_at | DateTime | 创建时间 | utcnow |
 
-### 9.7 StoryModel (故事模型表)
+### 11.2 AIGenerationCheckpoint (AI生成检查点表)
+存储生成过程的中间状态。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| session_id | String(64) | 会话ID(索引) | - |
+| project_id | Integer | 项目ID | - |
+| user_id | Integer | 用户ID | - |
+| stage | String(50) | 阶段 | - |
+| checkpoint_type | String(50) | 检查点类型 | nullable |
+| checkpoint_data | Text | 检查点数据(JSON) | nullable |
+| progress_percent | Integer | 进度百分比 | 0 |
+| status | String(20) | 状态 | 'in_progress' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+| expires_at | DateTime | 过期时间 | nullable |
+| parent_checkpoint_id | Integer | 父检查点ID | nullable |
+| name | String(255) | 检查点名称 | nullable |
+
+### 11.3 ConceptMergeRecord (概念融合记录表)
+存储重复概念合并的历史记录。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| session_id | String(64) | 会话ID(索引) | - |
+| concept_type | String(50) | 概念类型 | - |
+| source_concepts | Text | 源概念(JSON) | nullable |
+| merged_concept | Text | 融合概念(JSON) | nullable |
+| attribute_changes | Text | 属性变化(JSON) | nullable |
+| similarity_score | Float | 相似度评分 | nullable |
+| merge_strategy | String(20) | 融合策略 | nullable |
+| created_at | DateTime | 创建时间 | utcnow |
+
+### 11.4 EntityChapterAppearance (实体章节出现表)
+记录世界观实体在章节中的出现。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| chapter_id | Integer | 关联章节ID(外键) | - |
+| entity_type | String(50) | 实体类型 | - |
+| entity_id | Integer | 实体ID | - |
+| appearance_type | String(50) | 出现类型 | '提及' |
+| description | Text | 描述 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+索引: `idx_entity_chapter`, `idx_chapter_entity`, `uq_chapter_entity`
+
+### 11.5 StoryModel (故事模型表)
 存储故事模型模板。
 
 | 字段名 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
 | id | Integer | 主键 | - |
-| key | String(100) | 模型键 | - |
+| key | String(100) | 模型键(唯一) | - |
 | name | String(255) | 模型名称 | - |
 | description | Text | 描述 | '' |
 | is_default | Boolean | 是否默认 | False |
@@ -867,11 +1153,169 @@
 
 ---
 
+## 12. 辅助功能表
+
+### 12.1 Version (版本表)
+存储项目版本信息。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| version_name | String(255) | 版本名称 | - |
+| description | Text | 描述 | '' |
+| tags | Text | 标签 | '' |
+| content_hash | String(255) | 内容哈希 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+
+### 12.2 Note (笔记表)
+存储笔记信息。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| chapter_id | Integer | 关联章节ID(外键) | nullable |
+| title | String(255) | 笔记标题 | - |
+| content | Text | 内容 | '' |
+| type | String(50) | 类型 | '普通' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 12.3 NavigationFlow (导航流程表)
+存储创作导航流程。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 项目ID | - |
+| current_stage | String(50) | 当前阶段 | 'project_creation' |
+| overall_progress | Float | 整体进度 | 0 |
+| stage_progress | Text | 阶段进度(JSON) | '[]' |
+| last_updated | DateTime | 最后更新 | utcnow |
+
+### 12.4 Task (任务表)
+存储创作任务。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 项目ID | - |
+| title | String(255) | 任务标题 | - |
+| description | Text | 描述 | - |
+| type | String(50) | 类型 | 'chapter' |
+| priority | Integer | 优先级 | 3 |
+| status | String(50) | 状态 | 'pending' |
+| due_date | Date | 截止日期 | - |
+| created_at | DateTime | 创建时间 | utcnow |
+| completed_at | DateTime | 完成时间 | nullable |
+
+### 12.5 Inspiration (灵感表)
+存储创作灵感。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 项目ID | - |
+| type | String(50) | 类型 | 'plot' |
+| content | Text | 内容 | - |
+| context | Text | 上下文 | - |
+| rating | Integer | 评分 | 0 |
+| status | String(50) | 状态 | '未使用' |
+| created_at | DateTime | 创建时间 | utcnow |
+| used_at | DateTime | 使用时间 | nullable |
+
+### 12.6 EmotionBoard (情绪板表)
+存储情绪板图片。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| image_url | Text | 图片URL | - |
+| description | Text | 描述 | '' |
+| tags | Text | 标签 | '' |
+| order_index | Integer | 排序索引 | 0 |
+| created_at | DateTime | 创建时间 | utcnow |
+
+### 12.7 Timeline (时间线表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| world_id | Integer | 关联世界ID(外键) | nullable |
+| name | String(255) | 时间线名称 | - |
+| description | Text | 描述 | '' |
+| timeline_type | String(100) | 时间线类型 | '个人时间线' |
+| related_id | Integer | 关联ID | 0 |
+| birth_growth | Text | 出生/成长 | '' |
+| key_events | Text | 关键事件 | '' |
+| development_changes | Text | 发展变化 | '' |
+| important_turning_points | Text | 重要转折点 | '' |
+| ending_destination | Text | 结局/终点 | '' |
+| establishment_development | Text | 建立/发展 | '' |
+| rise_fall_changes | Text | 兴衰变化 | '' |
+| major_events | Text | 重大事件 | '' |
+| power_changes | Text | 力量变化 | '' |
+| ending_transformation | Text | 结局转变 | '' |
+| world_creation | Text | 世界创造 | '' |
+| civilization_development | Text | 文明发展 | '' |
+| major_changes | Text | 重大变化 | '' |
+| current_era | Text | 当前时代 | '' |
+| future_possibilities | Text | 未来可能 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 12.8 DataAssociation (数据关联表)
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| project_id | Integer | 关联项目ID(外键) | - |
+| association_type | String(100) | 关联类型 | '人物关联' |
+| source_type | String(50) | 源实体类型 | '' |
+| source_id | Integer | 源实体ID | 0 |
+| target_type | String(50) | 目标实体类型 | '' |
+| target_id | Integer | 目标实体ID | 0 |
+| association_details | Text | 关联详情 | '' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 12.9 Tag (标签表)
+用于分类和检索。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| world_id | Integer | 关联世界ID(外键) | - |
+| name | String(255) | 标签名称 | - |
+| tag_type | String(100) | 标签类型 | '通用' |
+| description | Text | 描述 | '' |
+| color | String(50) | 标签颜色 | '#1890ff' |
+| usage_count | Integer | 使用次数 | 0 |
+| status | String(50) | 状态 | 'active' |
+| created_at | DateTime | 创建时间 | utcnow |
+| updated_at | DateTime | 更新时间 | utcnow |
+
+### 12.10 EntityTag (实体标签关联表)
+多对多关联。
+
+| 字段名 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| id | Integer | 主键 | - |
+| tag_id | Integer | 关联标签ID(外键) | - |
+| entity_type | String(50) | 实体类型 | - |
+| entity_id | Integer | 实体ID | - |
+| created_at | DateTime | 创建时间 | utcnow |
+
+---
+
 ## 附录
 
 ### 通用字段说明
 
-所有表都包含以下通用字段：
+所有表都包含以下通用字段（部分表）：
 
 | 字段名 | 类型 | 说明 |
 |--------|------|------|
@@ -901,3 +1345,7 @@
 - `major_industries` - 产业列表
 - `location_ids` - 地点ID列表
 - `satellites` - 卫星列表
+- `key_events` - 关键事件列表
+- `generation_params` - 生成参数字典
+- `source_concepts` - 源概念列表
+- `attribute_changes` - 属性变化记录

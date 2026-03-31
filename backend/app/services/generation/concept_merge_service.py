@@ -110,6 +110,7 @@ class ConceptMergeService:
             similarity_threshold: 相似度阈值，默认0.85
         """
         self.similarity_threshold = similarity_threshold
+        self._name_similarity_threshold = 0.85
         logger.info(f"ConceptMergeService 初始化完成，相似度阈值: {similarity_threshold}")
 
     def merge_elements(self, elements: List[Dict[str, Any]], concept_type: str) -> List[MergedElement]:
@@ -239,7 +240,7 @@ class ConceptMergeService:
         """
         检查两个名称是否匹配
 
-        使用标准化后的名称和相似度计算。
+        只匹配完全相同的名称，不同人名绝不合并。
 
         Args:
             name1: 第一个名称
@@ -251,17 +252,13 @@ class ConceptMergeService:
         if not name1 or not name2:
             return False
 
-        # 标准化名称
         norm1 = self._normalize_name(name1)
         norm2 = self._normalize_name(name2)
 
-        # 完全匹配
         if norm1 == norm2:
             return True
 
-        # 计算相似度
-        similarity = self._calculate_similarity(norm1, norm2)
-        return similarity >= self.similarity_threshold
+        return False
 
     def _calculate_similarity(self, name1: str, name2: str) -> float:
         """
@@ -301,37 +298,19 @@ class ConceptMergeService:
             elem2: 第二个元素
 
         Returns:
-            是否语义匹配
+            是否语义匹配（仅当名称完全相同时才匹配）
         """
-        # 1. 类型必须相同
-        type1 = elem1.get('type', '')
-        type2 = elem2.get('type', '')
-        if type1 and type2 and type1 != type2:
+        name1 = elem1.get('name', '')
+        name2 = elem2.get('name', '')
+
+        if not name1 or not name2:
             return False
 
-        # 2. 检查简介相似度
-        brief1 = elem1.get('brief', '')
-        brief2 = elem2.get('brief', '')
-        if brief1 and brief2:
-            brief_similarity = difflib.SequenceMatcher(None, brief1, brief2).ratio()
-            if brief_similarity >= self.similarity_threshold:
-                return True
+        norm1 = self._normalize_name(name1)
+        norm2 = self._normalize_name(name2)
 
-        # 3. 检查证据相似度
-        evidence1 = elem1.get('evidence', '')
-        evidence2 = elem2.get('evidence', '')
-        if evidence1 and evidence2:
-            evidence_similarity = difflib.SequenceMatcher(None, evidence1, evidence2).ratio()
-            if evidence_similarity >= self.similarity_threshold:
-                return True
-
-        # 4. 检查描述相似度
-        desc1 = elem1.get('description', '')
-        desc2 = elem2.get('description', '')
-        if desc1 and desc2:
-            desc_similarity = difflib.SequenceMatcher(None, desc1, desc2).ratio()
-            if desc_similarity >= self.similarity_threshold:
-                return True
+        if norm1 == norm2:
+            return True
 
         return False
 

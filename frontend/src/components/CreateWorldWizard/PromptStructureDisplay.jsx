@@ -5,7 +5,6 @@ import {
 } from '@ant-design/icons';
 
 const { Text } = Typography;
-const { Panel } = Collapse;
 
 const PromptStructureDisplay = ({ sections }) => {
   if (!sections) return <Text type="secondary">等待数据...</Text>;
@@ -56,28 +55,32 @@ const PromptStructureDisplay = ({ sections }) => {
             <BookOutlined />
             故事背景上下文
           </div>
-          <Collapse ghost size="small">
-            {story_context?.outline && (
-              <Panel header="大纲内容" key="outline">
-                <div style={{ ...contentStyle, color: '#389e0d' }}>{story_context.outline}</div>
-              </Panel>
-            )}
-            {story_context?.volume && (
-              <Panel header="卷纲内容" key="volume">
-                <div style={{ ...contentStyle, color: '#389e0d' }}>{story_context.volume}</div>
-              </Panel>
-            )}
-            {story_context?.chapters?.length > 0 && (
-              <Panel header={`章纲内容 (${story_context.chapters.length}个)`} key="chapters">
-                {story_context.chapters.map((chapter, idx) => (
+          <Collapse 
+            ghost 
+            size="small"
+            items={[
+              story_context?.outline && {
+                key: 'outline',
+                label: '大纲内容',
+                children: <div style={{ ...contentStyle, color: '#389e0d' }}>{story_context.outline}</div>
+              },
+              story_context?.volume && {
+                key: 'volume',
+                label: '卷纲内容',
+                children: <div style={{ ...contentStyle, color: '#389e0d' }}>{story_context.volume}</div>
+              },
+              story_context?.chapters?.length > 0 && {
+                key: 'chapters',
+                label: `章纲内容 (${story_context.chapters.length}个)`,
+                children: story_context.chapters.map((chapter, idx) => (
                   <div key={idx} style={{ marginBottom: 8, padding: 8, backgroundColor: '#f0f0f0', borderRadius: 4 }}>
                     <Text type="secondary" style={{ fontSize: 11 }}>章纲 {idx + 1}</Text>
                     <div style={{ ...contentStyle, color: '#389e0d', marginTop: 4 }}>{chapter}</div>
                   </div>
-                ))}
-              </Panel>
-            )}
-          </Collapse>
+                ))
+              }
+            ].filter(Boolean)}
+          />
         </div>
       )}
 

@@ -86,6 +86,7 @@ const AIChat = ({
     setPendingChanges,
     selectedTarget,
     selectedItems,
+    setSelectedItems,
     isBatchMode,
     batchState,
     setBatchState,

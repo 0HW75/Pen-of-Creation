@@ -391,7 +391,7 @@ const Step1WithStream = ({ onComplete, initialData }) => {
         project_id: values.projectId,
         content_scope: contentScope,
         extraction_config: {
-          target_types: ['characters', 'locations', 'factions', 'items', 'world_architecture', 'energy_systems', 'society_systems', 'timeline_events', 'relations'],
+          target_types: ['characters', 'locations', 'factions', 'items', 'world_architecture', 'energy_systems', 'civilizations', 'social_classes', 'political_systems', 'economic_systems', 'cultural_customs', 'timeline_events', 'relations'],
           strategy: 'infer_potential',
           include_evidence: true,
         },
@@ -464,7 +464,8 @@ const Step1WithStream = ({ onComplete, initialData }) => {
                       elements: data.elements,
                       statistics: data.statistics,
                     },
-                    storyContext: data.story_context, // 传递故事上下文
+                    storyContext: data.story_context,
+                    checkpointId: data.checkpoint_id,
                   });
                   break;
                 case 'aborted':

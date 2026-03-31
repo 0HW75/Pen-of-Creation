@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { message } from 'antd';
-import { characterApi, locationApi, factionApi, itemApi, settingApi, worldSettingApi } from '../../services/api';
+import { characterApi, locationApi, factionApi, itemApi, settingApi, worldSettingApi, societyApi, historyTimelineApi } from '../../services/api';
 
 export const useSaveElements = (projectId) => {
   const inferElementType = useCallback((elementName, elementData) => {
@@ -403,7 +403,7 @@ export const useSaveElements = (projectId) => {
 
             case 'civilization':
               try {
-                await worldSettingApi.createCivilization({
+                await societyApi.createCivilization({
                   world_id: worldId,
                   name: elementData.name || elementName,
                   civilization_type: elementData.civilization_type || '其他',
@@ -420,7 +420,7 @@ export const useSaveElements = (projectId) => {
                   taboos: elementData.taboos || '',
                   values: elementData.values || '',
                   historical_origin: elementData.historical_origin || '',
-                  importance: elementData.importance || 5,
+                  importance_level: elementData.importance_level || elementData.importance || 5,
                 });
                 savedCount++;
                 console.log('文明保存成功:', elementName);
@@ -442,7 +442,7 @@ export const useSaveElements = (projectId) => {
 
             case 'historical_event':
               try {
-                await worldSettingApi.createHistoricalEvent({
+                await historyTimelineApi.createHistoricalEvent({
                   world_id: worldId,
                   name: elementData.name || elementName,
                   event_type: elementData.event_type || '其他',
@@ -511,10 +511,12 @@ export const useSaveElements = (projectId) => {
 
             default:
               console.log(`未处理的元素类型: ${elementType}`, elementData);
+              failedCount++;
               break;
           }
         } catch (saveError) {
           console.error(`保存元素失败: ${result.element_name}`, saveError);
+          console.error('详细错误信息:', saveError.response?.data || saveError.message);
           failedCount++;
         }
       }

@@ -3,22 +3,32 @@ import { Card, Checkbox, Button, Space, Typography, Row, Col, Badge, Tabs, messa
 import {
   UserOutlined, EnvironmentOutlined, TeamOutlined, ShoppingOutlined,
   GlobalOutlined, ThunderboltOutlined, BankOutlined, HistoryOutlined,
-  LinkOutlined, MergeCellsOutlined, ReloadOutlined
+  LinkOutlined, MergeCellsOutlined, ReloadOutlined, CrownOutlined,
+  ApartmentOutlined, FlagOutlined, MoneyCollectOutlined, CustomerServiceOutlined
 } from '@ant-design/icons';
 import { worldviewGenerationApi } from '../../services/api';
 
 const { Title, Text } = Typography;
 
-// 模块配置 - 与数据库 9 种类型对应
+// 模块配置 - 与后端 18 种类型对应
 const moduleConfig = {
   characters: { title: '角色库', icon: <UserOutlined />, color: '#1890ff' },
   locations: { title: '地点场景', icon: <EnvironmentOutlined />, color: '#52c41a' },
   factions: { title: '组织势力', icon: <TeamOutlined />, color: '#fa8c16' },
   items: { title: '物品资源', icon: <ShoppingOutlined />, color: '#eb2f96' },
-  world_architecture: { title: '世界架构', icon: <GlobalOutlined />, color: '#722ed1' },
+  dimensions: { title: '维度/位面', icon: <GlobalOutlined />, color: '#722ed1' },
+  regions: { title: '地理区域', icon: <EnvironmentOutlined />, color: '#13c2c2' },
+  celestial_bodies: { title: '天体', icon: <GlobalOutlined />, color: '#fa8c16' },
+  natural_laws: { title: '自然法则', icon: <ThunderboltOutlined />, color: '#f5222d' },
   energy_systems: { title: '能量体系', icon: <ThunderboltOutlined />, color: '#f5222d' },
-  society_systems: { title: '社会体系', icon: <BankOutlined />, color: '#13c2c2' },
-  timeline_events: { title: '历史脉络', icon: <HistoryOutlined />, color: '#fa541c' },
+  civilizations: { title: '文明体系', icon: <BankOutlined />, color: '#13c2c2' },
+  social_classes: { title: '社会阶层', icon: <ApartmentOutlined />, color: '#52c41a' },
+  political_systems: { title: '政治体系', icon: <FlagOutlined />, color: '#fa8c16' },
+  economic_systems: { title: '经济体系', icon: <MoneyCollectOutlined />, color: '#eb2f96' },
+  cultural_customs: { title: '文化习俗', icon: <CustomerServiceOutlined />, color: '#722ed1' },
+  historical_eras: { title: '历史纪元', icon: <HistoryOutlined />, color: '#fa541c' },
+  historical_events: { title: '历史事件', icon: <HistoryOutlined />, color: '#fa541c' },
+  historical_figures: { title: '历史人物', icon: <UserOutlined />, color: '#1890ff' },
   relations: { title: '关系网络', icon: <LinkOutlined />, color: '#2f54eb' },
 };
 
@@ -79,6 +89,11 @@ const Step2ConfirmList = ({ elements, selectedElements, onComplete, onPrev, load
                 }
                 
                 const newSelected = {};
+                // 初始化所有模块的选择状态
+                Object.keys(moduleConfig).forEach(key => {
+                  newSelected[key] = [];
+                });
+                // 设置有数据的元素的选择状态
                 Object.keys(data.integrated_elements).forEach(key => {
                   newSelected[key] = data.integrated_elements[key].map(el => el.id);
                 });
@@ -123,7 +138,7 @@ const Step2ConfirmList = ({ elements, selectedElements, onComplete, onPrev, load
   const handleSelectAll = (moduleKey, checked) => {
     setLocalSelected(prev => {
       if (checked) {
-        const allIds = elements[moduleKey]?.map(el => el.id) || [];
+        const allIds = currentElements[moduleKey]?.map(el => el.id) || [];
         return { ...prev, [moduleKey]: allIds };
       } else {
         return { ...prev, [moduleKey]: [] };
@@ -143,10 +158,8 @@ const Step2ConfirmList = ({ elements, selectedElements, onComplete, onPrev, load
     return currentElements[moduleKey]?.length || 0;
   };
 
-  // 过滤出有数据的模块
-  const availableModules = Object.keys(moduleConfig).filter(
-    key => currentElements[key] && currentElements[key].length > 0
-  );
+  // 显示所有模块（包括空数据的）
+  const availableModules = Object.keys(moduleConfig);
 
   return (
     <div style={{ padding: '20px 0' }}>

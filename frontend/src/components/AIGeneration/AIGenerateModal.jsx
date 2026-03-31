@@ -13,7 +13,6 @@ import { aiGenerationApi } from '../../services/api';
 
 const { TextArea } = Input;
 const { Option } = Select;
-const { Panel } = Collapse;
 const { Text, Title } = Typography;
 
 const ENTITY_TYPE_LABELS = {
@@ -415,121 +414,127 @@ const AIGenerateModal = ({ visible, onCancel, onGenerate, worldId, projectId, de
     const { sections } = currentInput;
     if (!sections) return null;
 
+    const panelContent = (
+      <>
+        {sections.element && (
+          <>
+            <Title level={5}>当前处理元素</Title>
+            <Descriptions bordered size="small" column={1}>
+              <Descriptions.Item label="名称">{sections.element.name || '-'}</Descriptions.Item>
+              <Descriptions.Item label="类型">{sections.element.type || '-'}</Descriptions.Item>
+              <Descriptions.Item label="简介">
+                <Text style={{ whiteSpace: 'pre-wrap' }}>{sections.element.brief || '-'}</Text>
+              </Descriptions.Item>
+              {sections.element.evidence && (
+                <Descriptions.Item label="证据">
+                  <Text style={{ whiteSpace: 'pre-wrap' }}>{sections.element.evidence}</Text>
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+            <Divider />
+          </>
+        )}
+
+        {sections.prompt_summary && (
+          <>
+            <Title level={5}>Prompt摘要</Title>
+            <div style={{
+              background: '#f6ffed',
+              border: '1px solid #b7eb8f',
+              borderRadius: 4,
+              padding: 12,
+              marginBottom: 16
+            }}>
+              <Text style={{ whiteSpace: 'pre-wrap' }}>{sections.prompt_summary}</Text>
+              {sections.full_prompt_length && (
+                <div style={{ marginTop: 8 }}>
+                  <Tag color="green">完整长度: {sections.full_prompt_length} 字符</Tag>
+                </div>
+              )}
+            </div>
+            <Divider />
+          </>
+        )}
+
+        {sections.story_context && (
+          <>
+            <Title level={5}>故事上下文</Title>
+            {sections.story_context.outline && (
+              <div style={{ marginBottom: 8 }}>
+                <Tag color="blue">大纲</Tag>
+                <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                  {sections.story_context.outline.substring(0, 100)}...
+                </Text>
+              </div>
+            )}
+            {sections.story_context.volume && (
+              <div style={{ marginBottom: 8 }}>
+                <Tag color="cyan">卷纲</Tag>
+                <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                  {sections.story_context.volume.substring(0, 100)}...
+                </Text>
+              </div>
+            )}
+            {sections.story_context.chapters && sections.story_context.chapters.length > 0 && (
+              <div>
+                <Tag color="geekblue">章纲</Tag>
+                <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                  {sections.story_context.chapters.length} 个章节
+                </Text>
+              </div>
+            )}
+            <Divider />
+          </>
+        )}
+
+        {(sections.previous_context || sections.generated_context) && (
+          <>
+            <Title level={5}>已生成上下文</Title>
+            {sections.previous_context && (
+              <div style={{ marginBottom: 8 }}>
+                <Tag color="orange">之前批次</Tag>
+                <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                  {sections.previous_context.substring(0, 100)}...
+                </Text>
+              </div>
+            )}
+            {sections.generated_context && (
+              <div>
+                <Tag color="gold">同批次</Tag>
+                <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                  {sections.generated_context.substring(0, 100)}...
+                </Text>
+              </div>
+            )}
+          </>
+        )}
+      </>
+    );
+
     return (
       <Collapse
         activeKey={showInputDetails ? ['input'] : []}
         onChange={(keys) => setShowInputDetails(keys.includes('input'))}
         style={{ marginTop: 16 }}
-      >
-        <Panel
-          header={
-            <Space>
-              <EyeOutlined />
-              <Text strong>查看输入内容</Text>
-              {currentInput.element_name && (
-                <Tag color="blue">{currentInput.element_name}</Tag>
-              )}
-              {currentInput.stage && (
-                <Tag color="purple">{currentInput.stage === 'extraction' ? '提取' : '生成'}</Tag>
-              )}
-            </Space>
+        items={[
+          {
+            key: 'input',
+            label: (
+              <Space>
+                <EyeOutlined />
+                <Text strong>查看输入内容</Text>
+                {currentInput.element_name && (
+                  <Tag color="blue">{currentInput.element_name}</Tag>
+                )}
+                {currentInput.stage && (
+                  <Tag color="purple">{currentInput.stage === 'extraction' ? '提取' : '生成'}</Tag>
+                )}
+              </Space>
+            ),
+            children: panelContent
           }
-          key="input"
-        >
-          {sections.element && (
-            <>
-              <Title level={5}>当前处理元素</Title>
-              <Descriptions bordered size="small" column={1}>
-                <Descriptions.Item label="名称">{sections.element.name || '-'}</Descriptions.Item>
-                <Descriptions.Item label="类型">{sections.element.type || '-'}</Descriptions.Item>
-                <Descriptions.Item label="简介">
-                  <Text style={{ whiteSpace: 'pre-wrap' }}>{sections.element.brief || '-'}</Text>
-                </Descriptions.Item>
-                {sections.element.evidence && (
-                  <Descriptions.Item label="证据">
-                    <Text style={{ whiteSpace: 'pre-wrap' }}>{sections.element.evidence}</Text>
-                  </Descriptions.Item>
-                )}
-              </Descriptions>
-              <Divider />
-            </>
-          )}
-
-          {sections.prompt_summary && (
-            <>
-              <Title level={5}>Prompt摘要</Title>
-              <div style={{
-                background: '#f6ffed',
-                border: '1px solid #b7eb8f',
-                borderRadius: 4,
-                padding: 12,
-                marginBottom: 16
-              }}>
-                <Text style={{ whiteSpace: 'pre-wrap' }}>{sections.prompt_summary}</Text>
-                {sections.full_prompt_length && (
-                  <div style={{ marginTop: 8 }}>
-                    <Tag color="green">完整长度: {sections.full_prompt_length} 字符</Tag>
-                  </div>
-                )}
-              </div>
-              <Divider />
-            </>
-          )}
-
-          {sections.story_context && (
-            <>
-              <Title level={5}>故事上下文</Title>
-              {sections.story_context.outline && (
-                <div style={{ marginBottom: 8 }}>
-                  <Tag color="blue">大纲</Tag>
-                  <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-                    {sections.story_context.outline.substring(0, 100)}...
-                  </Text>
-                </div>
-              )}
-              {sections.story_context.volume && (
-                <div style={{ marginBottom: 8 }}>
-                  <Tag color="cyan">卷纲</Tag>
-                  <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-                    {sections.story_context.volume.substring(0, 100)}...
-                  </Text>
-                </div>
-              )}
-              {sections.story_context.chapters && sections.story_context.chapters.length > 0 && (
-                <div>
-                  <Tag color="geekblue">章纲</Tag>
-                  <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-                    {sections.story_context.chapters.length} 个章节
-                  </Text>
-                </div>
-              )}
-              <Divider />
-            </>
-          )}
-
-          {(sections.previous_context || sections.generated_context) && (
-            <>
-              <Title level={5}>已生成上下文</Title>
-              {sections.previous_context && (
-                <div style={{ marginBottom: 8 }}>
-                  <Tag color="orange">之前批次</Tag>
-                  <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-                    {sections.previous_context.substring(0, 100)}...
-                  </Text>
-                </div>
-              )}
-              {sections.generated_context && (
-                <div>
-                  <Tag color="gold">同批次</Tag>
-                  <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-                    {sections.generated_context.substring(0, 100)}...
-                  </Text>
-                </div>
-              )}
-            </>
-          )}
-        </Panel>
-      </Collapse>
+        ]}
+      />
     );
   };
 

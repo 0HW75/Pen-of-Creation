@@ -159,7 +159,7 @@ P{编号}-{计划主题}.md
 
 ## 八、Python虚拟环境使用规范
 
-**核心原则：运行Python命令时，使用项目目录下的虚拟环境。**
+**核心原则：运行Python命令时，使用项目根目录下的虚拟环境。**
 
 ### 8.1 虚拟环境位置
 
@@ -170,6 +170,22 @@ P{编号}-{计划主题}.md
 运行Python脚本时，应使用虚拟环境中的Python解释器：
 
 ```powershell
-# 直接使用虚拟环境中的python（完整路径）
-F:\Myproject\poc\Pen-of-Creation\.venv\Scripts\python.exe backend\script_name.py
+# 方式1：从项目根目录运行
+.venv\Scripts\python.exe backend\script_name.py
+
+# 方式2：从项目根目录运行（推荐）
+& .venv\Scripts\python.exe backend\run.py
+
+# 方式3：先cd到根目录，再运行
+cd d:\个人\myproj\AI_novel_editor
+.venv\Scripts\python.exe backend\run.py
 ```
+
+---
+
+## 九、时区设置规范
+
+**核心原则：所有时间必须使用东八区（Asia/Shanghai）。**
+
+- ❌ 禁止使用：`datetime.utcnow()`
+- ✅ 正确使用：`from app import now_utc_plus_8` 后，使用 `now_utc_plus_8()`
