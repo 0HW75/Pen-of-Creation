@@ -1,15 +1,22 @@
 from flask import Blueprint, request, jsonify
 from app import db
-from app import now_utc_plus_8
+from datetime import datetime
 from app.models import (
     World, Character, Location, Faction, HistoricalEvent, Item,
     Dimension, Region, CelestialBody, NaturalLaw, EnergySystem,
-    Ability, Skill, Talent, Race, Creature,
+    Ability, Skill, Talent, Race, Creature, SpecialCreature,
     Civilization, SocialClass, CulturalCustom, EconomicSystem, PoliticalSystem,
-    EnergyForm, PowerLevel, PowerCost, CommonSkill,
-    HistoricalEra, HistoricalFigure,
+    EnergyForm, PowerLevel, PowerCost, CommonSkill, CivilizationRegion,
+    HistoricalEra, HistoricalFigure, EventParticipant,
+    Timeline, DataAssociation, Tag, EntityTag, EntityRelation,
+    CharacterTrait, CharacterAbility, CharacterRelationship,
+    FactionStructure, FactionGoal, LocationStructure, SpecialLocation,
+    EquipmentSystem, SpecialItem,
 )
-from datetime import datetime
+
+def now_utc_plus_8():
+    """获取UTC+8时间"""
+    return datetime.utcnow()
 
 worlds_bp = Blueprint('worlds', __name__)
 
@@ -172,6 +179,44 @@ def delete_world(world_id):
         HistoricalEvent.query.filter_by(world_id=world_id).delete()
         HistoricalEra.query.filter_by(world_id=world_id).delete()
         HistoricalFigure.query.filter_by(world_id=world_id).delete()
+        EventParticipant.query.filter(
+            EventParticipant.event_id.in_(
+                db.session.query(HistoricalEvent.id).filter_by(world_id=world_id)
+            )
+        ).delete(synchronize_session=False)
+
+        Timeline.query.filter_by(world_id=world_id).delete()
+        DataAssociation.query.filter_by(project_id=world.project_id).delete()
+
+        Tag.query.filter_by(world_id=world_id).delete()
+        EntityTag.query.filter(
+            EntityTag.tag_id.in_(
+                db.session.query(Tag.id).filter_by(world_id=world_id)
+            )
+        ).delete(synchronize_session=False)
+
+        EntityRelation.query.filter_by(world_id=world_id).delete()
+
+        SpecialCreature.query.filter_by(world_id=world_id).delete()
+
+        CharacterTrait.query.filter_by(project_id=world.project_id).delete()
+        CharacterAbility.query.filter_by(project_id=world.project_id).delete()
+        CharacterRelationship.query.filter_by(project_id=world.project_id).delete()
+
+        FactionStructure.query.filter_by(project_id=world.project_id).delete()
+        FactionGoal.query.filter_by(project_id=world.project_id).delete()
+
+        LocationStructure.query.filter_by(project_id=world.project_id).delete()
+        SpecialLocation.query.filter_by(project_id=world.project_id).delete()
+
+        EquipmentSystem.query.filter_by(project_id=world.project_id).delete()
+        SpecialItem.query.filter_by(project_id=world.project_id).delete()
+
+        CivilizationRegion.query.filter(
+            CivilizationRegion.civilization_id.in_(
+                db.session.query(Civilization.id).filter_by(world_id=world_id)
+            )
+        ).delete(synchronize_session=False)
 
         db.session.delete(world)
         db.session.commit()

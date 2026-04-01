@@ -19,9 +19,6 @@ from app.services.generation.generation_strategy import strategy_selector
 
 logger = logging.getLogger(__name__)
 
-ai_generation_bp = Blueprint('ai_generation', __name__)
-
-# This blueprint is used for main AI generation routes
 ai_generation_utils_bp = Blueprint('ai_generation_utils', __name__)
 
 generators = {

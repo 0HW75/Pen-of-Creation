@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { blueprintApi } from '../services/api';
 
-export const useBlueprintOutlines = (outlines, volumes, chapters, selectedOutline, selectedVolume, setOutlines, setVolumes, setChapters, setSelectedOutline, setSelectedVolume, setSelectedChapter, setActiveView, loadProjectOutline) => {
+export const useBlueprintOutlines = (outlines, volumes, chapters, selectedOutline, selectedVolume, selectedChapter, setOutlines, setVolumes, setChapters, setSelectedOutline, setSelectedVolume, setSelectedChapter, setActiveView, loadProjectOutline) => {
   const [isOutlineEditModalOpen, setIsOutlineEditModalOpen] = useState(false);
   const [outlineEditFormData, setOutlineEditFormData] = useState({});
   const [isVolumeEditModalOpen, setIsVolumeEditModalOpen] = useState(false);

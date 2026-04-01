@@ -18,7 +18,7 @@ from app.services.generation.generators import (
 
 logger = logging.getLogger(__name__)
 
-ai_generation_bp = Blueprint('ai_generation', __name__)
+ai_generation_bp = Blueprint('ai_generation_main', __name__)
 
 generators = {
     'character': CharacterGenerator(),

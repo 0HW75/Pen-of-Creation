@@ -456,7 +456,6 @@ const Step1WithStream = ({ onComplete, initialData }) => {
                   setProgress(100);
                   setCurrentStage('提取完成');
                   setStreamLog(prev => [...prev, { type: 'system', content: data.message }]);
-                  // 完成后调用原始完成回调，传递提取的元素和故事上下文
                   onComplete({
                     projectId: values.projectId,
                     contentScope,
@@ -464,7 +463,8 @@ const Step1WithStream = ({ onComplete, initialData }) => {
                       elements: data.elements,
                       statistics: data.statistics,
                     },
-                    storyContext: data.story_context, // 传递故事上下文
+                    storyContext: data.story_context,
+                    checkpointId: sessionId,
                   });
                   break;
                 case 'aborted':

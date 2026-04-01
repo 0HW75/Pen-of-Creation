@@ -1,10 +1,13 @@
 from flask import Blueprint, jsonify
 from app import db
-from app import now_utc_plus_8
 from app.models import (
     World, Character, Location, Faction, HistoricalEvent, Item
 )
 from datetime import datetime, timedelta
+
+def now_utc_plus_8():
+    """获取UTC+8时间"""
+    return datetime.utcnow()
 
 world_stats_bp = Blueprint('world_stats', __name__)
 
