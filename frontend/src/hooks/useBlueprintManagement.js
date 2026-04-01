@@ -779,14 +779,13 @@ ${volumeContent}
         if (distanceFromCurrent === 4) {
           previousChaptersInfo += `\n## 【往前倒推4章】第${c.order_index}章《${c.title}》\n`;
           previousChaptersInfo += `**显示级别**：概要\n\n`;
-          previousChaptersInfo += `${c.content || c.brief || '暂无内容'}\n`;
+          previousChaptersInfo += `${c.outline_content || c.brief || '暂无内容'}\n`;
         } else if (distanceFromCurrent >= 1 && distanceFromCurrent <= 3) {
           const levelNames = {1: '1章（最近）', 2: '2章', 3: '3章'};
           previousChaptersInfo += `\n## 【往前倒推${levelNames[distanceFromCurrent]}】第${c.order_index}章《${c.title}》\n`;
           previousChaptersInfo += `**显示级别**：详细信息\n\n`;
-          previousChaptersInfo += `- 核心事件：${c.core_event || '无'}\n`;
-          previousChaptersInfo += `- 内容概要：${c.content || c.brief || '无'}\n`;
-          
+          previousChaptersInfo += `- 内容概要：${c.outline_content || c.brief || '无'}\n`;
+
           if (c.scenes && c.scenes.length > 0) {
             const scenesList = Array.isArray(c.scenes) ? c.scenes : (typeof c.scenes === 'string' ? JSON.parse(c.scenes) : []);
             previousChaptersInfo += `- 场景：${scenesList.join('、')}\n`;
@@ -1024,7 +1023,7 @@ ${volumeContent}
                 id: chapter.id || Date.now() + (currentBatch - 1) * batchSize + index,
                 title: chapter.title,
                 core_event: chapter.core_event,
-                content: chapter.content,
+                outline_content: chapter.content,
                 scenes: chapter.scenes || [],
                 characters: chapter.characters || [],
                 emotional_goal: chapter.emotional_goal || '',
@@ -1052,7 +1051,7 @@ ${volumeContent}
                 body: JSON.stringify({
                   title: chapter.title,
                   core_event: chapter.core_event,
-                  content: chapter.content,
+                  outline_content: chapter.outline_content,
                   scenes: chapter.scenes,
                   characters: chapter.characters,
                   emotional_goal: chapter.emotional_goal,
