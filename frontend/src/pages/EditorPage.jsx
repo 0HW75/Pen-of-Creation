@@ -52,16 +52,17 @@ const EditorPage = ({ projectId }) => {
 
   // 当选择章节时加载章节内容
   const handleChapterSelect = useCallback(async (chapterOrId) => {
-    // 处理传入的是章节对象或章节ID
     const chapterId = typeof chapterOrId === 'object' ? chapterOrId.id : chapterOrId;
     const chapter = typeof chapterOrId === 'object' ? chapterOrId : null;
-    
+
     setSelectedChapterId(chapterId);
     setLoading(true);
     try {
       const response = await chapterApi.getChapter(chapterId);
-      setChapterContent(response.data.content);
-      setChapterTitle(response.data.title);
+      const fullChapter = response.data;
+      setChapterContent(fullChapter.content);
+      setChapterTitle(fullChapter.title);
+      setChapters(prev => prev.map(c => c.id === chapterId ? fullChapter : c));
       setActiveTab('editor');
     } catch (error) {
       message.error('加载章节内容失败');
