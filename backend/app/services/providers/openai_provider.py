@@ -46,6 +46,15 @@ class OpenAIProvider(AIServiceProvider):
                 'timeout': kwargs.get('timeout', self.config.get('timeout', 30))
             }
             
+            # 添加JSON Schema支持
+            if 'response_format' in kwargs:
+                params['response_format'] = kwargs['response_format']
+            if 'json_schema' in kwargs:
+                params['response_format'] = {
+                    'type': 'json_schema',
+                    'json_schema': kwargs['json_schema']
+                }
+            
             # 添加可选参数
             if 'top_p' in kwargs:
                 params['top_p'] = kwargs['top_p']
@@ -180,6 +189,15 @@ class OpenAIProvider(AIServiceProvider):
                 'timeout': kwargs.get('timeout', self.config.get('timeout', 30)),
                 'stream': True
             }
+            
+            # 添加JSON Schema支持
+            if 'response_format' in kwargs:
+                params['response_format'] = kwargs['response_format']
+            if 'json_schema' in kwargs:
+                params['response_format'] = {
+                    'type': 'json_schema',
+                    'json_schema': kwargs['json_schema']
+                }
             
             # 添加可选参数
             if 'top_p' in kwargs:

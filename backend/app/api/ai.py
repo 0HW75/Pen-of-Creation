@@ -311,6 +311,7 @@ def stream_chat_completion():
     provider = data.get('provider', None)  # 可选的服务提供商
     temperature = data.get('temperature', 0.7)  # 温度设置
     max_tokens = data.get('max_tokens', 1000)  # token限制设置
+    response_format = data.get('response_format', None)  # 响应格式设置
     
     if not messages:
         return jsonify({'error': '缺少消息列表'}), 400
@@ -323,7 +324,8 @@ def stream_chat_completion():
             messages=messages,
             provider=provider,
             max_tokens=max_tokens,
-            temperature=temperature
+            temperature=temperature,
+            response_format=response_format
         )
         
         # 流式响应

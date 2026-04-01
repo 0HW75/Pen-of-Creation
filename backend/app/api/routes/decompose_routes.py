@@ -12,6 +12,18 @@ def decompose_volume(id):
 
     data = request.json
 
+    # 验证章纲内容长度
+    def validate_chapter_content(chap_data):
+        content = chap_data.get('content', '')
+        if len(content) > 500:
+            return False, '章纲内容长度不能超过500字'
+        core_event = chap_data.get('core_event', '')
+        if isinstance(core_event, list):
+            core_event_str = ''.join(core_event)
+            if len(core_event_str) > 200:
+                return False, '核心事件总长度不能超过200字'
+        return True, ''
+
     if isinstance(data, list):
         created_chapters = []
         
@@ -26,6 +38,11 @@ def decompose_volume(id):
         
         # 遍历传入的数据创建/更新章节
         for idx, chap_data in enumerate(data):
+            # 验证章纲内容长度
+            valid, message = validate_chapter_content(chap_data)
+            if not valid:
+                return jsonify({'error': message}), 400
+            
             order_index = chap_data.get('order_index', idx)
             
             # 尝试通过 order_index 查找现有章节
@@ -74,6 +91,11 @@ def decompose_volume(id):
             if existing_ch.order_index not in new_order_indices:
                 db.session.delete(existing_ch)
     else:
+        # 验证章纲内容长度
+        valid, message = validate_chapter_content(data)
+        if not valid:
+            return jsonify({'error': message}), 400
+        
         existing_chapter = Chapter.query.filter_by(
             project_id=volume.project_id,
             volume_id=volume.id,

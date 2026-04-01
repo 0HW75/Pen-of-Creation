@@ -9,13 +9,13 @@ const ChapterDetailEditor = ({ chapter, onSave, onCancel }) => {
   const [scenes, setScenes] = useState([]);
   const [characters, setCharacters] = useState([]);
   const [keywords, setKeywords] = useState([]);
-  const [inputValues, setInputValues] = useState({ scenes: '', characters: '', keywords: '' });
+  const [coreEvents, setCoreEvents] = useState([]);
+  const [inputValues, setInputValues] = useState({ scenes: '', characters: '', keywords: '', coreEvents: '' });
 
   useEffect(() => {
     if (chapter) {
       form.setFieldsValue({
         title: chapter.title,
-        core_event: chapter.core_event,
         content: chapter.outline_content,
         emotional_goal: chapter.emotional_goal,
         word_count_estimate: chapter.word_count_estimate,
@@ -25,6 +25,7 @@ const ChapterDetailEditor = ({ chapter, onSave, onCancel }) => {
       setScenes(parseArrayField(chapter.scenes));
       setCharacters(parseArrayField(chapter.characters));
       setKeywords(parseArrayField(chapter.keywords));
+      setCoreEvents(parseArrayField(chapter.core_event));
     }
   }, [chapter, form]);
 
@@ -44,6 +45,7 @@ const ChapterDetailEditor = ({ chapter, onSave, onCancel }) => {
         ...chapter,
         ...values,
         outline_content: values.content,
+        core_event: coreEvents,
         scenes,
         characters,
         keywords,
@@ -54,18 +56,44 @@ const ChapterDetailEditor = ({ chapter, onSave, onCancel }) => {
 
   const handleAddTag = (type, value) => {
     if (!value.trim()) return;
-    const setter = type === 'scenes' ? setScenes : type === 'characters' ? setCharacters : setKeywords;
-    const current = type === 'scenes' ? scenes : type === 'characters' ? characters : keywords;
-    if (!current.includes(value.trim())) {
+    let setter, current;
+    if (type === 'scenes') {
+      setter = setScenes;
+      current = scenes;
+    } else if (type === 'characters') {
+      setter = setCharacters;
+      current = characters;
+    } else if (type === 'keywords') {
+      setter = setKeywords;
+      current = keywords;
+    } else if (type === 'coreEvents') {
+      setter = setCoreEvents;
+      current = coreEvents;
+    }
+    if (setter && current && !current.includes(value.trim())) {
       setter([...current, value.trim()]);
       setInputValues({ ...inputValues, [type]: '' });
     }
   };
 
   const handleRemoveTag = (type, tag) => {
-    const setter = type === 'scenes' ? setScenes : type === 'characters' ? setCharacters : setKeywords;
-    const current = type === 'scenes' ? scenes : type === 'characters' ? characters : keywords;
-    setter(current.filter((t) => t !== tag));
+    let setter, current;
+    if (type === 'scenes') {
+      setter = setScenes;
+      current = scenes;
+    } else if (type === 'characters') {
+      setter = setCharacters;
+      current = characters;
+    } else if (type === 'keywords') {
+      setter = setKeywords;
+      current = keywords;
+    } else if (type === 'coreEvents') {
+      setter = setCoreEvents;
+      current = coreEvents;
+    }
+    if (setter && current) {
+      setter(current.filter((t) => t !== tag));
+    }
   };
 
   const renderTagInput = (type, label, placeholder) => (
@@ -117,15 +145,7 @@ const ChapterDetailEditor = ({ chapter, onSave, onCancel }) => {
           <Input placeholder="请输入章节标题" />
         </Form.Item>
 
-        <Form.Item
-          label="核心事件"
-          name="core_event"
-        >
-          <TextArea
-            rows={2}
-            placeholder="请输入核心事件（2-3句话概括）"
-          />
-        </Form.Item>
+        {renderTagInput('coreEvents', '核心事件', '输入核心事件，按回车或点击添加')}
 
         <Form.Item
           label="内容概要"

@@ -63,7 +63,7 @@ const OutlineTree = ({
                           className={`chapter-item ${selectedChapter?.id === chapter.id ? 'selected' : ''}`}
                           onClick={() => onChapterSelect(chapter)}
                         >
-                          <span>{chapter.title}</span>
+                          <span>第{chapter.order_index + 1}章：{chapter.title}</span>
                           <div className="chapter-actions">
                             <span className="word-count">{chapter.word_count_estimate}字</span>
                             <button 

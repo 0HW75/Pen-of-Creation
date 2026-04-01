@@ -110,21 +110,27 @@ export const useBlueprintManagement = (projectId) => {
 
   const abortControllerRef = useRef(null);
 
-  const callAIAPI = useCallback(async (messages, maxTokens, temperature, onProgress = null) => {
+  const callAIAPI = useCallback(async (messages, maxTokens, temperature, onProgress = null, responseFormat = null) => {
     abortControllerRef.current = new AbortController();
     const signal = abortControllerRef.current.signal;
     
     try {
+      const bodyData = {
+        messages: messages,
+        max_tokens: maxTokens,
+        temperature: temperature
+      };
+      
+      if (responseFormat) {
+        bodyData.response_format = responseFormat;
+      }
+      
       const response = await fetch('http://localhost:5000/api/ai/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          messages: messages,
-          max_tokens: maxTokens,
-          temperature: temperature
-        }),
+        body: JSON.stringify(bodyData),
         signal: signal
       });
       
@@ -388,7 +394,7 @@ export const useBlueprintManagement = (projectId) => {
     }
   }, [projectId, projectInfo, systemPrompt, selectedArchitect, worldviewStructurePrompt, loadProjectInfo, setOutlines, setSelectedOutline, setVolumes, setSelectedVolume, setChapters, setSelectedChapter, setError, setIsLoading, setIsStreaming, setStreamingOutput]);
 
-  const generateVolumeOutline = useCallback(async (outlineContent, config) => {
+  const generateVolumeOutline = useCallback(async (outlineContent, config, onProgress = null) => {
     const systemContent = `你是一位专业的中文小说架构师。
 【重要规则】
 1. 必须使用中文输出所有内容
@@ -424,14 +430,14 @@ ${outlineContent}
       { role: 'user', content: userPrompt }
     ];
     
-    const content = await callAIAPI(messages, 2000, 0.7);
+    const content = await callAIAPI(messages, 2000, 0.7, onProgress, { type: 'json_object' });
     const parsed = safeJSONParse(content);
     if (!parsed) throw new Error('无法解析卷纲规划');
     
     return parsed.volumes || [];
   }, [callAIAPI, safeJSONParse]);
 
-  const generateDetailedVolume = useCallback(async (outlineContent, volumeOutline, previousVolumes, config) => {
+  const generateDetailedVolume = useCallback(async (outlineContent, volumeOutline, previousVolumes, config, onProgress = null) => {
     let systemContent = config.systemPrompt || `你是一位专业的中文小说编辑，擅长在有限篇幅内精炼卷纲内容。
 【重要规则】
 1. 必须使用中文输出所有内容
@@ -509,7 +515,7 @@ ${outlineContent}
       { role: 'user', content: userPrompt }
     ];
     
-    const content = await callAIAPI(messages, config.maxTokens || 4000, config.temperature || 0.7);
+    const content = await callAIAPI(messages, config.maxTokens || 4000, config.temperature || 0.7, onProgress, { type: 'json_object' });
     const parsed = safeJSONParse(content);
     if (!parsed) throw new Error(`第${volumeOutline.order_index}卷细化失败：无法解析JSON`);
     
@@ -552,7 +558,13 @@ ${outlineContent}
         if (useIncrementalMode) {
           setStreamingOutput('【第一步】正在规划分卷结构...\n\n');
           
-          const volumeOutlines = await generateVolumeOutline(outlineContent, config);
+          const volumeOutlines = await generateVolumeOutline(
+            outlineContent, 
+            config, 
+            (content) => {
+              setStreamingOutput(prev => prev + content);
+            }
+          );
           console.log('卷纲规划:', volumeOutlines);
           
           setStreamingOutput(prev => prev + `✓ 规划完成，共${volumeOutlines.length}卷\n\n`);
@@ -567,7 +579,10 @@ ${outlineContent}
                 outlineContent,
                 volOutline,
                 detailedVolumes,
-                config
+                config,
+                (content) => {
+                  setStreamingOutput(prev => prev + content);
+                }
               );
               
               let chapterCount = detailedVolume.chapter_count;
@@ -636,7 +651,7 @@ ${outlineContent}
             { role: 'user', content: userPrompt }
           ];
           
-          const content = await callAIAPI(messages, config.maxTokens || 8000, config.temperature || 0.7);
+          const content = await callAIAPI(messages, config.maxTokens || 8000, config.temperature || 0.7, null, { type: 'json_object' });
           const parsedData = safeJSONParse(content);
           if (!parsedData) throw new Error('无法从AI输出中提取JSON');
           
@@ -721,7 +736,7 @@ ${outlineContent}
     }
   }, [selectedOutline, selectedArchitect, projectId, callAIAPI, generateVolumeOutline, generateDetailedVolume, setVolumes, setActiveView, setError, setIsLoading, setIsStreaming, setStreamingOutput]);
 
-  const generateChapterOutline = useCallback(async (volumeContent, totalChapters, config) => {
+  const generateChapterOutline = useCallback(async (volumeContent, totalChapters, config, onProgress = null) => {
     const systemContent = `你是一位专业的小说章节规划师。请根据卷纲规划章节，只输出章节标题和一句话概述。`;
     
     const userPrompt = `请根据以下卷纲，规划章节结构：
@@ -745,15 +760,15 @@ ${volumeContent}
       { role: 'user', content: userPrompt }
     ];
     
-    const content = await callAIAPI(messages, 2000, 0.7);
+    const content = await callAIAPI(messages, 2000, 0.7, onProgress, { type: 'json_object' });
     const parsed = safeJSONParse(content);
     if (!parsed) throw new Error('无法解析章纲规划');
     
     return parsed.chapters || [];
   }, [callAIAPI, safeJSONParse]);
 
-  const generateDetailedChapter = useCallback(async (volumeContent, chapterOutline, previousChapters, config) => {
-    let systemContent = config.systemPrompt || `你是一位专业的小说章节规划师，擅长细化章节内容。`;
+  const generateDetailedChapter = useCallback(async (volumeContent, chapterOutline, previousChapters, config, onProgress = null) => {
+    let systemContent = config.systemPrompt || `你是一位专业的小说章节规划师，擅长在有限篇幅内精炼章节内容。严格控制章纲内容长度，总字数不超过500字。`;
     
     if (config.useArchitectPrompt !== false && selectedArchitect && selectedArchitect.prompt) {
       if (config.combinePrompts) {
@@ -823,11 +838,11 @@ ${volumeContent}
 
 # 要求
 1. 生成当前章节的详细内容，包括：
-   - 核心事件（2-3句话概括，不超过100字）
-   - 主要内容概述（5-8句话，每句话不超过50字，总字数不超过400字）
-   - 出场人物（主要角色列表，每个角色名称不超过20字）
-   - 场景设置（主要场景描述，不超过100字）
-   - 情感目标（1-2句话描述本章要传达的情感）
+   - 核心事件（数组形式，2-3条，每条一句话）
+   - 主要内容概述（简洁扼要，总字数不超过200字）
+   - 出场人物（只列出重点人物：主角和主要配角，不要列出无名成员）
+   - 场景设置（数组形式，每条一句话，不要太详细）
+   - 情感目标（1句话描述本章要传达的情感）
    - 关键词（3-5个关键词）
    - 预估字数：{{minWords}}-{{maxWords}}字
 2. 确保与卷纲和前文章节连贯
@@ -835,10 +850,11 @@ ${volumeContent}
    - 必须输出合法的JSON格式
    - 使用英文双引号，不要用中文引号
    - 不要使用三引号
-   - 字符串中的换行用\\n表示
+   - 字符串中的换行用\n表示
    - characters、scenes、keywords 是字符串数组
-   - **严格控制内容长度，避免输出过长导致JSON截断**
-4. 输出字段：id、title、core_event、content、scenes（数组）、characters（数组）、emotional_goal、keywords（数组）、word_count_estimate、order_index
+   - core_event 是字符串数组
+   - **严格控制内容长度，总字数不超过500字，避免输出过长**
+4. 输出字段：id、title、core_event（数组）、content、scenes（数组）、characters（数组）、emotional_goal、keywords（数组）、word_count_estimate、order_index
 
 请直接输出合法的JSON，不要包含其他文字或markdown代码块标记！`;
 
@@ -860,7 +876,7 @@ ${volumeContent}
       { role: 'user', content: userPrompt }
     ];
     
-    const content = await callAIAPI(messages, config.maxTokens || 4000, config.temperature || 0.7);
+    const content = await callAIAPI(messages, config.maxTokens || 4000, config.temperature || 0.7, onProgress, { type: 'json_object' });
     const parsed = safeJSONParse(content);
     if (!parsed) throw new Error(`第${chapterOutline.order_index}章细化失败：无法解析JSON`);
     
@@ -909,7 +925,14 @@ ${volumeContent}
         if (useIncrementalMode) {
           setStreamingOutput('【第一步】正在规划章节结构...\n\n');
           
-          const chapterOutlines = await generateChapterOutline(volumeContent, totalChapters, config);
+          const chapterOutlines = await generateChapterOutline(
+            volumeContent, 
+            totalChapters, 
+            config, 
+            (content) => {
+              setStreamingOutput(prev => prev + content);
+            }
+          );
           console.log('章纲规划:', chapterOutlines);
           
           setStreamingOutput(prev => prev + `✓ 规划完成，共${chapterOutlines.length}章\n\n`);
@@ -924,7 +947,10 @@ ${volumeContent}
                 volumeContent,
                 chOutline,
                 detailedChapters,
-                config
+                config,
+                (content) => {
+                  setStreamingOutput(prev => prev + content);
+                }
               );
               
               const chapterData = {
@@ -1016,7 +1042,7 @@ ${volumeContent}
               { role: 'user', content: userPrompt }
             ];
             
-            const content = await callAIAPI(messages, config.maxTokens || 3000, config.temperature || 0.7);
+            const content = await callAIAPI(messages, config.maxTokens || 3000, config.temperature || 0.7, null, { type: 'json_object' });
             
             const parsedData = safeJSONParse(content);
             if (parsedData && parsedData.chapters && Array.isArray(parsedData.chapters)) {

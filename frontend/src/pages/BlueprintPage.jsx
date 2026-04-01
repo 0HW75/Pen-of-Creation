@@ -162,11 +162,11 @@ const BlueprintPage = ({ projectId }) => {
 
 # 要求
 1. 生成当前章节的详细内容，包括：
-   - 核心事件（2-3句话概括，不超过100字）
-   - 主要内容概述（5-8句话，每句话不超过50字，总字数不超过400字）
-   - 出场人物（主要角色列表，每个角色名称不超过20字）
-   - 场景设置（主要场景描述，不超过100字）
-   - 情感目标（1-2句话描述本章要传达的情感）
+   - 核心事件（数组形式，2-3条，每条一句话）
+   - 主要内容概述（5-8句话，每句话不超过30字，总字数不超过150字）
+   - 出场人物（只列出重点人物：主角和主要配角，不要列出无名成员，每个角色名称不超过20字）
+   - 场景设置（数组形式，每条一句话，不要太详细）
+   - 情感目标（1句话描述本章要传达的情感）
    - 关键词（3-5个关键词）
    - 预估字数：{{minWords}}-{{maxWords}}字
 2. 确保与卷纲和前文章节连贯
@@ -176,8 +176,9 @@ const BlueprintPage = ({ projectId }) => {
    - 不要使用三引号
    - 字符串中的换行用\\n表示
    - characters、scenes、keywords 是字符串数组
-   - **严格控制内容长度，避免输出过长导致JSON截断**
-4. 输出字段：id、title、core_event、content、scenes（数组）、characters（数组）、emotional_goal、keywords（数组）、word_count_estimate、order_index
+   - core_event 是字符串数组
+   - **严格控制内容长度，总字数不超过300字，避免输出过长导致JSON截断**
+4. 输出字段：id、title、core_event（数组）、content、scenes（数组）、characters（数组）、emotional_goal、keywords（数组）、word_count_estimate、order_index
 
 请直接输出合法的JSON，不要包含其他文字或markdown代码块标记！`,
     minChapters: 5,
