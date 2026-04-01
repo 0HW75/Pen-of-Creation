@@ -8,7 +8,6 @@ import {
   EyeInvisibleOutlined,
   PushpinOutlined,
   PushpinFilled,
-  BookOutlined,
   UserOutlined,
   TagsOutlined
 } from '@ant-design/icons';
@@ -46,7 +45,6 @@ const OutlineReferencePanel = ({
   }
 
   const outlineData = {
-    outlineContent: currentChapter.outline_content || '',
     coreEvent: currentChapter.core_event || '',
     emotionGoal: currentChapter.emotional_goal || '',
     scenes: (() => {
@@ -111,31 +109,6 @@ const OutlineReferencePanel = ({
           maxHeight: floating ? '300px' : '100%',
           overflow: 'auto'
         }}>
-          {outlineData.outlineContent && (
-            <Card
-              size="small"
-              style={{
-                marginBottom: '12px',
-                background: '#fafafa',
-                border: '1px solid #d9d9d9'
-              }}
-              bodyStyle={{ padding: '12px' }}
-            >
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Space>
-                  <BookOutlined style={{ color: '#722ed1' }} />
-                  <Text strong style={{ color: '#722ed1' }}>章纲内容</Text>
-                </Space>
-                <Paragraph
-                  style={{ margin: 0, fontSize: '13px', whiteSpace: 'pre-wrap' }}
-                  ellipsis={{ rows: 6, expandable: true, symbol: '展开' }}
-                >
-                  {outlineData.outlineContent}
-                </Paragraph>
-              </Space>
-            </Card>
-          )}
-
           {outlineData.coreEvent && (
             <Card
               size="small"
