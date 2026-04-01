@@ -34,7 +34,7 @@ def decompose_volume(id):
             if existing_chapter:
                 # 更新现有章节
                 existing_chapter.title = chap_data.get('title', existing_chapter.title)
-                existing_chapter.content = chap_data.get('content', existing_chapter.content)
+                existing_chapter.outline_content = chap_data.get('content', existing_chapter.outline_content)
                 existing_chapter.core_event = chap_data.get('core_event', existing_chapter.core_event)
                 existing_chapter.emotional_goal = chap_data.get('emotional_goal', existing_chapter.emotional_goal)
                 existing_chapter.word_count_estimate = chap_data.get('word_count_estimate', existing_chapter.word_count_estimate)
@@ -52,7 +52,7 @@ def decompose_volume(id):
                     project_id=volume.project_id,
                     volume_id=volume.id,
                     title=chap_data.get('title', '未命名章'),
-                    content=chap_data.get('content', ''),
+                    outline_content=chap_data.get('content', ''),
                     core_event=chap_data.get('core_event', ''),
                     emotional_goal=chap_data.get('emotional_goal', ''),
                     word_count_estimate=chap_data.get('word_count_estimate', 2000),
@@ -82,7 +82,7 @@ def decompose_volume(id):
 
         if existing_chapter:
             existing_chapter.title = data.get('title', existing_chapter.title)
-            existing_chapter.content = data.get('content', existing_chapter.content)
+            existing_chapter.outline_content = data.get('content', existing_chapter.outline_content)
             existing_chapter.core_event = data.get('core_event', existing_chapter.core_event)
             existing_chapter.emotional_goal = data.get('emotional_goal', existing_chapter.emotional_goal)
             existing_chapter.word_count_estimate = data.get('word_count_estimate', existing_chapter.word_count_estimate)
@@ -99,7 +99,7 @@ def decompose_volume(id):
                 project_id=volume.project_id,
                 volume_id=volume.id,
                 title=data.get('title', '未命名章'),
-                content=data.get('content', ''),
+                outline_content=data.get('content', ''),
                 core_event=data.get('core_event', ''),
                 emotional_goal=data.get('emotional_goal', ''),
                 word_count_estimate=data.get('word_count_estimate', 2000),

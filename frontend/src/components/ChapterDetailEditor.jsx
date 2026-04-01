@@ -16,7 +16,7 @@ const ChapterDetailEditor = ({ chapter, onSave, onCancel }) => {
       form.setFieldsValue({
         title: chapter.title,
         core_event: chapter.core_event,
-        content: chapter.content,
+        content: chapter.outline_content,
         emotional_goal: chapter.emotional_goal,
         word_count_estimate: chapter.word_count_estimate,
       });
@@ -43,6 +43,7 @@ const ChapterDetailEditor = ({ chapter, onSave, onCancel }) => {
       const updatedChapter = {
         ...chapter,
         ...values,
+        outline_content: values.content,
         scenes,
         characters,
         keywords,

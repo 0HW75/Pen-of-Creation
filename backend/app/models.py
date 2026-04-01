@@ -146,7 +146,8 @@ class Chapter(db.Model):
     volume_id = db.Column(db.Integer, db.ForeignKey('volume.id'), nullable=True)
     volume = db.Column(db.String(255), default='')  # 卷/分组名称，如"第一卷"
     title = db.Column(db.String(255), nullable=False)
-    content = db.Column(db.Text, default='')
+    content = db.Column(db.Text, default='')  # 章节正文（实际写作内容）
+    outline_content = db.Column(db.Text, default='')  # 章纲内容（AI生成的规划参考）
     scenes = db.Column(db.Text, default='[]')
     characters = db.Column(db.Text, default='[]')
     core_event = db.Column(db.Text, default='')
@@ -169,6 +170,7 @@ class Chapter(db.Model):
             'volume': self.volume,
             'title': self.title,
             'content': self.content,
+            'outline_content': self.outline_content,
             'scenes': self.scenes,
             'characters': self.characters,
             'core_event': self.core_event,

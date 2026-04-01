@@ -319,7 +319,7 @@ def extract_blueprint_elements_stream():
 
                 yield f"data: {json.dumps({'type': 'progress', 'stage': 'chapter', 'current': 1, 'total': 1, 'progress': 50}, ensure_ascii=False)}\n\n"
 
-                chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
+                chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.outline_content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
                 story_context_chapters.append(chapter_content)
 
                 for msg in process_with_stream(chapter_content, f'章纲《{chapter.title}》', 'chapter'):
@@ -398,7 +398,7 @@ def extract_blueprint_elements_stream():
                     progress = 30 + int((ch_idx / total_chapters) * 70) if total_chapters > 0 else 30
                     yield f"data: {json.dumps({'type': 'progress', 'stage': 'chapter', 'current': ch_idx + 1, 'total': total_chapters, 'progress': progress}, ensure_ascii=False)}\n\n"
 
-                    chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
+                    chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.outline_content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
                     story_context_chapters.append(chapter_content)
 
                     for msg in process_with_stream(chapter_content, f'章纲《{chapter.title}》', 'chapter'):
@@ -508,7 +508,7 @@ def extract_blueprint_elements_stream():
                         chapter_progress = int(((idx + ch_idx / total_chapters) / total_volumes) * 50) if total_volumes > 0 else 0
                         yield f"data: {json.dumps({'type': 'progress', 'stage': 'chapter', 'current': ch_idx + 1, 'total': total_chapters, 'progress': 50 + chapter_progress}, ensure_ascii=False)}\n\n"
 
-                        chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
+                        chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.outline_content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
                         story_context_chapters.append(chapter_content)
 
                         for msg in process_with_stream(chapter_content, f'章纲《{chapter.title}》', 'chapter'):
@@ -623,7 +623,7 @@ def extract_blueprint_elements_stream():
                         chapter_progress = int(((idx + ch_idx / total_chapters) / total_volumes) * 50) if total_volumes > 0 else 0
                         yield f"data: {json.dumps({'type': 'progress', 'stage': 'chapter', 'current': ch_idx + 1, 'total': total_chapters, 'progress': 50 + chapter_progress}, ensure_ascii=False)}\n\n"
 
-                        chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
+                        chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.outline_content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
                         story_context_chapters.append(chapter_content)
 
                         for msg in process_with_stream(chapter_content, f'章纲《{chapter.title}》', 'chapter'):

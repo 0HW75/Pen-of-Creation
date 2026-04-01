@@ -31,6 +31,7 @@ def create_chapter():
         volume=data.get('volume', ''),
         title=data['title'],
         content=data.get('content', ''),
+        outline_content=data.get('outline_content', ''),
         status=data.get('status', '未写'),
         type=data.get('type', '普通'),
         order_index=data['order_index']
@@ -62,6 +63,7 @@ def update_chapter(id):
     
     chapter.title = data.get('title', chapter.title)
     chapter.content = data.get('content', chapter.content)
+    chapter.outline_content = data.get('outline_content', chapter.outline_content)
     chapter.status = data.get('status', chapter.status)
     chapter.type = data.get('type', chapter.type)
     chapter.volume = data.get('volume', chapter.volume)

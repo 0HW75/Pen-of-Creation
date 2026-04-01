@@ -36,9 +36,9 @@ const convertChapterToMarkdown = (chapter) => {
     markdown += `## 核心事件\n\n${chapter.core_event}\n\n`;
   }
 
-  // 处理内容
-  if (chapter.content) {
-    markdown += `## 内容概要\n\n${chapter.content}\n\n`;
+  // 处理内容（章纲的outline_content字段）
+  if (chapter.outline_content) {
+    markdown += `## 内容概要\n\n${chapter.outline_content}\n\n`;
   }
 
   // 处理场景
