@@ -983,7 +983,8 @@ ${volumeContent}
           }
           
           const totalBatches = Math.ceil(totalChapters / batchSize);
-          
+          let messages = [];
+
           while (currentBatch <= totalBatches) {
             const existingChapters = allChapters.length;
             const startChapter = existingChapters + 1;
@@ -1009,8 +1010,8 @@ ${volumeContent}
             userPrompt += `2. 每个章需要包含：id、title、core_event、content、scenes、characters、emotional_goal、keywords、word_count_estimate、order_index\n`;
             userPrompt += `3. 输出JSON格式，包含chapters数组\n`;
             userPrompt += `4. 使用英文双引号，不要用中文引号\n`;
-            
-            const messages = [
+
+            messages = [
               { role: 'system', content: systemContent },
               { role: 'user', content: userPrompt }
             ];
