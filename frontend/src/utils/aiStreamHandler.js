@@ -122,7 +122,8 @@ export const buildVolumeDecomposePrompt = (volumeContent, batchInfo, existingCha
   prompt += `5. 输出格式要求：\n`;
   prompt += `   - 使用JSON格式输出\n`;
   prompt += `   - 包含一个"chapters"数组，每个元素代表一个章\n`;
-  prompt += `   - 每个章对象包含：id、title、core_event、emotional_goal、word_count_estimate、content、order_index\n`;
+  prompt += `   - 每个章对象包含：id（必须是数字）、title、core_event、emotional_goal、word_count_estimate、content、order_index\n`;
+  prompt += `   - 【重要】id必须是数字类型，不能是字符串！\n`;
   prompt += `6. 请确保输出的JSON格式正确，不要包含任何额外的文字\n`;
   
   return prompt;

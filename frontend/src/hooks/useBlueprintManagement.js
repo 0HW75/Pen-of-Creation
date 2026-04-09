@@ -431,7 +431,7 @@ ${outlineContent}
     ];
     
     const content = await callAIAPI(messages, 2000, 0.7, onProgress, { type: 'json_object' });
-    const parsed = safeJSONParse(content);
+    const parsed = await safeJSONParse(content);
     if (!parsed) throw new Error('无法解析卷纲规划');
     
     return parsed.volumes || [];
@@ -515,11 +515,11 @@ ${outlineContent}
       { role: 'user', content: userPrompt }
     ];
     
-    const content = await callAIAPI(messages, config.maxTokens || 4000, config.temperature || 0.7, onProgress, { type: 'json_object' });
+    const content = await callAIAPI(messages, config.maxTokens || 800, config.temperature || 1.5, onProgress, { type: 'json_object' });
     const parsed = safeJSONParse(content);
     if (!parsed) throw new Error(`第${volumeOutline.order_index}卷细化失败：无法解析JSON`);
-    
-    return parsed;
+
+    return { ...parsed, messages };
   }, [callAIAPI, selectedArchitect, safeJSONParse]);
 
   const decomposeOutlineToVolumes = useCallback(async (volumeConfig = null) => {
@@ -556,6 +556,7 @@ ${outlineContent}
         let allVolumes = [];
         
         if (useIncrementalMode) {
+          let messages = [];
           setStreamingOutput('【第一步】正在规划分卷结构...\n\n');
           
           const volumeOutlines = await generateVolumeOutline(
@@ -606,6 +607,9 @@ ${outlineContent}
               };
               
               detailedVolumes.push(volumeData);
+              if (detailedVolume.messages) {
+                messages = messages.concat(detailedVolume.messages);
+              }
               setStreamingOutput(prev => prev + `✓ 第${volumeData.order_index}卷《${volumeData.title}》生成完成\n\n`);
             } catch (error) {
               console.error(`第${volOutline.order_index}卷生成失败:`, error);
@@ -652,7 +656,7 @@ ${outlineContent}
           ];
           
           const content = await callAIAPI(messages, config.maxTokens || 8000, config.temperature || 0.7, null, { type: 'json_object' });
-          const parsedData = safeJSONParse(content);
+          const parsedData = await safeJSONParse(content);
           if (!parsedData) throw new Error('无法从AI输出中提取JSON');
           
           if (parsedData.volumes && Array.isArray(parsedData.volumes)) {
@@ -761,14 +765,14 @@ ${volumeContent}
     ];
     
     const content = await callAIAPI(messages, 2000, 0.7, onProgress, { type: 'json_object' });
-    const parsed = safeJSONParse(content);
+    const parsed = await safeJSONParse(content);
     if (!parsed) throw new Error('无法解析章纲规划');
     
     return parsed.chapters || [];
   }, [callAIAPI, safeJSONParse]);
 
   const generateDetailedChapter = useCallback(async (volumeContent, chapterOutline, previousChapters, config, onProgress = null) => {
-    let systemContent = config.systemPrompt || `你是一位专业的小说章节规划师，擅长在有限篇幅内精炼章节内容。严格控制章纲内容长度，总字数不超过500字。`;
+    let systemContent = config.systemPrompt;
     
     if (config.useArchitectPrompt !== false && selectedArchitect && selectedArchitect.prompt) {
       if (config.combinePrompts) {
@@ -780,91 +784,60 @@ ${volumeContent}
     
     let previousChaptersInfo = '';
     if (previousChapters && previousChapters.length > 0) {
-      previousChaptersInfo = '\n\n# 前文章节（按时间顺序排列，从远到近）\n';
-      previousChaptersInfo += '【说明】\n';
-      previousChaptersInfo += '- 往前倒推4章：显示概要\n';
-      previousChaptersInfo += '- 往前倒推3章、2章、1章：显示详细信息\n\n';
+      previousChaptersInfo = '\n\n# 前文章节\n';
+      previousChaptersInfo += '【说明】按顺序阅读以下章节，了解故事发展脉络\n\n';
       
-      const sortedChapters = [...previousChapters].reverse();
-      const totalPrevChapters = sortedChapters.length;
+      const totalChapters = previousChapters.length;
       
-      sortedChapters.forEach((c, i) => {
-        const distanceFromCurrent = totalPrevChapters - i;
-        
-        if (distanceFromCurrent === 4) {
-          previousChaptersInfo += `\n## 【往前倒推4章】第${c.order_index}章《${c.title}》\n`;
-          previousChaptersInfo += `**显示级别**：概要\n\n`;
-          previousChaptersInfo += `${c.outline_content || c.brief || '暂无内容'}\n`;
-        } else if (distanceFromCurrent >= 1 && distanceFromCurrent <= 3) {
-          const levelNames = {1: '1章（最近）', 2: '2章', 3: '3章'};
-          previousChaptersInfo += `\n## 【往前倒推${levelNames[distanceFromCurrent]}】第${c.order_index}章《${c.title}》\n`;
-          previousChaptersInfo += `**显示级别**：详细信息\n\n`;
-          previousChaptersInfo += `- 内容概要：${c.outline_content || c.brief || '无'}\n`;
-
+      // 早期章节（第1章到倒数第4章）- 只显示core_event
+      if (totalChapters > 3) {
+        previousChaptersInfo += '## 早期章节\n';
+        for (let i = 0; i < totalChapters - 3; i++) {
+          const c = previousChapters[i];
+          const coreEvents = Array.isArray(c.core_event) ? c.core_event.join('；') : (c.core_event || '暂无');
+          previousChaptersInfo += `- 第${c.order_index}章《${c.title}》：${coreEvents}\n`;
+        }
+        previousChaptersInfo += '\n';
+      }
+      
+      // 近期章节（最后3章）- 显示完整信息
+      const recentChapters = previousChapters.slice(-3);
+      if (recentChapters.length > 0) {
+        previousChaptersInfo += '## 近期章节\n';
+        recentChapters.forEach((c, idx) => {
+          previousChaptersInfo += `\n### 第${c.order_index}章《${c.title}》\n`;
+          
+          const coreEvents = Array.isArray(c.core_event) ? c.core_event.join('；') : (c.core_event || '暂无');
+          previousChaptersInfo += `- 核心事件：${coreEvents}\n`;
+          
           if (c.scenes && c.scenes.length > 0) {
-            const scenesList = Array.isArray(c.scenes) ? c.scenes : (typeof c.scenes === 'string' ? JSON.parse(c.scenes) : []);
+            const scenesList = Array.isArray(c.scenes) ? c.scenes : JSON.parse(c.scenes);
             previousChaptersInfo += `- 场景：${scenesList.join('、')}\n`;
           }
           
           if (c.characters && c.characters.length > 0) {
-            const charsList = Array.isArray(c.characters) ? c.characters : (typeof c.characters === 'string' ? JSON.parse(c.characters) : []);
+            const charsList = Array.isArray(c.characters) ? c.characters : JSON.parse(c.characters);
             previousChaptersInfo += `- 出场角色：${charsList.join('、')}\n`;
           }
           
           if (c.emotional_goal) {
             previousChaptersInfo += `- 情感目标：${c.emotional_goal}\n`;
           }
-          
-          if (c.keywords && c.keywords.length > 0) {
-            const kwList = Array.isArray(c.keywords) ? c.keywords : (typeof c.keywords === 'string' ? JSON.parse(c.keywords) : []);
-            previousChaptersInfo += `- 关键词：${kwList.join('、')}\n`;
-          }
-          
-          previousChaptersInfo += `- 预估字数：${c.word_count_estimate || '无'}字\n`;
-        }
-      });
+        });
+      }
     }
     
-    const defaultUserPrompt = `请根据以下信息，生成当前章纲：
-
-# 卷纲内容
-{{volumeContent}}
-
-# 当前章节规划
-章节号：第{{chapterIndex}}章
-标题：{{chapterTitle}}
-概述：{{chapterBrief}}
-{{previousChaptersInfo}}
-
-# 要求
-1. 生成当前章节的详细内容，包括：
-   - 核心事件（数组形式，2-3条，每条一句话）
-   - 主要内容概述（简洁扼要，总字数不超过200字）
-   - 出场人物（只列出重点人物：主角和主要配角，不要列出无名成员）
-   - 场景设置（数组形式，每条一句话，不要太详细）
-   - 情感目标（1句话描述本章要传达的情感）
-   - 关键词（3-5个关键词）
-   - 预估字数：{{minWords}}-{{maxWords}}字
-2. 确保与卷纲和前文章节连贯
-3. **重要格式要求**：
-   - 必须输出合法的JSON格式
-   - 使用英文双引号，不要用中文引号
-   - 不要使用三引号
-   - 字符串中的换行用\n表示
-   - characters、scenes、keywords 是字符串数组
-   - core_event 是字符串数组
-   - **严格控制内容长度，总字数不超过500字，避免输出过长**
-4. 输出字段：id、title、core_event（数组）、content、scenes（数组）、characters（数组）、emotional_goal、keywords（数组）、word_count_estimate、order_index
-
-请直接输出合法的JSON，不要包含其他文字或markdown代码块标记！`;
-
-    let userPrompt = config.userPromptTemplate || defaultUserPrompt;
+    let userPrompt = config.userPromptTemplate;
+    
+    if (!userPrompt) {
+      throw new Error('缺少用户提示词模板，请检查配置');
+    }
     
     userPrompt = userPrompt
       .replace(/\{\{volumeContent\}\}/g, volumeContent)
       .replace(/\{\{chapterIndex\}\}/g, chapterOutline.order_index)
       .replace(/\{\{chapterTitle\}\}/g, chapterOutline.title)
-      .replace(/\{\{chapterBrief\}\}/g, chapterOutline.brief || '')
+      .replace(/\{\{chapterBrief\}\}/g, (Array.isArray(chapterOutline.core_event) ? chapterOutline.core_event.join('；') : chapterOutline.core_event) || '')
       .replace(/\{\{previousChaptersInfo\}\}/g, previousChaptersInfo)
       .replace(/\{\{minChapters\}\}/g, config.minChapters || 5)
       .replace(/\{\{maxChapters\}\}/g, config.maxChapters || 10)
@@ -875,9 +848,14 @@ ${volumeContent}
       { role: 'system', content: systemContent },
       { role: 'user', content: userPrompt }
     ];
-    
-    const content = await callAIAPI(messages, config.maxTokens || 4000, config.temperature || 0.7, onProgress, { type: 'json_object' });
-    const parsed = safeJSONParse(content);
+
+    console.log('========== 章纲生成提示词 ==========');
+    console.log('【系统提示】:', systemContent);
+    console.log('【用户提示】:', userPrompt);
+    console.log('=====================================');
+
+    const content = await callAIAPI(messages, config.maxTokens || 2000, config.temperature || 1.5, onProgress, { type: 'json_object' });
+    const parsed = await safeJSONParse(content);
     if (!parsed) throw new Error(`第${chapterOutline.order_index}章细化失败：无法解析JSON`);
     
     return parsed;
@@ -922,6 +900,8 @@ ${volumeContent}
           console.warn('获取现有章节数失败，将从0开始:', e);
         }
         
+        let lastMessages = [];
+        
         if (useIncrementalMode) {
           setStreamingOutput('【第一步】正在规划章节结构...\n\n');
           
@@ -934,10 +914,11 @@ ${volumeContent}
             }
           );
           console.log('章纲规划:', chapterOutlines);
-          
+
           setStreamingOutput(prev => prev + `✓ 规划完成，共${chapterOutlines.length}章\n\n`);
-          
+
           const detailedChapters = [];
+          let messages = [];
           for (let i = 0; i < chapterOutlines.length; i++) {
             const chOutline = chapterOutlines[i];
             setStreamingOutput(prev => prev + `【第二步-${i + 1}/${chapterOutlines.length}】正在生成第${chOutline.order_index}章《${chOutline.title}》...\n\n`);
@@ -954,16 +935,13 @@ ${volumeContent}
               );
               
               const chapterData = {
-                id: detailedChapter.id || Date.now() + i,
+                id: typeof detailedChapter.id === 'number' ? detailedChapter.id : Date.now() + i,
                 title: detailedChapter.title || chOutline.title,
                 core_event: detailedChapter.core_event || '',
-                content: detailedChapter.content || '',
                 scenes: detailedChapter.scenes || [],
                 characters: detailedChapter.characters || [],
                 emotional_goal: detailedChapter.emotional_goal || '',
-                keywords: detailedChapter.keywords || [],
-                word_count_estimate: detailedChapter.word_count_estimate || config.minWords || 2000,
-                order_index: existingChapterCount + i
+                order_index: i
               };
               
               detailedChapters.push(chapterData);
@@ -974,14 +952,12 @@ ${volumeContent}
               detailedChapters.push({
                 id: Date.now() + i,
                 title: chOutline.title,
-                core_event: chOutline.brief || '',
-                content: chOutline.brief || '',
+                core_event: chOutline.core_event || chOutline.brief || '',
                 scenes: [],
                 characters: [],
                 emotional_goal: '',
-                keywords: [],
                 word_count_estimate: config.minWords || 2000,
-                order_index: existingChapterCount + i
+                order_index: i
               });
             }
           }
@@ -1009,7 +985,11 @@ ${volumeContent}
           }
           
           const totalBatches = Math.ceil(totalChapters / batchSize);
-          let messages = [];
+          lastMessages = [];
+
+          if (currentBatch > totalBatches) {
+            currentBatch = totalBatches;
+          }
 
           while (currentBatch <= totalBatches) {
             const existingChapters = allChapters.length;
@@ -1033,28 +1013,27 @@ ${volumeContent}
             
             userPrompt += `# 分解要求\n`;
             userPrompt += `1. 分析卷纲内容，生成第${startChapter}-${endChapter}章的章纲\n`;
-            userPrompt += `2. 每个章需要包含：id、title、core_event、content、scenes、characters、emotional_goal、keywords、word_count_estimate、order_index\n`;
+            userPrompt += `2. 每个章需要包含：id（必须是数字）、title、core_event（数组）、scenes（数组）、characters（数组）、emotional_goal（单个词）、order_index\n`;
             userPrompt += `3. 输出JSON格式，包含chapters数组\n`;
             userPrompt += `4. 使用英文双引号，不要用中文引号\n`;
+            userPrompt += `5. id必须是数字类型，不能是字符串！\n`;
 
-            messages = [
+            lastMessages = [
               { role: 'system', content: systemContent },
               { role: 'user', content: userPrompt }
             ];
             
-            const content = await callAIAPI(messages, config.maxTokens || 3000, config.temperature || 0.7, null, { type: 'json_object' });
+            const content = await callAIAPI(lastMessages, config.maxTokens || 3000, config.temperature || 0.7, null, { type: 'json_object' });
             
-            const parsedData = safeJSONParse(content);
+            const parsedData = await safeJSONParse(content);
             if (parsedData && parsedData.chapters && Array.isArray(parsedData.chapters)) {
               const batchChapters = parsedData.chapters.map((chapter, index) => ({
-                id: chapter.id || Date.now() + (currentBatch - 1) * batchSize + index,
+                id: typeof chapter.id === 'number' ? chapter.id : Date.now() + (currentBatch - 1) * batchSize + index,
                 title: chapter.title,
                 core_event: chapter.core_event,
-                outline_content: chapter.content,
                 scenes: chapter.scenes || [],
                 characters: chapter.characters || [],
                 emotional_goal: chapter.emotional_goal || '',
-                keywords: chapter.keywords || [],
                 word_count_estimate: chapter.word_count_estimate || 2000,
                 order_index: existingChapterCount + allChapters.length + index
               }));
@@ -1078,19 +1057,23 @@ ${volumeContent}
                 body: JSON.stringify({
                   title: chapter.title,
                   core_event: chapter.core_event,
-                  outline_content: chapter.outline_content,
                   scenes: chapter.scenes,
                   characters: chapter.characters,
                   emotional_goal: chapter.emotional_goal,
-                  keywords: chapter.keywords,
-                  word_count_estimate: chapter.word_count_estimate,
                   order_index: chapter.order_index
                 })
               });
 
               if (saveResponse.ok) {
                 const savedChapter = await saveResponse.json();
-                savedChapters.push(savedChapter);
+                console.log('保存章节返回:', savedChapter);
+                if (Array.isArray(savedChapter) && savedChapter.length > 0) {
+                  savedChapters.push(savedChapter[0]);
+                } else if (savedChapter && savedChapter.id) {
+                  savedChapters.push(savedChapter);
+                } else {
+                  console.warn('保存章节返回无效数据:', savedChapter);
+                }
               } else {
                 console.error('保存章纲失败:', await saveResponse.text());
               }
@@ -1099,13 +1082,17 @@ ${volumeContent}
 
             try {
               for (const savedChapter of savedChapters) {
+                if (!savedChapter || !savedChapter.id) {
+                  console.warn('跳过无效的章节数据:', savedChapter);
+                  continue;
+                }
                 await aiVersionAPI.createVersion({
                   project_id: projectId,
                   entity_type: 'chapter',
                   entity_id: savedChapter.id,
-                  version_name: `AI生成-章纲-${savedChapter.title}`,
+                  version_name: `AI生成-章纲-${savedChapter.title || '未命名'}`,
                   content: JSON.stringify(savedChapter),
-                  prompt: messages,
+                  prompt: JSON.stringify(lastMessages || []),
                   provider: 'ai',
                   is_current: true
                 });
@@ -1179,11 +1166,9 @@ ${volumeContent}
             title: data.title,
             order_index: data.order_index,
             core_event: data.core_event,
-            content: data.content,
             scenes: data.scenes,
             characters: data.characters,
             emotional_goal: data.emotional_goal,
-            keywords: data.keywords,
             word_count_estimate: data.word_count_estimate
           });
           break;

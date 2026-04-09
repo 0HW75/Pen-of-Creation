@@ -6,43 +6,41 @@ const { TextArea } = Input;
 const { TabPane } = Tabs;
 
 const defaultConfig = {
-  systemPrompt: '你是一位专业的小说章节规划师，擅长将卷纲分解为精彩的章节大纲。请严格控制输出内容的长度，确保JSON格式完整。',
-  userPromptTemplate: `请根据以下信息，生成当前章纲：
+  systemPrompt: `你是一位小说章纲生成助手。
 
-# 卷纲内容
-{{volumeContent}}
+【输出格式 - 必须严格遵守】
+只输出纯JSON，格式如下（不要任何其他文字）：
+{"id": 1, "title": "标题", "core_event": ["事件A", "事件B"], "scenes": ["场景X"], "characters": ["角色Y"], "emotional_goal": "情感", "order_index": 1}
 
-# 当前章节规划
-章节号：第{{chapterIndex}}章
-标题：{{chapterTitle}}
+【注意】id必须是数字，不能是字符串！
+
+【禁止】
+- 不要输出markdown代码块
+- 不要输出任何解释性文字
+- 字符串值内不要使用英文双引号，如需引号用单引号替代`,
+  userPromptTemplate: `根据以下卷纲生成章纲：
+
+卷纲：{{volumeContent}}
+章节：第{{chapterIndex}}章《{{chapterTitle}}》
 概述：{{chapterBrief}}
-{{previousChaptersInfo}}
+前文章节：{{previousChaptersInfo}}
 
-# 要求
-1. 生成当前章节的详细内容，包括：
-   - 核心事件（2-3句话概括，不超过100字）
-   - 主要内容概述（5-8句话，每句话不超过50字，总字数不超过400字）
-   - 出场人物（主要角色列表，每个角色名称不超过20字）
-   - 场景设置（主要场景描述，不超过100字）
-   - 情感目标（1-2句话描述本章要传达的情感）
-   - 关键词（3-5个关键词）
-   - 预估字数：{{minWords}}-{{maxWords}}字
-2. 确保与卷纲和前文章节连贯
-3. **重要格式要求**：
-   - 必须输出合法的JSON格式
-   - 使用英文双引号，不要用中文引号
-   - 不要使用三引号
-   - 字符串中的换行用\\n表示
-   - characters、scenes、keywords 是字符串数组
-   - **严格控制内容长度，避免输出过长导致JSON截断**
-4. 输出字段：id、title、core_event、content、scenes（数组）、characters（数组）、emotional_goal、keywords（数组）、word_count_estimate、order_index
+【必须严格遵循的JSON格式 - 不要修改任何内容】
+{"id": 1, "title": "标题", "core_event": ["事件1", "事件2"], "scenes": ["场景1"], "characters": ["角色1"], "emotional_goal": "情感", "order_index": 1}
 
-请直接输出合法的JSON，不要包含其他文字或markdown代码块标记！`,
+【重要】id必须是数字类型，如1、2、3等，不能是字符串！
+
+【规则】
+- 只输出纯JSON，不要markdown代码块
+- 使用英文半角引号 ""
+- 数组元素用英文逗号分隔，结尾不要逗号
+- 对象属性用英文逗号分隔，结尾不要逗号
+- 总字数不超过500字`,
   minChapters: 5,
   maxChapters: 10,
   minWords: 2000,
   maxWords: 5000,
-  maxTokens: 8000,
+  maxTokens: 2000,
   temperature: 0.7,
   useArchitectPrompt: true,
   combinePrompts: true,
@@ -262,15 +260,15 @@ const ChapterGenerationConfig = ({
                 name="maxTokens"
                 rules={[
                   { required: true, message: '请输入Max Tokens' },
-                  { type: 'number', min: 1000, max: 200000, message: 'Max Tokens必须在1000-200000之间' }
+                  { type: 'number', min: 100, max: 200000, message: 'Max Tokens必须在100-200000之间' }
                 ]}
               >
                 <InputNumber
-                  min={1000}
+                  min={100}
                   max={200000}
-                  step={1000}
+                  step={100}
                   style={{ width: '100%' }}
-                  placeholder="1000-200000"
+                  placeholder="100-200000"
                 />
               </Form.Item>
 
