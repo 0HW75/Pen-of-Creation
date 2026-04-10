@@ -30,8 +30,17 @@ export const useSaveElements = (projectId) => {
     if (name.includes('能量') || name.includes('体系') || name.includes('修炼') || name.includes('功法') || name.includes('等级')) {
       return 'energy_system';
     }
-    if (name.includes('世界') || name.includes('维度') || name.includes('位面') || name.includes('宇宙') || name.includes('空间')) {
-      return 'world_architecture';
+    if (name.includes('维度') || name.includes('位面')) {
+      return 'dimension';
+    }
+    if (name.includes('区域') || name.includes('版图') || name.includes('领地')) {
+      return 'region';
+    }
+    if (name.includes('天体') || name.includes('星球') || name.includes('恒星') || name.includes('卫星')) {
+      return 'celestial_body';
+    }
+    if (name.includes('法则') || name.includes('规则') || name.includes('物理法则') || name.includes('魔法规则')) {
+      return 'natural_law';
     }
 
     if (elementData?.abilities || elementData?.personality || elementData?.background || 
@@ -107,20 +116,26 @@ export const useSaveElements = (projectId) => {
               elementType = 'energy_system';
             } else if (elementId.includes('char')) {
               elementType = 'character';
-            } else if (elementId.includes('loc')) {
+            } else if (elementId.includes('loc') || elementId.includes('loc_')) {
               elementType = 'location';
             } else if (elementId.includes('faction') || elementId.includes('fac_')) {
               elementType = 'faction';
             } else if (elementId.includes('item') || elementId.includes('itm_')) {
               elementType = 'item';
-            } else if (elementId.includes('world') || elementId.includes('arch') || elementId.includes('dim_')) {
-              elementType = 'world_architecture';
+            } else if (elementId.includes('dim_')) {
+              elementType = 'dimension';
+            } else if (elementId.includes('reg_')) {
+              elementType = 'region';
+            } else if (elementId.includes('cel_')) {
+              elementType = 'celestial_body';
+            } else if (elementId.includes('nat_')) {
+              elementType = 'natural_law';
             } else if (elementId.includes('civilization') || elementId.includes('civ_')) {
               elementType = 'civilization';
             } else if (elementId.includes('historical') || elementId.includes('event') || elementId.includes('evt_') || elementId.includes('hist_')) {
               elementType = 'historical_event';
-            } else if (elementId.includes('dimension') || elementId.includes('dim_')) {
-              elementType = 'dimension';
+            } else if (elementId.includes('energy') || elementId.includes('ener_')) {
+              elementType = 'energy_system';
             } else {
               elementType = inferElementType(elementName, elementData);
             }
@@ -322,83 +337,116 @@ export const useSaveElements = (projectId) => {
               }
               break;
 
-            case 'world_architecture':
-              const architectureType = elementData.architecture_type || '';
-              console.log(`保存世界架构: ${elementName}, 类型: ${architectureType}`);
-              
+            case 'dimension':
               try {
-                if (architectureType.includes('维度') || architectureType.includes('位面')) {
-                  await worldSettingApi.createDimension({
-                    world_id: worldId,
-                    name: elementData.name || elementName,
-                    dimension_type: elementData.dimension_type || '位面',
-                    description: elementData.description || '',
-                    entry_conditions: elementData.entry_conditions || '',
-                    physical_properties: elementData.physical_properties || '',
-                    time_flow: elementData.time_flow || '',
-                    special_rules: elementData.special_rules || '',
-                  });
-                  console.log('维度保存成功:', elementName);
-                } else if (architectureType.includes('区域') || architectureType.includes('地理')) {
-                  await worldSettingApi.createRegion({
-                    world_id: worldId,
-                    name: elementData.name || elementName,
-                    region_type: elementData.region_type || '区域',
-                    description: elementData.description || '',
-                    climate: elementData.climate || '',
-                    terrain: elementData.terrain || '',
-                    geographical_coordinates: elementData.geographical_coordinates || '',
-                  });
-                  console.log('区域保存成功:', elementName);
-                } else if (architectureType.includes('天体')) {
-                  await worldSettingApi.createCelestialBody({
-                    world_id: worldId,
-                    name: elementData.name || elementName,
-                    celestial_type: elementData.celestial_type || '行星',
-                    description: elementData.description || '',
-                    position: elementData.position || '',
-                    size: elementData.size || '',
-                    characteristics: elementData.characteristics || '',
-                  });
-                  console.log('天体保存成功:', elementName);
-                } else if (architectureType.includes('法则') || architectureType.includes('规则')) {
-                  await worldSettingApi.createNaturalLaw({
-                    world_id: worldId,
-                    name: elementData.name || elementName,
-                    law_type: elementData.law_type || '物理法则',
-                    description: elementData.description || '',
-                    effects: elementData.effects || '',
-                    exceptions: elementData.exceptions || '',
-                  });
-                  console.log('自然法则保存成功:', elementName);
-                } else {
-                  await worldSettingApi.createDimension({
-                    world_id: worldId,
-                    name: elementData.name || elementName,
-                    dimension_type: elementData.dimension_type || '位面',
-                    description: elementData.description || '',
-                    entry_conditions: elementData.entry_conditions || '',
-                    physical_properties: elementData.physical_properties || '',
-                    time_flow: elementData.time_flow || '',
-                    special_rules: elementData.special_rules || '',
-                  });
-                  console.log('世界架构(默认维度)保存成功:', elementName);
-                }
-                savedCount++;
-              } catch (archError) {
-                console.error('世界架构保存失败，尝试使用物品API:', archError);
+                await worldSettingApi.createDimension({
+                  world_id: worldId,
+                  name: elementData.name || elementName,
+                  dimension_type: elementData.dimension_type || elementData.type || '位面',
+                  description: elementData.description || '',
+                  entry_conditions: elementData.entry_conditions || '',
+                  physical_properties: elementData.physical_properties || '',
+                  time_flow: elementData.time_flow || '',
+                  special_rules: elementData.special_rules || '',
+                });
+                console.log('维度保存成功:', elementName);
+              } catch (dimError) {
+                console.error('维度保存失败:', dimError);
                 await itemApi.createItem({
                   project_id: projectId,
                   world_id: worldId,
                   name: elementData.name || elementName,
                   description: elementData.description || '',
-                  item_type: '世界架构',
+                  item_type: '维度',
                   properties: JSON.stringify(elementData),
                   origin: 'AI生成',
                   significance: elementData.significance || '核心设定',
                 });
-                savedCount++;
               }
+              savedCount++;
+              break;
+
+            case 'region':
+              try {
+                await worldSettingApi.createRegion({
+                  world_id: worldId,
+                  name: elementData.name || elementName,
+                  region_type: elementData.region_type || elementData.type || '区域',
+                  description: elementData.description || '',
+                  climate: elementData.climate || '',
+                  terrain: elementData.terrain || '',
+                  geographical_coordinates: elementData.geographical_coordinates || '',
+                });
+                console.log('区域保存成功:', elementName);
+              } catch (regError) {
+                console.error('区域保存失败:', regError);
+                await itemApi.createItem({
+                  project_id: projectId,
+                  world_id: worldId,
+                  name: elementData.name || elementName,
+                  description: elementData.description || '',
+                  item_type: '区域',
+                  properties: JSON.stringify(elementData),
+                  origin: 'AI生成',
+                  significance: elementData.significance || '核心设定',
+                });
+              }
+              savedCount++;
+              break;
+
+            case 'celestial_body':
+              try {
+                await worldSettingApi.createCelestialBody({
+                  world_id: worldId,
+                  name: elementData.name || elementName,
+                  celestial_type: elementData.celestial_type || elementData.type || '行星',
+                  description: elementData.description || '',
+                  position: elementData.position || '',
+                  size: elementData.size || '',
+                  characteristics: elementData.characteristics || '',
+                });
+                console.log('天体保存成功:', elementName);
+              } catch (celError) {
+                console.error('天体保存失败:', celError);
+                await itemApi.createItem({
+                  project_id: projectId,
+                  world_id: worldId,
+                  name: elementData.name || elementName,
+                  description: elementData.description || '',
+                  item_type: '天体',
+                  properties: JSON.stringify(elementData),
+                  origin: 'AI生成',
+                  significance: elementData.significance || '核心设定',
+                });
+              }
+              savedCount++;
+              break;
+
+            case 'natural_law':
+              try {
+                await worldSettingApi.createNaturalLaw({
+                  world_id: worldId,
+                  name: elementData.name || elementName,
+                  law_type: elementData.law_type || elementData.type || '物理法则',
+                  description: elementData.description || '',
+                  effects: elementData.effects || '',
+                  exceptions: elementData.exceptions || '',
+                });
+                console.log('自然法则保存成功:', elementName);
+              } catch (lawError) {
+                console.error('自然法则保存失败:', lawError);
+                await itemApi.createItem({
+                  project_id: projectId,
+                  world_id: worldId,
+                  name: elementData.name || elementName,
+                  description: elementData.description || '',
+                  item_type: '自然法则',
+                  properties: JSON.stringify(elementData),
+                  origin: 'AI生成',
+                  significance: elementData.significance || '核心设定',
+                });
+              }
+              savedCount++;
               break;
 
             case 'civilization':

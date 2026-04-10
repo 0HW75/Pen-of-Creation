@@ -50,7 +50,6 @@ generators = {
     'dimension': DimensionGenerator(),
     'celestial_body': CelestialBodyGenerator(),
     'natural_law': NaturalLawGenerator(),
-    'world_architecture': DimensionGenerator(),
     'relation': RelationGenerator(),
     'social_class': SocialClassGenerator(),
     'political_system': PoliticalSystemGenerator(),
@@ -444,12 +443,9 @@ def execute_batch_generation_stream():
                     logger.info(f"[{session_id}] 元素 '{element_name}' - 流式AI调用完成，耗时: {stream_duration:.2f}秒，响应长度: {len(full_response)} 字符")
                     logger.debug(f"[{session_id}] 元素 '{element_name}' - AI原始响应:\n{full_response}")
 
-                    generation_logger.log_step3_input(entity_type, element_name, final_prompt, generated_context)
-
                     logger.info(f"[{session_id}] 元素 '{element_name}' - 阶段: 结果解析开始")
 
                     parsed_result = result_parser.parse(full_response, entity_type)
-                    generation_logger.log_step3_output(entity_type, element_name, full_response, parsed_result)
 
                     if parsed_result.get('success'):
                         result_data = parsed_result.get('data', {})
@@ -600,7 +596,10 @@ def _get_related_entity_types(entity_type):
         'item': ['character', 'faction', 'location', 'energy_system'],
         'energy_system': ['civilization', 'faction', 'character'],
         'civilization': ['location', 'faction', 'energy_system', 'character'],
-        'world_architecture': ['energy_system', 'civilization', 'location'],
+        'dimension': ['energy_system', 'civilization', 'location'],
+        'region': ['location', 'faction', 'civilization'],
+        'celestial_body': ['location', 'energy_system'],
+        'natural_law': ['energy_system', 'civilization'],
         'historical_event': ['character', 'faction', 'location', 'civilization'],
         'relation': ['character', 'faction'],
     }
@@ -708,7 +707,10 @@ def integrate_elements_stream():
                 'locations': '地点',
                 'factions': '势力组织',
                 'items': '物品道具',
-                'world_architecture': '世界架构',
+                'dimensions': '维度/位面',
+                'regions': '区域',
+                'celestial_bodies': '天体',
+                'natural_laws': '自然法则',
                 'energy_systems': '能量体系',
                 'civilizations': '文明体系',
                 'social_classes': '社会阶层',
@@ -767,7 +769,10 @@ def integrate_elements_stream():
                 'locations': len(all_integrated.get('locations', [])),
                 'factions': len(all_integrated.get('factions', [])),
                 'items': len(all_integrated.get('items', [])),
-                'world_architecture': len(all_integrated.get('world_architecture', [])),
+                'dimensions': len(all_integrated.get('dimensions', [])),
+                'regions': len(all_integrated.get('regions', [])),
+                'celestial_bodies': len(all_integrated.get('celestial_bodies', [])),
+                'natural_laws': len(all_integrated.get('natural_laws', [])),
                 'energy_systems': len(all_integrated.get('energy_systems', [])),
                 'civilizations': len(all_integrated.get('civilizations', [])),
                 'social_classes': len(all_integrated.get('social_classes', [])),
@@ -818,7 +823,10 @@ def integrate_elements():
             'locations': len(integrated_elements.get('locations', [])),
             'factions': len(integrated_elements.get('factions', [])),
             'items': len(integrated_elements.get('items', [])),
-            'world_architecture': len(integrated_elements.get('world_architecture', [])),
+            'dimensions': len(integrated_elements.get('dimensions', [])),
+            'regions': len(integrated_elements.get('regions', [])),
+            'celestial_bodies': len(integrated_elements.get('celestial_bodies', [])),
+            'natural_laws': len(integrated_elements.get('natural_laws', [])),
             'energy_systems': len(integrated_elements.get('energy_systems', [])),
             'civilizations': len(integrated_elements.get('civilizations', [])),
             'social_classes': len(integrated_elements.get('social_classes', [])),
@@ -858,7 +866,8 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
     def build_ai_prompt(items: list, element_type: str) -> str:
         type_names = {
             'characters': '角色', 'locations': '地点', 'factions': '势力组织',
-            'items': '物品道具', 'world_architecture': '世界架构',
+            'items': '物品道具', 'dimensions': '维度/位面', 'regions': '区域',
+            'celestial_bodies': '天体', 'natural_laws': '自然法则',
             'energy_systems': '能量体系',
             'civilizations': '文明体系', 'social_classes': '社会阶层',
             'political_systems': '政治体系', 'economic_systems': '经济体系',
@@ -956,9 +965,9 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
 
     result = {}
     element_types = ['characters', 'locations', 'factions', 'items',
-                     'world_architecture', 'energy_systems',
-                     'civilizations', 'social_classes', 'political_systems',
-                     'economic_systems', 'cultural_customs',
+                     'dimensions', 'regions', 'celestial_bodies', 'natural_laws',
+                     'energy_systems', 'civilizations', 'social_classes',
+                     'political_systems', 'economic_systems', 'cultural_customs',
                      'timeline_events', 'relations']
 
     for elem_type in element_types:

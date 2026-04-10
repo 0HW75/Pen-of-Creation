@@ -3,21 +3,29 @@ import { Card, Checkbox, Button, Space, Typography, Row, Col, Badge, Tabs, messa
 import {
   UserOutlined, EnvironmentOutlined, TeamOutlined, ShoppingOutlined,
   GlobalOutlined, ThunderboltOutlined, BankOutlined, HistoryOutlined,
-  LinkOutlined, MergeCellsOutlined, ReloadOutlined
+  LinkOutlined, MergeCellsOutlined, ReloadOutlined,
+  StarOutlined, ExperimentOutlined, FlagOutlined, DollarOutlined, CoffeeOutlined
 } from '@ant-design/icons';
 import { worldviewGenerationApi } from '../../services/api';
 
 const { Title, Text } = Typography;
 
-// 模块配置 - 与数据库 9 种类型对应
+// 模块配置 - 与数据库 16 种类型对应
 const moduleConfig = {
   characters: { title: '角色库', icon: <UserOutlined />, color: '#1890ff' },
   locations: { title: '地点场景', icon: <EnvironmentOutlined />, color: '#52c41a' },
   factions: { title: '组织势力', icon: <TeamOutlined />, color: '#fa8c16' },
   items: { title: '物品资源', icon: <ShoppingOutlined />, color: '#eb2f96' },
-  world_architecture: { title: '世界架构', icon: <GlobalOutlined />, color: '#722ed1' },
+  dimensions: { title: '维度/位面', icon: <GlobalOutlined />, color: '#722ed1' },
+  regions: { title: '区域', icon: <EnvironmentOutlined />, color: '#13c2c2' },
+  celestial_bodies: { title: '天体', icon: <StarOutlined />, color: '#fa541c' },
+  natural_laws: { title: '自然法则', icon: <ExperimentOutlined />, color: '#fa8c16' },
   energy_systems: { title: '能量体系', icon: <ThunderboltOutlined />, color: '#f5222d' },
-  society_systems: { title: '社会体系', icon: <BankOutlined />, color: '#13c2c2' },
+  civilizations: { title: '文明体系', icon: <BankOutlined />, color: '#52c41a' },
+  social_classes: { title: '社会阶层', icon: <TeamOutlined />, color: '#722ed1' },
+  political_systems: { title: '政治体系', icon: <FlagOutlined />, color: '#eb2f96' },
+  economic_systems: { title: '经济体系', icon: <DollarOutlined />, color: '#13c2c2' },
+  cultural_customs: { title: '文化习俗', icon: <CoffeeOutlined />, color: '#fa541c' },
   timeline_events: { title: '历史脉络', icon: <HistoryOutlined />, color: '#fa541c' },
   relations: { title: '关系网络', icon: <LinkOutlined />, color: '#2f54eb' },
 };

@@ -76,9 +76,8 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
           project_id: data.projectId,
           content_scope: data.contentScope,
           extraction_config: {
-            target_types: ['characters', 'locations', 'factions', 'items', 'world_architecture', 'energy_systems', 'society_systems', 'timeline_events', 'relations'],
+            target_types: ['characters', 'locations', 'factions', 'items', 'dimensions', 'regions', 'celestial_bodies', 'natural_laws', 'energy_systems', 'civilizations', 'social_classes', 'political_systems', 'economic_systems', 'cultural_customs', 'timeline_events', 'relations'],
             strategy: 'infer_potential',
-            include_evidence: true,
           },
         });
         
@@ -127,7 +126,7 @@ const CreateWorldWizard = ({ visible, onCancel, onComplete }) => {
         selected_elements: selectedElements,  // 用户选择的元素ID
         batch_config: {
           batch_size: 5,
-          priority_order: ['energy_systems', 'characters', 'locations', 'factions', 'world_architecture', 'society_systems', 'items', 'timeline_events', 'relations'],
+          priority_order: ['energy_systems', 'characters', 'locations', 'factions', 'dimensions', 'regions', 'celestial_bodies', 'natural_laws', 'civilizations', 'social_classes', 'political_systems', 'economic_systems', 'cultural_customs', 'items', 'timeline_events', 'relations'],
           generation_strategy: 'moderate',
           conflict_resolution: 'prompt',
         },

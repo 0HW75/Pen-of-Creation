@@ -83,7 +83,10 @@ def extract_blueprint_elements():
                     'locations': len(extracted_elements.get('locations', [])),
                     'factions': len(extracted_elements.get('factions', [])),
                     'items': len(extracted_elements.get('items', [])),
-                    'world_architecture': len(extracted_elements.get('world_architecture', [])),
+                    'dimensions': len(extracted_elements.get('dimensions', [])),
+                    'regions': len(extracted_elements.get('regions', [])),
+                    'celestial_bodies': len(extracted_elements.get('celestial_bodies', [])),
+                    'natural_laws': len(extracted_elements.get('natural_laws', [])),
                     'energy_systems': len(extracted_elements.get('energy_systems', [])),
                     'civilizations': len(extracted_elements.get('civilizations', [])),
                     'social_classes': len(extracted_elements.get('social_classes', [])),
@@ -115,7 +118,10 @@ def _mock_extract_elements(content: str, config: dict) -> dict:
         'locations': [],
         'factions': [],
         'items': [],
-        'world_architecture': [],
+        'dimensions': [],
+        'regions': [],
+        'celestial_bodies': [],
+        'natural_laws': [],
         'energy_systems': [],
         'civilizations': [],
         'social_classes': [],
@@ -198,13 +204,13 @@ def extract_blueprint_elements_stream():
             content_scope['project_id'] = project_id
             target_types = extraction_config.get('target_types', [
                 'characters', 'locations', 'factions', 'items',
-                'world_architecture', 'energy_systems',
-                'civilizations', 'social_classes', 'political_systems',
-                'economic_systems', 'cultural_customs',
+                'dimensions', 'regions', 'celestial_bodies', 'natural_laws',
+                'energy_systems', 'civilizations', 'social_classes',
+                'political_systems', 'economic_systems', 'cultural_customs',
                 'timeline_events', 'relations'
             ])
             strategy = extraction_config.get('strategy', 'infer_potential')
-            include_evidence = extraction_config.get('include_evidence', True)
+            include_evidence = extraction_config.get('include_evidence', False)
 
             yield f"data: {json.dumps({'type': 'start', 'message': '开始提取设定元素'}, ensure_ascii=False)}\n\n"
 
@@ -213,7 +219,10 @@ def extract_blueprint_elements_stream():
                 'locations': [],
                 'factions': [],
                 'items': [],
-                'world_architecture': [],
+                'dimensions': [],
+                'regions': [],
+                'celestial_bodies': [],
+                'natural_laws': [],
                 'energy_systems': [],
                 'civilizations': [],
                 'social_classes': [],
@@ -242,7 +251,10 @@ def extract_blueprint_elements_stream():
                     'locations': '地点场景（城市、建筑、自然景观等）',
                     'factions': '组织势力（门派、国家、组织等）',
                     'items': '物品资源（武器、法宝、道具等）',
-                    'world_architecture': '世界架构（世界规则、维度、地理等）',
+                    'dimensions': '维度/位面（不同世界、维度空间等）',
+                    'regions': '区域（地理区域、领地、版图等）',
+                    'celestial_bodies': '天体（星球、恒星、卫星等）',
+                    'natural_laws': '自然法则（物理规则、魔法法则等）',
                     'energy_systems': '能量体系（力量等级、修炼体系等）',
                     'civilizations': '文明体系（文明类型、发展阶段等）',
                     'social_classes': '社会阶层（贵族、平民、奴隶等）',
@@ -319,7 +331,7 @@ def extract_blueprint_elements_stream():
 
                 yield f"data: {json.dumps({'type': 'progress', 'stage': 'chapter', 'current': 1, 'total': 1, 'progress': 50}, ensure_ascii=False)}\n\n"
 
-                chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.outline_content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
+                chapter_content = f"【章纲标题】{chapter.title}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
                 story_context_chapters.append(chapter_content)
 
                 for msg in process_with_stream(chapter_content, f'章纲《{chapter.title}》', 'chapter'):
@@ -398,7 +410,15 @@ def extract_blueprint_elements_stream():
                     progress = 30 + int((ch_idx / total_chapters) * 70) if total_chapters > 0 else 30
                     yield f"data: {json.dumps({'type': 'progress', 'stage': 'chapter', 'current': ch_idx + 1, 'total': total_chapters, 'progress': progress}, ensure_ascii=False)}\n\n"
 
-                    chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.outline_content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
+                    chapter_content = f"""【卷/分组】{chapter.volume}
+【章纲标题】{chapter.title}
+【核心事件】{chapter.core_event}
+【情感目标】{chapter.emotional_goal}
+【场景】{chapter.scenes}
+【角色】{chapter.characters}
+【类型】{chapter.type}
+【字数预估】{chapter.word_count_estimate}
+【状态】{chapter.status}"""
                     story_context_chapters.append(chapter_content)
 
                     for msg in process_with_stream(chapter_content, f'章纲《{chapter.title}》', 'chapter'):
@@ -508,7 +528,7 @@ def extract_blueprint_elements_stream():
                         chapter_progress = int(((idx + ch_idx / total_chapters) / total_volumes) * 50) if total_volumes > 0 else 0
                         yield f"data: {json.dumps({'type': 'progress', 'stage': 'chapter', 'current': ch_idx + 1, 'total': total_chapters, 'progress': 50 + chapter_progress}, ensure_ascii=False)}\n\n"
 
-                        chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.outline_content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
+                        chapter_content = f"【章纲标题】{chapter.title}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
                         story_context_chapters.append(chapter_content)
 
                         for msg in process_with_stream(chapter_content, f'章纲《{chapter.title}》', 'chapter'):
@@ -623,7 +643,7 @@ def extract_blueprint_elements_stream():
                         chapter_progress = int(((idx + ch_idx / total_chapters) / total_volumes) * 50) if total_volumes > 0 else 0
                         yield f"data: {json.dumps({'type': 'progress', 'stage': 'chapter', 'current': ch_idx + 1, 'total': total_chapters, 'progress': 50 + chapter_progress}, ensure_ascii=False)}\n\n"
 
-                        chapter_content = f"【章纲标题】{chapter.title}\n【章纲内容】{chapter.outline_content}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
+                        chapter_content = f"【章纲标题】{chapter.title}\n【核心事件】{chapter.core_event}\n【场景】{chapter.scenes}\n【角色】{chapter.characters}"
                         story_context_chapters.append(chapter_content)
 
                         for msg in process_with_stream(chapter_content, f'章纲《{chapter.title}》', 'chapter'):
@@ -661,7 +681,10 @@ def extract_blueprint_elements_stream():
                 'locations': len(integrated_elements.get('locations', [])),
                 'factions': len(integrated_elements.get('factions', [])),
                 'items': len(integrated_elements.get('items', [])),
-                'world_architecture': len(integrated_elements.get('world_architecture', [])),
+                'dimensions': len(integrated_elements.get('dimensions', [])),
+                'regions': len(integrated_elements.get('regions', [])),
+                'celestial_bodies': len(integrated_elements.get('celestial_bodies', [])),
+                'natural_laws': len(integrated_elements.get('natural_laws', [])),
                 'energy_systems': len(integrated_elements.get('energy_systems', [])),
                 'civilizations': len(integrated_elements.get('civilizations', [])),
                 'social_classes': len(integrated_elements.get('social_classes', [])),
@@ -747,10 +770,7 @@ def _extract_with_ai(text: str, target_types: list, strategy: str, include_evide
         )
 
         ai_response = ai_result.get('content', '')
-        generation_logger.log_step1_extraction("AI_RESPONSE", ai_response)
-        generation_logger.log_step1_extraction("INPUT_PROMPT", prompt[:2000])
         result = _parse_ai_response(ai_response)
-        generation_logger.log_step1_extraction("PARSED_RESULT", result)
         return result
     except Exception as e:
         logger.error(f'AI提取失败 [{context}]: {str(e)}')
@@ -782,10 +802,7 @@ def _extract_with_ai_stream(text: str, target_types: list, strategy: str, includ
                 full_response += content
                 yield {'type': 'stream_chunk', 'content': content}
 
-        generation_logger.log_step1_extraction("STREAM_AI_RESPONSE", full_response)
-        generation_logger.log_step1_extraction("STREAM_INPUT_PROMPT", prompt[:2000])
         parsed_result = _parse_ai_response(full_response)
-        generation_logger.log_step1_extraction("STREAM_PARSED_RESULT", parsed_result)
         yield {'type': 'result', 'data': parsed_result}
 
     except Exception as e:
@@ -816,7 +833,10 @@ def _parse_ai_response(ai_response: str) -> dict:
         'locations': [],
         'factions': [],
         'items': [],
-        'world_architecture': [],
+        'dimensions': [],
+        'regions': [],
+        'celestial_bodies': [],
+        'natural_laws': [],
         'energy_systems': [],
         'civilizations': [],
         'social_classes': [],
@@ -874,7 +894,10 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
             'locations': '地点',
             'factions': '势力组织',
             'items': '物品道具',
-            'world_architecture': '世界架构',
+            'dimensions': '维度/位面',
+            'regions': '区域',
+            'celestial_bodies': '天体',
+            'natural_laws': '自然法则',
             'energy_systems': '能量体系',
             'civilizations': '文明体系',
             'social_classes': '社会阶层',
@@ -998,9 +1021,7 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
             }
 
         prompt = build_ai_prompt(group, element_type)
-        generation_logger.log_step2_merge(f"{element_type}_MERGE_PROMPT", prompt[:2000])
         ai_result = call_ai_integrate(prompt)
-        generation_logger.log_step2_merge(f"{element_type}_MERGE_RESULT", ai_result)
 
         if not ai_result or 'groups' not in ai_result:
             names = [item.get('name', '') for item in group]
@@ -1038,9 +1059,9 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
 
     result = {}
     element_types = ['characters', 'locations', 'factions', 'items',
-                     'world_architecture', 'energy_systems',
-                     'civilizations', 'social_classes', 'political_systems',
-                     'economic_systems', 'cultural_customs',
+                     'dimensions', 'regions', 'celestial_bodies', 'natural_laws',
+                     'energy_systems', 'civilizations', 'social_classes',
+                     'political_systems', 'economic_systems', 'cultural_customs',
                      'timeline_events', 'relations']
 
     for elem_type in element_types:
@@ -1050,18 +1071,16 @@ def _integrate_elements_with_ai(elements: dict) -> dict:
             continue
 
         groups = group_similar_items(items, threshold=0.6)
-        generation_logger.log_step2_merge(f"{elem_type}_GROUPS", {
-            'original_count': len(items),
-            'group_count': len(groups),
-            'groups': [{'name': g[0].get('name', ''), 'size': len(g)} for g in groups]
-        })
 
         id_prefix_map = {
             'characters': 'char',
             'locations': 'loc',
             'factions': 'faction',
             'items': 'item',
-            'world_architecture': 'world_arch',
+            'dimensions': 'dim',
+            'regions': 'reg',
+            'celestial_bodies': 'cel',
+            'natural_laws': 'nat',
             'energy_systems': 'energy',
             'civilizations': 'civ',
             'social_classes': 'sclass',
