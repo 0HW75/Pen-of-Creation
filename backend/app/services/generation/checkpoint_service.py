@@ -59,6 +59,28 @@ class CheckpointService:
             if not name and data:
                 name = self._generate_checkpoint_name(stage, checkpoint_type, data)
 
+            # 调试日志：记录保存的数据内容
+            if data:
+                data_keys = list(data.keys())
+                logger.info(f"[DEBUG] 保存检查点数据 keys: {data_keys}")
+                if 'elements' in data:
+                    elements_data = data.get('elements')
+                    logger.info(f"[DEBUG] elements 类型: {type(elements_data)}")
+                    if isinstance(elements_data, dict):
+                        elements_count = {k: len(v) for k, v in elements_data.items() if isinstance(v, list)}
+                        logger.info(f"[DEBUG] elements 内容: {elements_count}")
+                    else:
+                        logger.info(f"[DEBUG] elements 不是 dict: {elements_data}")
+                if 'integrated_elements' in data:
+                    int_elements_count = {k: len(v) for k, v in data.get('integrated_elements', {}).items() if isinstance(v, list)}
+                    logger.info(f"[DEBUG] integrated_elements 内容: {int_elements_count}")
+                # 记录数据大小
+                try:
+                    data_str = json.dumps(data, ensure_ascii=False)
+                    logger.info(f"[DEBUG] checkpoint_data 字符串长度: {len(data_str)}")
+                except Exception as e:
+                    logger.info(f"[DEBUG] 序列化数据失败: {e}")
+
             # 检查是否已存在相同session_id的检查点
             existing = AIGenerationCheckpoint.query.filter_by(
                 session_id=session_id
@@ -71,8 +93,8 @@ class CheckpointService:
                 existing.checkpoint_data = json.dumps(data, ensure_ascii=False) if data else None
                 existing.progress_percent = progress_percent
                 existing.status = status
-                existing.updated_at = datetime.utcnow()
-                existing.expires_at = datetime.utcnow() + timedelta(days=self.DEFAULT_EXPIRY_DAYS)
+                existing.updated_at = datetime.now()
+                existing.expires_at = datetime.now() + timedelta(days=self.DEFAULT_EXPIRY_DAYS)
                 if parent_checkpoint_id is not None:
                     existing.parent_checkpoint_id = parent_checkpoint_id
                 if name:
@@ -90,7 +112,7 @@ class CheckpointService:
                     checkpoint_data=json.dumps(data, ensure_ascii=False) if data else None,
                     progress_percent=progress_percent,
                     status=status,
-                    expires_at=datetime.utcnow() + timedelta(days=self.DEFAULT_EXPIRY_DAYS),
+                    expires_at=datetime.now() + timedelta(days=self.DEFAULT_EXPIRY_DAYS),
                     parent_checkpoint_id=parent_checkpoint_id,
                     name=name
                 )
@@ -382,7 +404,7 @@ class CheckpointService:
             int: 清理的检查点数量
         """
         try:
-            now = datetime.utcnow()
+            now = datetime.now()
             expired = AIGenerationCheckpoint.query.filter(
                 AIGenerationCheckpoint.expires_at < now
             ).all()
@@ -419,7 +441,7 @@ class CheckpointService:
                 return False
             
             checkpoint.status = status
-            checkpoint.updated_at = datetime.utcnow()
+            checkpoint.updated_at = datetime.now()
             db.session.commit()
             
             logger.info(f"更新检查点状态: {checkpoint_id} -> {status}")
@@ -467,7 +489,7 @@ class CheckpointService:
             'results': results,
             'story_context': story_context,
             'batch_config': batch_config,
-            'saved_at': datetime.utcnow().isoformat()
+            'saved_at': datetime.now().isoformat()
         }
 
         progress_percent = int((current_index / len(elements)) * 100) if elements else 0

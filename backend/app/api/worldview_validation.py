@@ -156,6 +156,15 @@ def get_checkpoint(checkpoint_id):
                 'message': '检查点不存在'
             }), 404
 
+        logger.info(f"[DEBUG] get_checkpoint 返回: keys={list(checkpoint.keys())}")
+        if 'parsed_data' in checkpoint:
+            parsed = checkpoint['parsed_data']
+            logger.info(f"[DEBUG] parsed_data keys: {list(parsed.keys()) if parsed else 'None'}")
+            if parsed and 'elements' in parsed:
+                logger.info(f"[DEBUG] parsed_data.elements 类型: {type(parsed.get('elements'))}")
+            if parsed and 'integrated_elements' in parsed:
+                logger.info(f"[DEBUG] parsed_data.integrated_elements 类型: {type(parsed.get('integrated_elements'))}")
+
         return jsonify({
             'code': 200,
             'data': checkpoint
@@ -287,3 +296,214 @@ def cleanup_expired_checkpoints():
     except Exception as e:
         logger.error(f'清理过期检查点失败: {str(e)}', exc_info=True)
         return jsonify({'code': 500, 'message': f'清理失败: {str(e)}'}), 500
+
+
+@api_bp.route('/worldview/snapshot/<int:chapter_id>', methods=['GET'])
+def get_chapter_snapshot(chapter_id):
+    """
+    获取章节快照
+
+    URL参数:
+        chapter_id: 章纲ID
+
+    Response:
+    {
+        "code": 200,
+        "data": {
+            "id": 1,
+            "chapter_id": 123,
+            "chapter_title": "第三章",
+            "snapshot_type": "chapter",
+            "elements_data": {...},
+            "new_elements": {...},
+            "changed_elements": {...},
+            "element_count": 150
+        }
+    }
+    """
+    try:
+        from app.services.generation.chapter_snapshot_service import chapter_snapshot_service
+
+        snapshot = chapter_snapshot_service.get_snapshot(chapter_id)
+
+        if not snapshot:
+            return jsonify({
+                'code': 404,
+                'message': '章节快照不存在'
+            }), 404
+
+        return jsonify({
+            'code': 200,
+            'message': '获取成功',
+            'data': snapshot
+        })
+
+    except Exception as e:
+        logger.error(f'获取章节快照失败: {str(e)}', exc_info=True)
+        return jsonify({'code': 500, 'message': f'获取失败: {str(e)}'}), 500
+
+
+@api_bp.route('/worldview/chapter-index/<int:chapter_id>', methods=['GET'])
+def get_chapter_index(chapter_id):
+    """
+    获取章节索引用途：AI生成指定章节内容时获取上下文
+
+    URL参数:
+        chapter_id: 章纲ID
+
+    Response:
+    {
+        "code": 200,
+        "data": {
+            "chapter_id": 123,
+            "chapter_title": "第五章",
+            "elements_by_type": {
+                "characters": [...],
+                "locations": [...],
+                ...
+            },
+            "total_count": 150,
+            "snapshot_id": 5
+        }
+    }
+    """
+    try:
+        from app.services.generation.chapter_snapshot_service import chapter_snapshot_service
+
+        index_data = chapter_snapshot_service.get_chapter_index(chapter_id)
+
+        if not index_data:
+            return jsonify({
+                'code': 404,
+                'message': '章节索引不存在'
+            }), 404
+
+        return jsonify({
+            'code': 200,
+            'message': '获取成功',
+            'data': index_data
+        })
+
+    except Exception as e:
+        logger.error(f'获取章节索引失败: {str(e)}', exc_info=True)
+        return jsonify({'code': 500, 'message': f'获取失败: {str(e)}'}), 500
+
+
+@api_bp.route('/worldview/element-history/<element_name>', methods=['GET'])
+def get_element_history(element_name):
+    """
+    获取元素的历史变更记录
+
+    URL参数:
+        element_name: 元素名称
+
+    Query参数:
+        project_id: 项目ID（必填）
+
+    Response:
+    {
+        "code": 200,
+        "data": {
+            "element_name": "张三",
+            "element_type": "character",
+            "first_appearance": "第一章",
+            "changes": [
+                {"chapter": "第一章", "status": "学徒", "change_type": "add"},
+                {"chapter": "第三章", "status": "炼气期", "change_type": "update", "field": "level"}
+            ]
+        }
+    }
+    """
+    try:
+        project_id = request.args.get('project_id', type=int)
+
+        if not project_id:
+            return jsonify({'code': 400, 'message': '缺少 project_id 参数'}), 400
+
+        from app.services.generation.chapter_snapshot_service import chapter_snapshot_service
+
+        history = chapter_snapshot_service.get_element_history(project_id, element_name)
+
+        return jsonify({
+            'code': 200,
+            'message': '获取成功',
+            'data': history
+        })
+
+    except Exception as e:
+        logger.error(f'获取元素历史失败: {str(e)}', exc_info=True)
+        return jsonify({'code': 500, 'message': f'获取失败: {str(e)}'}), 500
+
+
+@api_bp.route('/worldview/snapshots', methods=['GET'])
+def get_project_snapshots():
+    """
+    获取项目的所有快照列表
+
+    Query参数:
+        project_id: 项目ID（必填）
+
+    Response:
+    {
+        "code": 200,
+        "data": [
+            {"id": 1, "chapter_title": "大纲", "snapshot_type": "outline", ...},
+            {"id": 2, "chapter_title": "第一卷", "snapshot_type": "volume", ...},
+            ...
+        ]
+    }
+    """
+    try:
+        project_id = request.args.get('project_id', type=int)
+
+        if not project_id:
+            return jsonify({'code': 400, 'message': '缺少 project_id 参数'}), 400
+
+        from app.services.generation.chapter_snapshot_service import chapter_snapshot_service
+
+        snapshots = chapter_snapshot_service.get_project_snapshots(project_id)
+
+        return jsonify({
+            'code': 200,
+            'message': '获取成功',
+            'data': snapshots
+        })
+
+    except Exception as e:
+        logger.error(f'获取快照列表失败: {str(e)}', exc_info=True)
+        return jsonify({'code': 500, 'message': f'获取失败: {str(e)}'}), 500
+
+
+@api_bp.route('/worldview/snapshots/<int:snapshot_id>', methods=['DELETE'])
+def delete_snapshot(snapshot_id):
+    """
+    删除快照
+
+    URL参数:
+        snapshot_id: 快照ID
+
+    Response:
+    {
+        "code": 200,
+        "message": '删除成功'
+    }
+    """
+    try:
+        from app.services.generation.chapter_snapshot_service import chapter_snapshot_service
+
+        success = chapter_snapshot_service.delete_snapshot(snapshot_id)
+
+        if success:
+            return jsonify({
+                'code': 200,
+                'message': '删除成功'
+            })
+        else:
+            return jsonify({
+                'code': 404,
+                'message': '快照不存在'
+            }), 404
+
+    except Exception as e:
+        logger.error(f'删除快照失败: {str(e)}', exc_info=True)
+        return jsonify({'code': 500, 'message': f'删除失败: {str(e)}'}), 500

@@ -44,7 +44,7 @@ const CheckpointRestoreModal = ({
       if (response.data?.code === 200) {
         const result = response.data.data || {};
         const validCheckpoints = (result.checkpoints || []).filter(cp => {
-          return cp.status === 'in_progress' || cp.status === 'aborted';
+          return cp.status === 'in_progress' || cp.status === 'aborted' || cp.status === 'completed';
         });
         console.log(`加载到 ${validCheckpoints.length} 个可用检查点`);
         setCheckpoints(validCheckpoints);

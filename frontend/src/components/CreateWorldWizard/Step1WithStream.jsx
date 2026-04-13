@@ -40,7 +40,8 @@ const Step1WithStream = ({ onComplete, initialData }) => {
   
   const outputRef = useRef(null);
   const aiStreamRef = useRef(null);
-  const abortControllerRef = useRef(null); // 用于中止fetch请求
+  const abortControllerRef = useRef(null);
+  const isRestoringRef = useRef(false); // 防止重复恢复
 
   useEffect(() => {
     loadProjects();
@@ -101,6 +102,12 @@ const Step1WithStream = ({ onComplete, initialData }) => {
 
   // 处理检查点恢复
   const handleCheckpointRestore = async (data, checkpoint) => {
+    if (isRestoringRef.current) {
+      console.log('[检查点恢复] 正在恢复中，跳过重复调用');
+      return;
+    }
+    isRestoringRef.current = true;
+
     console.log('从检查点恢复 - 原始数据:', data);
     setCheckpointData(data);
     
@@ -118,16 +125,28 @@ const Step1WithStream = ({ onComplete, initialData }) => {
     }
     
     // 如果检查点包含提取结果，直接完成
-    if (cpData.merged_result && Object.keys(cpData.merged_result).length > 0) {
+    // 优先使用 integrated_elements（AI整合后的结果），其次使用 merged_result
+    const hasIntegratedElements = cpData.integrated_elements && Object.keys(cpData.integrated_elements).length > 0;
+    const hasMergedResult = cpData.merged_result && Object.keys(cpData.merged_result).length > 0;
+    const hasElements = cpData.elements && Object.keys(cpData.elements).length > 0;
+
+    if (hasIntegratedElements || hasMergedResult || hasElements) {
       message.success(`已恢复检查点 #${checkpoint.id}，提取进度: ${checkpoint.progress_percent || data?.progress_percent}%`);
-      
-      // 调用完成回调，传递恢复的数据
+
+      const recoveredElements = cpData.integrated_elements || cpData.elements || cpData.merged_result;
+
+      console.log('[检查点恢复] 数据恢复情况:');
+      console.log('  - integrated_elements 存在:', hasIntegratedElements);
+      console.log('  - elements 存在:', hasElements);
+      console.log('  - merged_result 存在:', hasMergedResult);
+      console.log('  - 最终使用的元素数量:', Object.keys(recoveredElements).length);
+
       try {
         await onComplete({
           projectId: selectedProject,
           contentScope: cpData.content_scope || {},
           extractionResult: {
-            elements: cpData.merged_result,
+            elements: recoveredElements,
             statistics: cpData.statistics || {},
           },
           storyContext: cpData.story_context || {},
@@ -350,7 +369,14 @@ const Step1WithStream = ({ onComplete, initialData }) => {
   };
 
   const handleStartExtraction = async () => {
+    if (isStreaming) {
+      console.log('[提取] 已有提取任务在进行中');
+      return;
+    }
+
     const values = await form.validateFields();
+
+    isRestoringRef.current = false;
     
     const contentScope = {
       type: contentScopeType,

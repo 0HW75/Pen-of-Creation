@@ -8,6 +8,7 @@ import logging
 from typing import Dict, List, Any, Optional, Callable
 from app.services.ai_service import ai_service
 from app.services.generation.checkpoint_service import checkpoint_service
+from app.services.generation.chapter_snapshot_service import chapter_snapshot_service
 from app.models import Project, Outline, Volume, Chapter
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,8 @@ class WorldviewElementExtractor:
         extraction_config: dict = None,
         progress_callback: Callable[[str, int, int], None] = None,
         session_id: str = None,
-        user_id: int = None
+        user_id: int = None,
+        enable_snapshot: bool = True
     ) -> Dict[str, List[Dict]]:
         """
         增量式提取所有类型的设定元素（支持检查点恢复）
@@ -46,6 +48,7 @@ class WorldviewElementExtractor:
         3. 逐个提取卷纲内容并合并
         4. 逐个提取章纲内容并合并
         5. 每个阶段完成后保存检查点
+        6. 如果 enable_snapshot=True，同时生成章节快照
 
         Args:
             content_scope: 内容范围配置
@@ -53,10 +56,13 @@ class WorldviewElementExtractor:
             progress_callback: 进度回调函数(stage, current, total)
             session_id: 会话ID，用于检查点保存和恢复
             user_id: 用户ID，用于检查点保存
+            enable_snapshot: 是否启用章节快照功能，默认True
 
         Returns:
             包含所有类型元素的字典
         """
+        self.enable_snapshot = enable_snapshot
+        self.previous_snapshot = None
         # 设置会话信息
         self.session_id = session_id
         self.user_id = user_id
@@ -136,6 +142,17 @@ class WorldviewElementExtractor:
                     if progress_callback:
                         progress_callback('outline', 1, 1)
 
+                    # 保存大纲快照
+                    if outline_id and project_id:
+                        outline = Outline.query.get(outline_id)
+                        self._save_chapter_snapshot(
+                            project_id=project_id,
+                            snapshot_type='outline',
+                            elements_data=merged_result,
+                            outline_id=outline_id,
+                            chapter_title=outline.title if outline else '大纲'
+                        )
+
                     # 保存大纲阶段检查点
                     if session_id and project_id and user_id:
                         self._save_extraction_checkpoint(
@@ -171,6 +188,16 @@ class WorldviewElementExtractor:
                                 source_chapter={'type': 'volume', 'id': volume.id, 'title': volume.title}
                             )
                             merged_result = self._merge_results(merged_result, volume_elements)
+
+                        # 保存卷纲快照
+                        self._save_chapter_snapshot(
+                            project_id=project_id,
+                            snapshot_type='volume',
+                            elements_data=merged_result,
+                            outline_id=outline_id,
+                            volume_id=volume.id,
+                            chapter_title=volume.title
+                        )
 
                         # 保存卷纲阶段检查点
                         if session_id and project_id and user_id:
@@ -217,6 +244,17 @@ class WorldviewElementExtractor:
                                 )
                                 merged_result = self._merge_results(merged_result, chapter_elements)
 
+                            # 保存章纲快照
+                            self._save_chapter_snapshot(
+                                project_id=project_id,
+                                snapshot_type='chapter',
+                                elements_data=merged_result,
+                                outline_id=outline_id,
+                                volume_id=volume.id,
+                                chapter_id=chapter.id,
+                                chapter_title=chapter.title
+                            )
+
                             # 保存章纲阶段检查点
                             if session_id and project_id and user_id:
                                 processed_chapter_ids.append(chapter.id)
@@ -254,6 +292,16 @@ class WorldviewElementExtractor:
                             )
                             merged_result = self._merge_results(merged_result, volume_elements)
 
+                        # 保存卷纲快照
+                        self._save_chapter_snapshot(
+                            project_id=project_id,
+                            snapshot_type='volume',
+                            elements_data=merged_result,
+                            outline_id=volume.outline_id if volume else None,
+                            volume_id=volume_id,
+                            chapter_title=volume.title if volume else None
+                        )
+
                         # 保存卷纲阶段检查点
                         if session_id and project_id and user_id:
                             self._save_extraction_checkpoint(
@@ -280,6 +328,16 @@ class WorldviewElementExtractor:
                                     source_chapter={'type': 'chapter', 'id': chapter.id, 'title': chapter.title, 'volume_id': volume_id}
                                 )
                                 merged_result = self._merge_results(merged_result, chapter_elements)
+
+                            # 保存章纲快照
+                            self._save_chapter_snapshot(
+                                project_id=project_id,
+                                snapshot_type='chapter',
+                                elements_data=merged_result,
+                                volume_id=volume_id,
+                                chapter_id=chapter.id,
+                                chapter_title=chapter.title
+                            )
 
                             # 保存章纲阶段检查点
                             if session_id and project_id and user_id:
@@ -313,6 +371,15 @@ class WorldviewElementExtractor:
                                 source_chapter={'type': 'chapter', 'id': chapter_id, 'title': chapter.title}
                             )
                             merged_result = self._merge_results(merged_result, chapter_elements)
+
+                        # 保存章纲快照
+                        self._save_chapter_snapshot(
+                            project_id=project_id,
+                            snapshot_type='chapter',
+                            elements_data=merged_result,
+                            chapter_id=chapter_id,
+                            chapter_title=chapter.title if chapter else None
+                        )
 
                         # 保存章纲阶段检查点
                         if session_id and project_id and user_id:
@@ -434,10 +501,12 @@ class WorldviewElementExtractor:
 
             stage = checkpoint.get('stage', '')
             merged_result = parsed_data.get('merged_result', {})
+            integrated_elements = parsed_data.get('integrated_elements') or parsed_data.get('elements')
 
             resumed_state = {
                 'stage': stage,
                 'merged_result': merged_result,
+                'integrated_elements': integrated_elements,
                 'outline_id': parsed_data.get('outline_id'),
                 'volume_id': parsed_data.get('volume_id'),
                 'chapter_id': parsed_data.get('chapter_id'),
@@ -466,6 +535,146 @@ class WorldviewElementExtractor:
             result += f"【故事模型】{outline.story_model}\n"
 
         return result
+
+    def _detect_changes(
+        self,
+        previous: Dict[str, List[Dict]],
+        current: Dict[str, List[Dict]]
+    ) -> Dict[str, List[Dict]]:
+        """
+        检测当前与上一个快照之间的变化
+
+        Args:
+            previous: 上一个状态的元素
+            current: 当前状态的元素
+
+        Returns:
+            包含变化的元素字典
+        """
+        changes = {}
+
+        for element_type in current:
+            if element_type not in previous:
+                changes[element_type] = current[element_type]
+                continue
+
+            type_changes = []
+            current_by_name = {item.get('name', '').lower(): item for item in current[element_type]}
+            prev_by_name = {item.get('name', '').lower(): item for item in previous[element_type]}
+
+            for name, current_item in current_by_name.items():
+                if name in prev_by_name:
+                    prev_item = prev_by_name[name]
+                    item_changes = self._compare_elements(prev_item, current_item)
+                    if item_changes:
+                        item_changes['_element_id'] = current_item.get('id', name)
+                        item_changes['_element_name'] = current_item.get('name', name)
+                        type_changes.append(item_changes)
+                else:
+                    type_changes.append({
+                        '_is_new': True,
+                        '_element_id': current_item.get('id', name),
+                        '_element_name': current_item.get('name', name),
+                        '_new_data': current_item
+                    })
+
+            if type_changes:
+                changes[element_type] = type_changes
+
+        return changes
+
+    def _compare_elements(self, prev_item: Dict, current_item: Dict) -> Optional[Dict]:
+        """
+        比较两个元素，找出变化的字段
+
+        Returns:
+            包含变化信息的字典，如果没有变化返回None
+        """
+        changes = {}
+        key_fields = ['name', 'type', 'brief', 'description', 'status', 'level']
+
+        for field in key_fields:
+            prev_val = prev_item.get(field, '')
+            curr_val = current_item.get(field, '')
+            if prev_val != curr_val:
+                changes[field] = {'old': prev_val, 'new': curr_val}
+
+        extra_fields = set(current_item.keys()) - set(key_fields) - {'id', 'source_chapter', 'sources'}
+        for field in extra_fields:
+            prev_val = prev_item.get(field, '')
+            curr_val = current_item.get(field, '')
+            if prev_val != curr_val:
+                changes[field] = {'old': prev_val, 'new': curr_val}
+
+        return changes if changes else None
+
+    def _save_chapter_snapshot(
+        self,
+        project_id: int,
+        snapshot_type: str,
+        elements_data: Dict[str, List[Dict]],
+        outline_id: int = None,
+        volume_id: int = None,
+        chapter_id: int = None,
+        chapter_title: str = None
+    ) -> None:
+        """
+        保存章节快照
+
+        Args:
+            project_id: 项目ID
+            snapshot_type: 快照类型
+            elements_data: 元素数据
+            outline_id: 大纲ID
+            volume_id: 卷纲ID
+            chapter_id: 章纲ID
+            chapter_title: 章节标题
+        """
+        if not getattr(self, 'enable_snapshot', True):
+            return
+
+        try:
+            new_elements = self._get_new_elements(self.previous_snapshot, elements_data) if self.previous_snapshot else elements_data
+            changed_elements = self._detect_changes(self.previous_snapshot or {}, elements_data) if self.previous_snapshot else {}
+
+            chapter_snapshot_service.save_snapshot(
+                project_id=project_id,
+                snapshot_type=snapshot_type,
+                elements_data=elements_data,
+                new_elements=new_elements,
+                changed_elements=changed_elements,
+                outline_id=outline_id,
+                volume_id=volume_id,
+                chapter_id=chapter_id,
+                chapter_title=chapter_title
+            )
+
+            self.previous_snapshot = elements_data
+            logger.info(f"保存章节快照成功: type={snapshot_type}, chapter_id={chapter_id}")
+
+        except Exception as e:
+            logger.error(f"保存章节快照失败: {str(e)}", exc_info=True)
+
+    def _get_new_elements(
+        self,
+        previous: Dict[str, List[Dict]],
+        current: Dict[str, List[Dict]]
+    ) -> Dict[str, List[Dict]]:
+        """获取新增的元素"""
+        new_elements = {}
+
+        for element_type in current:
+            if element_type not in previous:
+                new_elements[element_type] = current[element_type]
+                continue
+
+            prev_names = {item.get('name', '').lower() for item in previous[element_type]}
+            new_items = [item for item in current[element_type] if item.get('name', '').lower() not in prev_names]
+
+            if new_items:
+                new_elements[element_type] = new_items
+
+        return new_elements
 
     def _extract_volume_content(self, volume_id: int) -> str:
         """提取卷纲的所有文本内容"""

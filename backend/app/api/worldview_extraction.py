@@ -708,21 +708,32 @@ def extract_blueprint_elements_stream():
                 'chapters': story_context_chapters
             }
 
+            logger.info(f"[DEBUG] integrated_elements 类型: {type(integrated_elements)}")
+            logger.info(f"[DEBUG] integrated_elements 键: {list(integrated_elements.keys()) if isinstance(integrated_elements, dict) else 'Not a dict'}")
+            if isinstance(integrated_elements, dict):
+                for k, v in integrated_elements.items():
+                    if isinstance(v, list):
+                        logger.info(f"[DEBUG] integrated_elements.{k} 数量: {len(v)}")
+
             checkpoint_id = None
             if session_id:
+                checkpoint_data = {
+                    'merged_result': merged_result,
+                    'content_scope': content_scope,
+                    'story_context': story_context,
+                    'statistics': statistics,
+                    'elements': integrated_elements
+                }
+                logger.info(f"[DEBUG] checkpoint_data 键: {list(checkpoint_data.keys())}")
+                logger.info(f"[DEBUG] checkpoint_data.elements 是否为 dict: {isinstance(checkpoint_data['elements'], dict)}")
+
                 checkpoint = checkpoint_service.save_checkpoint(
                     session_id=session_id,
                     project_id=project_id,
                     user_id=1,
                     stage='extraction',
                     checkpoint_type='extraction_complete',
-                    data={
-                        'merged_result': merged_result,
-                        'content_scope': content_scope,
-                        'story_context': story_context,
-                        'statistics': statistics,
-                        'elements': integrated_elements
-                    },
+                    data=checkpoint_data,
                     progress_percent=100,
                     status='completed'
                 )

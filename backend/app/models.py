@@ -147,12 +147,10 @@ class Chapter(db.Model):
     volume = db.Column(db.String(255), default='')  # 卷/分组名称，如"第一卷"
     title = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text, default='')  # 章节正文（实际写作内容）
-    outline_content = db.Column(db.Text, default='')  # 章纲内容（AI生成的规划参考）
     scenes = db.Column(db.Text, default='[]')
     characters = db.Column(db.Text, default='[]')
     core_event = db.Column(db.Text, default='')
     emotional_goal = db.Column(db.Text, default='')
-    keywords = db.Column(db.Text, default='[]')
     word_count_estimate = db.Column(db.Integer, default=0)
     status = db.Column(db.String(50), default='未写')
     type = db.Column(db.String(50), default='普通')
@@ -170,12 +168,10 @@ class Chapter(db.Model):
             'volume': self.volume,
             'title': self.title,
             'content': self.content,
-            'outline_content': self.outline_content,
             'scenes': self.scenes,
             'characters': self.characters,
             'core_event': self.core_event,
             'emotional_goal': self.emotional_goal,
-            'keywords': self.keywords,
             'word_count_estimate': self.word_count_estimate,
             'status': self.status,
             'type': self.type,
@@ -2410,8 +2406,8 @@ class AIGenerationCheckpoint(db.Model):
     checkpoint_data = db.Column(db.Text, nullable=True)  # JSON格式
     progress_percent = db.Column(db.Integer, default=0)
     status = db.Column(db.String(20), default='in_progress')  # in_progress/completed/aborted
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     expires_at = db.Column(db.DateTime, nullable=True)  # 过期时间
     parent_checkpoint_id = db.Column(db.Integer, nullable=True)  # 关联的Step1检查点ID
     name = db.Column(db.String(255), nullable=True)  # 检查点名称
@@ -2475,13 +2471,13 @@ class EntityChapterAppearance(db.Model):
     description = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     __table_args__ = (
         db.Index('idx_entity_chapter', 'entity_type', 'entity_id', 'chapter_id'),
         db.Index('idx_chapter_entity', 'chapter_id', 'entity_type'),
         db.UniqueConstraint('chapter_id', 'entity_type', 'entity_id', name='uq_chapter_entity'),
     )
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -2493,4 +2489,72 @@ class EntityChapterAppearance(db.Model):
             'description': self.description,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+class WorldviewChapterSnapshot(db.Model):
+    """世界观章节快照表 - 存储每个章节提取后的设定快照"""
+    __tablename__ = 'worldview_chapter_snapshot'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    project_id = db.Column(db.Integer, nullable=False)
+    outline_id = db.Column(db.Integer, nullable=True)
+    volume_id = db.Column(db.Integer, nullable=True)
+    chapter_id = db.Column(db.Integer, nullable=True)
+    chapter_title = db.Column(db.String(200), nullable=True)
+    snapshot_type = db.Column(db.String(20), nullable=False)
+    elements_data = db.Column(db.Text, nullable=True)
+    new_elements = db.Column(db.Text, nullable=True)
+    changed_elements = db.Column(db.Text, nullable=True)
+    element_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'outline_id': self.outline_id,
+            'volume_id': self.volume_id,
+            'chapter_id': self.chapter_id,
+            'chapter_title': self.chapter_title,
+            'snapshot_type': self.snapshot_type,
+            'elements_data': self.elements_data,
+            'new_elements': self.new_elements,
+            'changed_elements': self.changed_elements,
+            'element_count': self.element_count,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class WorldviewElementChangeLog(db.Model):
+    """世界观元素变更记录表 - 追踪元素在各章节的变更履历"""
+    __tablename__ = 'worldview_element_change_log'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    project_id = db.Column(db.Integer, nullable=False)
+    element_type = db.Column(db.String(50), nullable=False)
+    element_name = db.Column(db.String(200), nullable=False)
+    element_id = db.Column(db.String(100), nullable=False)
+    chapter_id = db.Column(db.Integer, nullable=False)
+    chapter_title = db.Column(db.String(200), nullable=True)
+    change_type = db.Column(db.String(20), nullable=False)
+    field_name = db.Column(db.String(50), nullable=True)
+    old_value = db.Column(db.Text, nullable=True)
+    new_value = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'element_type': self.element_type,
+            'element_name': self.element_name,
+            'element_id': self.element_id,
+            'chapter_id': self.chapter_id,
+            'chapter_title': self.chapter_title,
+            'change_type': self.change_type,
+            'field_name': self.field_name,
+            'old_value': self.old_value,
+            'new_value': self.new_value,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
