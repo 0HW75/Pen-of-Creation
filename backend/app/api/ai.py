@@ -330,14 +330,33 @@ def stream_chat_completion():
             response_format=response_format
         )
         
-        # 流式响应
+        # 流式响应 - 添加心跳保持连接
         def generate():
+            import time
+            last_heartbeat = time.time()
+            heartbeat_interval = 15  # 每15秒发送一次心跳
+            
             for chunk in stream:
-                import json
+                # 发送数据块
                 yield f"data: {json.dumps(chunk)}\n\n"
+                
+                # 检查是否需要发送心跳
+                current_time = time.time()
+                if current_time - last_heartbeat >= heartbeat_interval:
+                    yield ":heartbeat\n\n"  # SSE注释作为心跳
+                    last_heartbeat = current_time
+                    
             yield "data: [DONE]\n\n"
         
-        return current_app.response_class(generate(), mimetype='text/event-stream')
+        return current_app.response_class(
+            generate(), 
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'X-Accel-Buffering': 'no',  # 禁用Nginx缓冲
+                'Connection': 'keep-alive'
+            }
+        )
         
     except ValueError as e:
         logger.error(f'AI服务错误: {str(e)}')
