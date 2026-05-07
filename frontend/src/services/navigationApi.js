@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api/navigation';
+const API_BASE_URL = '/api/navigation';
 
 // 获取创作流程图数据
 export const getNavigationFlow = async () => {

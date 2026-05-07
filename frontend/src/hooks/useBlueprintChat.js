@@ -316,7 +316,7 @@ ${message}
 
       abortControllerRef.current = new AbortController();
       
-      const response = await fetch('http://localhost:5000/api/ai/stream', {
+      const response = await fetch('/api/ai/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -492,7 +492,7 @@ ${message}
           chapter_count: mergeField(extractedContent.chapter_count, data.chapter_count, 'chapter_count')
         };
         console.log('更新卷纲数据:', updatedData);
-        response = await fetch(`http://localhost:5000/api/volumes/${data.id}`, {
+        response = await fetch(`/api/volumes/${data.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedData)
@@ -522,7 +522,7 @@ ${message}
         console.log('更新章纲数据:', updatedData);
         console.log('更新章纲 - core_event:', updatedData.core_event);
         console.log('发送给后端的数据:', JSON.stringify(updatedData, null, 2));
-        response = await fetch(`http://localhost:5000/api/chapters/${data.id}`, {
+        response = await fetch(`/api/chapters/${data.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedData)
