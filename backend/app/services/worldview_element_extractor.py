@@ -8,7 +8,7 @@ import logging
 from typing import Dict, List, Any, Optional, Callable
 from app.services.ai_service import ai_service
 from app.services.generation.checkpoint_service import checkpoint_service
-from app.services.generation.chapter_snapshot_service import chapter_snapshot_service
+# from app.services.generation.chapter_snapshot_service import chapter_snapshot_service  # 模块不存在，暂时注释
 from app.models import Project, Outline, Volume, Chapter
 
 logger = logging.getLogger(__name__)
