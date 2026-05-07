@@ -62,7 +62,7 @@ class AIConfig:
                 "siliconflow": {
                     "api_key": "",
                     "api_base": "https://api.siliconflow.cn/v1",
-                    "model": "gpt-3.5-turbo",
+                    "model": "deepseek-ai/DeepSeek-V2.5",
                     "timeout": 30
                 }
             }
