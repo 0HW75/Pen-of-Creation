@@ -62,7 +62,7 @@ class AIConfig:
                 "siliconflow": {
                     "api_key": "",
                     "api_base": "https://api.siliconflow.cn/v1",
-                    "model": "deepseek-ai/DeepSeek-V2.5",
+                    "model": "deepseek-ai/DeepSeek-V4-Flash",
                     "timeout": 30
                 }
             }
