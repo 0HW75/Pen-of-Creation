@@ -240,11 +240,13 @@ class SiliconFlowProvider(AIServiceProvider):
             }
             
             # 发送流式请求
+            # 流式请求需要更长的读取超时时间 (connect_timeout, read_timeout)
+            timeout_val = float(kwargs.get('timeout', self.config.get('timeout', 30)))
             response = requests.post(
                 f"{api_base}/chat/completions",
                 json=params,
                 headers=headers,
-                timeout=params['timeout'],
+                timeout=(10, timeout_val),
                 stream=True
             )
             

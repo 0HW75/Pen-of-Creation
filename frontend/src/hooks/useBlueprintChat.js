@@ -345,6 +345,10 @@ ${message}
         const lines = chunk.split('\n');
 
         for (const line of lines) {
+          // 忽略心跳注释和空行
+          if (line.startsWith(':') || line.trim() === '') {
+            continue;
+          }
           if (line.startsWith('data: ')) {
             const data = line.substring(6);
             if (data === '[DONE]') break;

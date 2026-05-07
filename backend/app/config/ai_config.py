@@ -32,7 +32,7 @@ class AIConfig:
         优先级：环境变量 > 配置文件
         """
         default_config = {
-            "default_provider": "openai",
+            "default_provider": "siliconflow",
             "providers": {
                 "openai": {
                     "api_key": "",
@@ -62,7 +62,7 @@ class AIConfig:
                 "siliconflow": {
                     "api_key": "",
                     "api_base": "https://api.siliconflow.cn/v1",
-                    "model": "gpt-3.5-turbo",
+                    "model": "deepseek-ai/DeepSeek-V4-Flash",
                     "timeout": 30
                 }
             }
