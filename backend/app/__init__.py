@@ -5,6 +5,23 @@ from flask_compress import Compress
 import os
 import time
 
+# 加载 .env 文件中的环境变量
+try:
+    from dotenv import load_dotenv
+    # 从应用根目录加载 .env 文件
+    env_path = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+        print(f"已加载环境变量文件: {env_path}")
+    else:
+        # 尝试从父目录加载
+        env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+        if os.path.exists(env_path):
+            load_dotenv(env_path)
+            print(f"已加载环境变量文件: {env_path}")
+except ImportError:
+    print("python-dotenv 未安装，跳过 .env 文件加载")
+
 # 创建数据库实例
 db = SQLAlchemy()
 
