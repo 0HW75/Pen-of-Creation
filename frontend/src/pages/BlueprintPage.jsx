@@ -241,7 +241,7 @@ const BlueprintPage = ({ projectId }) => {
   // 保存卷纲详情
   const handleSaveVolumeDetail = async (updatedVolume) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/volumes/${updatedVolume.id}`, {
+      const response = await fetch(`/api/volumes/${updatedVolume.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -269,7 +269,7 @@ const BlueprintPage = ({ projectId }) => {
   // 保存章纲详情
   const handleSaveChapterDetail = async (updatedChapter) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/chapters/${updatedChapter.id}`, {
+      const response = await fetch(`/api/chapters/${updatedChapter.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

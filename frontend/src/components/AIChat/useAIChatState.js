@@ -38,7 +38,7 @@ export const useAIChatState = ({
     if (!projectId) return;
     setIsLoadingChapters(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/projects/${projectId}/chapters`);
+      const response = await fetch(`/api/projects/${projectId}/chapters`);
       if (response.ok) {
         const data = await response.json();
         setAllChapters(data || []);

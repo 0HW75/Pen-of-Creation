@@ -351,6 +351,7 @@ def stream_chat_completion():
 def get_ai_config():
     """
     获取AI服务配置
+    注意：API Key 会被遮罩处理，不会暴露完整密钥
     """
     try:
         config = {
@@ -359,17 +360,15 @@ def get_ai_config():
             'configured_providers': ai_service.get_configured_providers(),
             'providers': {}
         }
-        
-        # 获取每个提供商的配置
+
+        # 获取每个提供商的配置（遮罩敏感信息）
         for provider in ai_service.get_available_providers():
-            provider_config = ai_config.get_provider_config(provider)
-            # 隐藏API密钥
-            safe_config = {k: v for k, v in provider_config.items() if k != 'api_key'}
-            safe_config['configured'] = ai_config.is_provider_configured(provider)
-            config['providers'][provider] = safe_config
-        
+            provider_config = ai_config.get_provider_config(provider, mask_sensitive=True)
+            provider_config['configured'] = ai_config.is_provider_configured(provider)
+            config['providers'][provider] = provider_config
+
         return jsonify({'success': True, 'config': config})
-        
+
     except Exception as e:
         logger.error(f'获取AI配置失败: {str(e)}')
         return jsonify({'error': str(e)}), 500

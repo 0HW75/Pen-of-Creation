@@ -125,7 +125,7 @@ export const useBlueprintManagement = (projectId) => {
         bodyData.response_format = responseFormat;
       }
       
-      const response = await fetch('http://localhost:5000/api/ai/stream', {
+      const response = await fetch('/api/ai/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -264,7 +264,7 @@ export const useBlueprintManagement = (projectId) => {
         { role: 'user', content: userPrompt }
       ];
       
-      const response = await fetch('http://localhost:5000/api/ai/stream', {
+      const response = await fetch('/api/ai/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -340,7 +340,7 @@ export const useBlueprintManagement = (projectId) => {
             version: 1
           };
           
-          const saveResponse = await fetch('http://localhost:5000/api/outlines', {
+          const saveResponse = await fetch('/api/outlines', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -693,7 +693,7 @@ ${outlineContent}
         let savedVolumes = [];
         try {
           for (const volume of allVolumes) {
-            const saveResponse = await fetch('http://localhost:5000/api/outlines/' + selectedOutline.id + '/decompose', {
+            const saveResponse = await fetch('/api/outlines/' + selectedOutline.id + '/decompose', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -1049,7 +1049,7 @@ ${volumeContent}
         if (allChapters.length > 0) {
           try {
             for (const chapter of allChapters) {
-              const saveResponse = await fetch('http://localhost:5000/api/volumes/' + selectedVolume.id + '/decompose', {
+              const saveResponse = await fetch('/api/volumes/' + selectedVolume.id + '/decompose', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json'
@@ -1176,7 +1176,7 @@ ${volumeContent}
           content = JSON.stringify(data);
       }
 
-      const response = await fetch('http://localhost:5000/api/ai-versions', {
+      const response = await fetch('/api/ai-versions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

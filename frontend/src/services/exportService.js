@@ -20,7 +20,7 @@ export const exportToWord = async (content, title, onProgress) => {
     onProgress && onProgress(20, '正在准备导出Word文档...');
     
     // 这里使用后端API来生成Word文档
-    const response = await axios.post('http://localhost:5000/api/export/word', {
+    const response = await axios.post('/api/export/word', {
       content,
       title
     }, {
@@ -77,7 +77,7 @@ export const exportToPdf = async (content, title, onProgress) => {
     onProgress && onProgress(20, '正在准备导出PDF文档...');
     
     // 这里使用后端API来生成PDF文档
-    const response = await axios.post('http://localhost:5000/api/export/pdf', {
+    const response = await axios.post('/api/export/pdf', {
       content,
       title
     }, {
