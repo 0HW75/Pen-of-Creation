@@ -3,6 +3,8 @@ from app.api import api_bp
 from app.services.ai_service import ai_service
 from app.config.ai_config import ai_config
 import logging
+import json
+import re
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -495,9 +497,6 @@ def generate_project_proposal():
         logger.info(f'项目提案生成成功，长度: {len(content)}, provider: {result.get("provider")}')
 
         # 解析JSON响应
-        import json
-        import re
-
         # 尝试提取JSON内容（AI可能会在JSON外添加标记）
         json_match = re.search(r'\{[\s\S]*\}', content)
         if json_match:

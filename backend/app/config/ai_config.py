@@ -32,7 +32,7 @@ class AIConfig:
         优先级：环境变量 > 配置文件
         """
         default_config = {
-            "default_provider": "openai",
+            "default_provider": "siliconflow",
             "providers": {
                 "openai": {
                     "api_key": "",
